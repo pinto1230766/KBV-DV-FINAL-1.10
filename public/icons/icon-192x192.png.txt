@@ -1,0 +1,4 @@
+Ce fichier est un placeholder. 
+Pour ajouter une vraie icône, remplacez ce fichier par une image PNG de 192x192 pixels.
+
+Le logo SVG inline dans index.html sera utilisé par défaut.

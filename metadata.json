@@ -1,0 +1,9 @@
+{
+  "name": "KBV DV LYON FINAL",
+  "description": "Application KBV DV LYON .FP pour gérer l'accueil des orateurs visiteurs, incluant la planification, l'accueil, les repas et l'hébergement.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation",
+    "filesystem"
+  ]
+}
