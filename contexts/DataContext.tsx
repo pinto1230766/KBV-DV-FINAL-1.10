@@ -839,45 +839,92 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const finalSpeakers = unifyByName(appData.speakers, (data.speakers || []) as Speaker[]);
         const finalHosts = unifyByName(appData.hosts, (data.hosts || []) as Host[]);
     
+        const normalizeName = (value: string) => value
+            ? value.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            : "";
+
         const speakerNameToInfoMap = new Map<string, Speaker>();
-        finalSpeakers.forEach(s => speakerNameToInfoMap.set(s.nom.toLowerCase().trim(), s));
-        
-        const visitKey = (v: Visit) => v.visitId; // Use visitId as unique key instead of visitDate
-        const visitMap = new Map<string, { visit: Visit; isArchived: boolean }>();
-    
-        appData.visits.forEach(v => visitMap.set(visitKey(v), { visit: v, isArchived: false }));
-        appData.archivedVisits.forEach(v => visitMap.set(visitKey(v), { visit: v, isArchived: true }));
-        
-        (data.visits || []).forEach((v: Visit) => visitMap.set(visitKey(v), { visit: v, isArchived: false }));
-        (data.archivedVisits || []).forEach((v: Visit) => visitMap.set(visitKey(v), { visit: v, isArchived: true }));
-        
+        finalSpeakers.forEach(s => speakerNameToInfoMap.set(normalizeName(s.nom), s));
+
+        const visitCompositeKey = (visit: Visit) => `${normalizeName(visit.nom)}|${visit.visitDate}`;
+
+        const mergeVisitRecords = (existing: Visit | undefined, incoming: Visit): Visit => {
+            if (!existing) {
+                const cloned = { ...incoming };
+                if (!cloned.visitId) {
+                    cloned.visitId = generateUUID();
+                }
+                return cloned;
+            }
+
+            const merged: Visit = {
+                ...existing,
+                ...incoming,
+                visitId: existing.visitId || incoming.visitId || generateUUID(),
+                visitTime: incoming.visitTime || existing.visitTime,
+                host: incoming.host || existing.host,
+                accommodation: incoming.accommodation ?? existing.accommodation,
+                meals: incoming.meals ?? existing.meals,
+                status: incoming.status || existing.status,
+                communicationStatus: { ...existing.communicationStatus, ...incoming.communicationStatus },
+            };
+
+            return merged;
+        };
+
+        type VisitBucket = { active?: Visit; archived?: Visit };
+        const visitBuckets = new Map<string, VisitBucket>();
+        let duplicateCount = 0;
+
+        const upsertVisit = (visit: Visit, isArchived: boolean) => {
+            const key = visitCompositeKey(visit);
+            const bucket = visitBuckets.get(key) ?? {};
+
+            if (isArchived) {
+                if (bucket.archived) {
+                    duplicateCount++;
+                }
+                const mergedArchived = mergeVisitRecords(bucket.archived, visit);
+                visitBuckets.set(key, { ...bucket, archived: mergedArchived });
+            } else {
+                if (bucket.active) {
+                    duplicateCount++;
+                }
+                const mergedActive = mergeVisitRecords(bucket.active, visit);
+                visitBuckets.set(key, { ...bucket, active: mergedActive });
+            }
+        };
+
+        const hydrateVisitWithSpeaker = (visit: Visit): Visit => {
+            const speakerInfo = speakerNameToInfoMap.get(normalizeName(visit.nom));
+            if (!speakerInfo) {
+                return { ...visit };
+            }
+
+            return {
+                ...visit,
+                id: speakerInfo.id,
+                nom: speakerInfo.nom,
+                congregation: speakerInfo.congregation,
+                telephone: speakerInfo.telephone,
+                photoUrl: speakerInfo.photoUrl,
+            };
+        };
+
+        appData.visits.forEach(v => upsertVisit(v, false));
+        appData.archivedVisits.forEach(v => upsertVisit(v, true));
+        (data.visits || []).forEach((v: Visit) => upsertVisit(v, false));
+        (data.archivedVisits || []).forEach((v: Visit) => upsertVisit(v, true));
+
         const finalVisits: Visit[] = [];
         const finalArchivedVisits: Visit[] = [];
-    
-        visitMap.forEach(({ visit, isArchived }) => {
-            const speakerInfo = speakerNameToInfoMap.get(visit.nom.toLowerCase().trim());
-            if (speakerInfo) {
-                const finalVisit: Visit = {
-                    ...visit,
-                    id: speakerInfo.id,
-                    nom: speakerInfo.nom,
-                    congregation: speakerInfo.congregation,
-                    telephone: speakerInfo.telephone,
-                    photoUrl: speakerInfo.photoUrl,
-                };
-    
-                if (isArchived) {
-                    finalArchivedVisits.push(finalVisit);
-                } else {
-                    finalVisits.push(finalVisit);
-                }
-            } else {
-                // If speaker not found in unified list (e.g. name changed), keep original visit
-                 if (isArchived) {
-                    finalArchivedVisits.push(visit);
-                } else {
-                    finalVisits.push(visit);
-                }
+
+        visitBuckets.forEach(({ active, archived }) => {
+            if (active) {
+                finalVisits.push(hydrateVisitWithSpeaker(active));
+            }
+            if (archived) {
+                finalArchivedVisits.push(hydrateVisitWithSpeaker(archived));
             }
         });
     

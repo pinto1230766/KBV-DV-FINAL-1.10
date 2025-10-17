@@ -599,17 +599,29 @@ const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'a
 
 const UsefulLinksContent: React.FC = () => {
     const sheetUrl = "https://docs.google.com/spreadsheets/d/1drIzPPi6AohCroSyUkF1UmMFxuEtMACBF4XATDjBOcg/edit?usp=drivesdk";
+    const keaUrl = "https://jw.org/kea";
 
     return (
-        <a 
-            href={sheetUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center p-4 bg-gray-100 dark:bg-primary-light/10 rounded-lg hover:bg-gray-200 dark:hover:bg-primary-light/20 transition-colors"
-        >
-            <ExternalLinkIcon className="w-6 h-6 mr-3 text-green-600" />
-            <span className="font-semibold">Ouvrir le Google Sheet de suivi</span>
-        </a>
+        <div className="space-y-4">
+            <a
+                href={sheetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center p-4 bg-gray-100 dark:bg-primary-light/10 rounded-lg hover:bg-gray-200 dark:hover:bg-primary-light/20 transition-colors"
+            >
+                <ExternalLinkIcon className="w-6 h-6 mr-3 text-green-600" />
+                <span className="font-semibold">Ouvrir le Google Sheet de suivi</span>
+            </a>
+            <a
+                href={keaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center p-4 bg-gray-100 dark:bg-primary-light/10 rounded-lg hover:bg-gray-200 dark:hover:bg-primary-light/20 transition-colors"
+            >
+                <ExternalLinkIcon className="w-6 h-6 mr-3 text-blue-600" />
+                <span className="font-semibold">Accéder à jw.org/kea</span>
+            </a>
+        </div>
     );
 };
 

@@ -314,28 +314,32 @@ const VisitCard: React.FC<{
                         isRemote={isRemote}
                         isSpecialEvent={isSpecialEvent}
                     />
-                    <VisitCardHostInfo 
-                        visit={visit} 
-                        onEdit={onEdit}
-                        hostExists={hostExists}
-                        isZoom={isZoom} 
-                        isStreaming={isStreaming}
-                        isLocalSpeaker={isLocalSpeaker}
-                        isRemote={isRemote}
-                        isSpecialEvent={isSpecialEvent}
-                    />
-                    <VisitCardActions 
-                        visit={visit} 
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        onComplete={onComplete}
-                        onOpenMessageGenerator={onOpenMessageGenerator}
-                        isLocalSpeaker={isLocalSpeaker}
-                        isRemote={isRemote}
-                        isSpecialEvent={isSpecialEvent}
-                        isMenuOpen={isMenuOpen}
-                        setIsMenuOpen={setIsMenuOpen}
-                    />
+                    {!isSpecialEvent && (
+                        <>
+                            <VisitCardHostInfo 
+                                visit={visit} 
+                                onEdit={onEdit}
+                                hostExists={hostExists}
+                                isZoom={isZoom} 
+                                isStreaming={isStreaming}
+                                isLocalSpeaker={isLocalSpeaker}
+                                isRemote={isRemote}
+                                isSpecialEvent={isSpecialEvent}
+                            />
+                            <VisitCardActions 
+                                visit={visit} 
+                                onEdit={onEdit}
+                                onDelete={onDelete}
+                                onComplete={onComplete}
+                                onOpenMessageGenerator={onOpenMessageGenerator}
+                                isLocalSpeaker={isLocalSpeaker}
+                                isRemote={isRemote}
+                                isSpecialEvent={isSpecialEvent}
+                                isMenuOpen={isMenuOpen}
+                                setIsMenuOpen={setIsMenuOpen}
+                            />
+                        </>
+                    )}
                 </div>
             </div>
         </div>
