@@ -12,6 +12,52 @@ import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { get, set, del } from '../utils/idb';
 import useLocalStorage from '../hooks/useLocalStorage';
 
+const normalizeName = (value: string) => value
+    ? value.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    : "";
+
+const visitCompositeKey = (visit: Visit) => `${normalizeName(visit.nom)}|${visit.visitDate}`;
+
+const mergeVisitRecords = (existing: Visit | undefined, incoming: Visit): Visit => {
+    if (!existing) {
+        const cloned = { ...incoming };
+        if (!cloned.visitId) {
+            cloned.visitId = generateUUID();
+        }
+        return cloned;
+    }
+
+    const merged: Visit = {
+        ...existing,
+        ...incoming,
+        visitId: existing.visitId || incoming.visitId || generateUUID(),
+        visitTime: incoming.visitTime || existing.visitTime,
+        host: incoming.host || existing.host,
+        accommodation: incoming.accommodation ?? existing.accommodation,
+        meals: incoming.meals ?? existing.meals,
+        status: incoming.status || existing.status,
+        communicationStatus: { ...existing.communicationStatus, ...incoming.communicationStatus },
+    };
+
+    return merged;
+};
+
+const hydrateVisitWithSpeaker = (visit: Visit, speakerMap: Map<string, Speaker>): Visit => {
+    const speakerInfo = speakerMap.get(normalizeName(visit.nom));
+    if (!speakerInfo) {
+        return { ...visit };
+    }
+
+    return {
+        ...visit,
+        id: speakerInfo.id,
+        nom: speakerInfo.nom,
+        congregation: speakerInfo.congregation,
+        telephone: speakerInfo.telephone,
+        photoUrl: speakerInfo.photoUrl,
+    };
+};
+
 interface AppData {
   speakers: Speaker[];
   visits: Visit[];
@@ -431,29 +477,57 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const removeDuplicateArchivedVisits = () => {
         updateAppData(prev => {
-            const uniqueVisits = new Map<string, Visit>();
-            
-            // Keep only the first occurrence of each visitId
-            prev.archivedVisits.forEach(visit => {
-                if (!uniqueVisits.has(visit.visitId)) {
-                    uniqueVisits.set(visit.visitId, visit);
+            const speakerMap = new Map<string, Speaker>();
+            prev.speakers.forEach(s => speakerMap.set(normalizeName(s.nom), s));
+
+            type VisitBucket = { active?: Visit; archived?: Visit };
+            const visitBuckets = new Map<string, VisitBucket>();
+
+            const upsertVisit = (visit: Visit, isArchived: boolean) => {
+                const key = visitCompositeKey(visit);
+                const bucket = visitBuckets.get(key) ?? {};
+
+                if (isArchived) {
+                    const merged = mergeVisitRecords(bucket.archived, visit);
+                    visitBuckets.set(key, { ...bucket, archived: merged });
+                } else {
+                    const merged = mergeVisitRecords(bucket.active, visit);
+                    visitBuckets.set(key, { ...bucket, active: merged });
+                }
+            };
+
+            prev.visits.forEach(v => upsertVisit(v, false));
+            prev.archivedVisits.forEach(v => upsertVisit(v, true));
+
+            const deduplicatedVisits: Visit[] = [];
+            const deduplicatedArchived: Visit[] = [];
+
+            visitBuckets.forEach(({ active, archived }) => {
+                if (active) {
+                    deduplicatedVisits.push(hydrateVisitWithSpeaker(active, speakerMap));
+                }
+                if (archived) {
+                    deduplicatedArchived.push(hydrateVisitWithSpeaker(archived, speakerMap));
                 }
             });
-            
-            const deduplicated = Array.from(uniqueVisits.values());
-            const duplicatesRemoved = prev.archivedVisits.length - deduplicated.length;
-            
+
+            deduplicatedVisits.sort((a, b) => new Date(a.visitDate + 'T00:00:00').getTime() - new Date(b.visitDate + 'T00:00:00').getTime());
+            deduplicatedArchived.sort((a, b) => new Date(b.visitDate + 'T00:00:00').getTime() - new Date(a.visitDate + 'T00:00:00').getTime());
+
+            const totalBefore = prev.visits.length + prev.archivedVisits.length;
+            const totalAfter = deduplicatedVisits.length + deduplicatedArchived.length;
+            const duplicatesRemoved = totalBefore - totalAfter;
+
             if (duplicatesRemoved > 0) {
-                addToast(`${duplicatesRemoved} doublon(s) supprimé(s) de l'archive.`, 'success');
+                addToast(`${duplicatesRemoved} doublon(s) de visites supprimé(s).`, 'success');
             } else {
-                addToast("Aucun doublon trouvé dans l'archive.", 'info');
+                addToast("Aucun doublon trouvé dans les visites.", 'info');
             }
-            
+
             return {
                 ...prev,
-                archivedVisits: deduplicated.sort((a, b) => 
-                    new Date(b.visitDate + 'T00:00:00').getTime() - new Date(a.visitDate + 'T00:00:00').getTime()
-                )
+                visits: deduplicatedVisits,
+                archivedVisits: deduplicatedArchived,
             };
         });
     };
