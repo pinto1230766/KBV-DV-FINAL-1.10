@@ -4,6 +4,7 @@ import {
     ExternalLinkIcon, ShieldCheckIcon, PodiumIcon, BookOpenIcon, ServerStackIcon, LockClosedIcon, LockOpenIcon, CloudArrowDownIcon, InformationCircleIcon, SparklesIcon, DownloadIcon, ChevronDownIcon, ClockIcon, SunIcon, MoonIcon, ComputerDesktopIcon, PaintBrushIcon, EnvelopeIcon, SaveIcon, ArrowUturnLeftIcon, MapPinIcon, EyeIcon, EyeSlashIcon
 } from './Icons';
 import { useData } from '../contexts/DataContext';
+import { useToast } from '../contexts/ToastContext';
 import { ArchivedVisits } from './ArchivedVisits';
 import { EncryptionPrompt } from './EncryptionPrompt';
 import { CongregationProfile, Visit, Language, MessageType, MessageRole } from '../types';
@@ -11,8 +12,6 @@ import useOnlineStatus from '../hooks/useOnlineStatus';
 import { DuplicateFinderModal } from './DuplicateFinderModal';
 import { LanguageSelector } from './LanguageSelector';
 import { messageTemplates, hostRequestMessageTemplates } from '../constants';
-import { GoogleGenAI } from '@google/genai';
-import { useToast } from '../contexts/ToastContext';
 
 interface SettingsProps {
     onImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -52,106 +51,6 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ title, description, i
                 <div className="px-4 pb-4 animate-fade-in">
                     <div className="border-t border-border-light dark:border-border-dark pt-4">
                         {children}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-
-const LogoContent: React.FC = () => {
-    const { apiKey, logoUrl, updateLogo } = useData();
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [generatedLogo, setGeneratedLogo] = useState<string | null>(null);
-    const { addToast } = useToast();
-
-    const defaultLogo = useMemo(() => {
-        const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%23b91c1c'/><text x='50' y='48' dominant-baseline='middle' text-anchor='middle' font-family='Montserrat, sans-serif' font-size='35' font-weight='bold' fill='white'>KBV</text><text x='50' y='70' dominant-baseline='middle' text-anchor='middle' font-family='Inter, sans-serif' font-size='15' font-weight='bold' fill='white'>DV LYON</text></svg>`;
-        return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-    }, []);
-
-    const isCustomLogo = useMemo(() => {
-        // Compare generated logo data URLs by checking a small segment, as encoding can vary slightly.
-        const areSame = logoUrl.substring(20, 100) === defaultLogo.substring(20, 100);
-        return !areSame;
-    }, [logoUrl, defaultLogo]);
-
-
-    const handleGenerate = async () => {
-        if (!apiKey) {
-            addToast("Veuillez configurer votre clé API pour utiliser l'IA.", 'error');
-            return;
-        }
-        setIsGenerating(true);
-        setGeneratedLogo(null);
-        try {
-            const ai = new GoogleGenAI({ apiKey });
-            const prompt = "A modern, professional logo for an app named 'KBV DV LYON .FP', for managing hospitality for visiting speakers. The style should be a minimalist vector icon. Incorporate elements symbolizing welcome, home, a calendar, or planning. The letters 'KBV' should be prominent. The overall feel should be clean, organized, and friendly.";
-            const response = await ai.models.generateImages({
-                model: 'imagen-4.0-generate-001',
-                prompt: prompt,
-                config: {
-                    numberOfImages: 1,
-                    outputMimeType: 'image/png',
-                },
-            });
-            const base64ImageBytes = response.generatedImages[0].image.imageBytes;
-            const imageUrl = `data:image/png;base64,${base64ImageBytes}`;
-            setGeneratedLogo(imageUrl);
-        } catch (error) {
-            console.error("Logo generation failed:", error);
-            addToast("La génération du logo a échoué.", 'error');
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-    
-    const handleApply = () => {
-        if (generatedLogo) {
-            updateLogo(generatedLogo);
-            setGeneratedLogo(null);
-        }
-    };
-    
-    const handleReset = () => {
-        updateLogo(null);
-    };
-
-    return (
-        <div className="space-y-4">
-            <p className="text-sm text-text-muted dark:text-text-muted-dark">Personnalisez le logo de l'application.</p>
-            <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-gray-50 dark:bg-primary-light/10 rounded-lg">
-                <div>
-                    <p className="font-semibold mb-2">Logo Actuel</p>
-                    <img src={logoUrl} alt="Logo actuel" className="w-24 h-24 rounded-lg shadow-md" />
-                </div>
-                <div className="flex-grow">
-                    <button onClick={handleGenerate} disabled={isGenerating} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-secondary/20 hover:bg-secondary/30 text-secondary font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                        {isGenerating ? <SpinnerIcon className="w-5 h-5" /> : <SparklesIcon className="w-5 h-5" />}
-                        {isGenerating ? "Génération en cours..." : "Générer un logo avec l'IA"}
-                    </button>
-                    {isCustomLogo && (
-                        <button onClick={handleReset} className="w-full sm:w-auto mt-2 text-sm text-red-600 hover:underline">
-                            Restaurer le logo par défaut
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {generatedLogo && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg animate-fade-in">
-                    <h3 className="font-bold text-blue-800 dark:text-blue-300 mb-3">Nouveau logo suggéré</h3>
-                    <div className="flex flex-col sm:flex-row items-center gap-6">
-                        <img src={generatedLogo} alt="Logo généré" className="w-24 h-24 rounded-lg shadow-md" />
-                        <div className="flex-grow flex flex-col sm:flex-row gap-3">
-                            <button onClick={handleApply} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg">
-                                Appliquer ce logo
-                            </button>
-                            <button onClick={() => setGeneratedLogo(null)} className="px-4 py-2 bg-card-light dark:bg-card-dark border border-gray-300 dark:border-border-dark rounded-md font-medium text-text-main dark:text-text-main-dark hover:bg-gray-50 dark:hover:bg-primary-light/20">
-                                Annuler
-                            </button>
-                        </div>
                     </div>
                 </div>
             )}
@@ -262,6 +161,19 @@ const CongregationProfileContent: React.FC = () => {
             <div>
                 <label htmlFor="backupPhoneNumber" className="block text-sm font-medium text-text-muted dark:text-text-muted-dark">Numéro WhatsApp pour sauvegarde (avec indicatif)</label>
                 <input type="tel" id="backupPhoneNumber" name="backupPhoneNumber" value={profile.backupPhoneNumber || ''} onChange={handleChange} className="mt-1 block w-full border border-border-light dark:border-border-dark rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-secondary focus:border-secondary bg-card-light dark:bg-primary-light/10" placeholder="+33612345678" />
+            </div>
+            <div>
+                <label htmlFor="city" className="block text-sm font-medium text-text-muted dark:text-text-muted-dark">Ville de la congrégation</label>
+                <input 
+                    type="text" 
+                    id="city" 
+                    name="city" 
+                    value={profile.city || ''} 
+                    onChange={handleChange} 
+                    className="mt-1 block w-full border border-border-light dark:border-border-dark rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-secondary focus:border-secondary bg-card-light dark:bg-primary-light/10" 
+                    placeholder="Ex: Lyon, France"
+                />
+                <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Utilisée pour les prévisions météo précises.</p>
             </div>
             <div className="pt-4 border-t border-border-light dark:border-border-dark">
                  <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark">Localisation de la salle du Royaume</label>
@@ -578,7 +490,7 @@ const SecurityContent: React.FC = () => {
 const StorageManagerContent: React.FC = () => {
     const { appData } = useData();
     const [usage, setUsage] = useState({ bytes: 0, percent: 0 });
-    const QUOTA = 5 * 1024 * 1024; // 5MB
+    const QUOTA = 50 * 1024 * 1024; // 50MB
 
     useEffect(() => {
         if (appData) {
@@ -703,12 +615,13 @@ const UsefulLinksContent: React.FC = () => {
 
 const MaintenanceContent: React.FC = () => {
     const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+    const { removeDuplicateArchivedVisits } = useData();
 
     return (
-        <>
+        <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                   <p className="font-semibold text-text-main dark:text-text-main-dark">Rechercher les doublons</p>
+                   <p className="font-semibold text-text-main dark:text-text-main-dark">Rechercher les doublons d'orateurs et contacts</p>
                    <p className="text-sm text-text-muted dark:text-text-muted-dark mt-1 max-w-md">
                         Analysez vos listes d'orateurs et de contacts d'accueil pour trouver et fusionner les entrées en double.
                    </p>
@@ -717,25 +630,37 @@ const MaintenanceContent: React.FC = () => {
                     Lancer la recherche
                 </button>
             </div>
+
+            <div className="border-t border-border-light dark:border-border-dark pt-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                       <p className="font-semibold text-text-main dark:text-text-main-dark">Supprimer les doublons d'archives</p>
+                       <p className="text-sm text-text-muted dark:text-text-muted-dark mt-1 max-w-md">
+                            Si vous voyez des visites en double dans l'archive, utilisez ce bouton pour les supprimer automatiquement.
+                       </p>
+                    </div>
+                    <button onClick={removeDuplicateArchivedVisits} className="flex-shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition-transform active:scale-95">
+                        Nettoyer les archives
+                    </button>
+                </div>
+            </div>
+
             {isDuplicateModalOpen && (
                 <DuplicateFinderModal 
                     isOpen={isDuplicateModalOpen} 
                     onClose={() => setIsDuplicateModalOpen(false)} 
                 />
             )}
-        </>
+        </div>
     );
 };
+
 
 export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImporting, onLeaveFeedback, archiveSectionRef }) => {
     const { syncWithGoogleSheet, archivedVisits } = useData();
     return (
         <div className="space-y-6">
-            <SettingsSection title="Logo & Identité Visuelle" description="Générez un nouveau logo pour l'application avec l'IA." icon={SparklesIcon}>
-                <LogoContent />
-            </SettingsSection>
-
-            <SettingsSection title="Profil de la Congrégation" description="Personnalisez les informations de l'application." icon={PodiumIcon} startsOpen={true}>
+            <SettingsSection title="Profil de la Congrégation" description="Personnalisez les informations de l'application." icon={PodiumIcon}>
                 <CongregationProfileContent />
             </SettingsSection>
 

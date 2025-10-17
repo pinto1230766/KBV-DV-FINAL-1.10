@@ -1,12 +1,21 @@
 export interface CongregationProfile {
+  /** Nom de la congrégation */
   name: string;
+  /** Sous-titre ou description */
   subtitle: string;
+  /** Heure par défaut pour les visites */
   defaultTime: string;
-  hospitalityOverseer?: string;
-  hospitalityOverseerPhone?: string;
-  backupPhoneNumber?: string;
+  /** Ville de la congrégation pour la météo */
+  city?: string;
+  /** Coordonnées GPS de la salle du royaume */
   latitude?: number | null;
   longitude?: number | null;
+  /** Nom du responsable de l'accueil */
+  hospitalityOverseer?: string;
+  /** Téléphone du responsable de l'accueil */
+  hospitalityOverseerPhone?: string;
+  /** Numéro de téléphone de secours */
+  backupPhoneNumber?: string;
 }
 
 export interface TalkHistory {

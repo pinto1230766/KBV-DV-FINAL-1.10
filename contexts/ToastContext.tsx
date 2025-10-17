@@ -1,14 +1,16 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { generateUUID } from '../utils/uuid';
 import { Toast as ToastInterface, ToastType } from '../types';
 import { CheckCircleIcon, XCircleIcon, InformationCircleIcon, ExclamationTriangleIcon, XIcon } from '../components/Icons';
 
 // --- Toast Component ---
 interface ToastProps {
-  id: string;
-  message: string;
-  type: ToastType;
-  duration?: number;
+  toast: {
+    id: string;
+    message: string;
+    type: ToastType;
+    duration?: number;
+  };
   onDismiss: (id: string) => void;
 }
 

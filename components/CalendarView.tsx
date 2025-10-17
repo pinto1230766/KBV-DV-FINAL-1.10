@@ -336,6 +336,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onEditVisit }) => {
                     
                     const visitStatus = isArchived ? 'completed' : visit?.status;
                     const statusStyle = statusInfo[visitStatus as keyof typeof statusInfo];
+                    const hostLabel = !visit
+                        ? ''
+                        : visitStatus === 'completed'
+                            ? 'Visite terminée'
+                            : visit.host === UNASSIGNED_HOST
+                                ? UNASSIGNED_HOST
+                                : visit.host;
 
                     const SpecialDateIcon = specialDate ? specialDateInfo[specialDate.type].icon : null;
 
@@ -374,7 +381,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onEditVisit }) => {
                                 {visit && !stays.some(s => s.visit.visitId === visit.visitId) && (
                                     <div 
                                         className={`mt-1 p-1 text-xs rounded-md ${statusStyle ? statusStyle.color : 'bg-gray-100'}`}
-                                        title={`${visit.nom} - Accueil: ${visit.host}`}
+                                        title={hostLabel ? `${visit.nom} - ${hostLabel}` : visit.nom}
                                     >
                                         <div className="flex items-center">
                                             {/* FIX: Wrapped icons in a span to apply the title attribute, which is not a valid prop for the Icon components. */}
@@ -383,7 +390,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ onEditVisit }) => {
                                             {visit.locationType === 'streaming' && <span title="Streaming"><WifiIcon className="w-3 h-3" /></span>}
                                         </div>
                                         <p className="font-bold leading-tight truncate mt-0.5">{visit.nom}</p>
-                                        <p className="leading-tight truncate opacity-80">{visit.host}</p>
+                                        {hostLabel && <p className="leading-tight truncate opacity-80">{hostLabel}</p>}
                                     </div>
                                 )}
                             </div>

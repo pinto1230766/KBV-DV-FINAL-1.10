@@ -45,6 +45,41 @@ const getUrgencyInfoForPast = (visit: Visit) => {
     return { level: 'normal', text: `Il y a ${days} j.`, color: 'bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' };
 };
 
+const extractTextFromGeminiResponse = (response: any): string | null => {
+    if (!response) return null;
+
+    if (typeof response.output_text === 'string' && response.output_text.trim()) {
+        return response.output_text.trim();
+    }
+
+    const candidates = response.candidates;
+    if (Array.isArray(candidates)) {
+        for (const candidate of candidates) {
+            const parts = candidate?.content?.parts;
+            if (Array.isArray(parts)) {
+                const textParts = parts
+                    .map((part: any) => part?.text)
+                    .filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0);
+                if (textParts.length > 0) {
+                    return textParts.join(' ').trim();
+                }
+            }
+        }
+    }
+
+    const maybeResponse = response.response;
+    if (maybeResponse && typeof maybeResponse.text === 'function') {
+        const text = maybeResponse.text();
+        if (typeof text === 'string' && text.trim()) return text.trim();
+    }
+
+    if (typeof response.text === 'string' && response.text.trim()) {
+        return response.text.trim();
+    }
+
+    return null;
+};
+
 export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => {
     const { upcomingVisits, archivedVisits, speakers, apiKey, congregationProfile, hosts, isOnline } = useData();
     const { addToast } = useToast();
@@ -71,8 +106,16 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
                 : 'Lyon, France';
             const date = new Date(nextVisit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
             const prompt = `Quelle est la météo prévue pour ${location} le ${date}? Donne une réponse très courte et concise, par exemple : "Ensoleillé, 24°C / 18°C".`;
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            setWeather(response.text);
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            });
+            const resultText = extractTextFromGeminiResponse(response);
+            if (resultText) {
+                setWeather(resultText);
+            } else {
+                addToast("Réponse météo indisponible.", 'warning');
+            }
         } catch (error) {
             addToast("Impossible de récupérer la météo.", 'error');
         } finally {
@@ -95,8 +138,16 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
                 ? `les coordonnées lat:${congregationProfile.latitude}, lon:${congregationProfile.longitude}`
                 : "Salle du Royaume des Témoins de Jéhovah, 16 Rue Imbert Colomes, 69001 Lyon";
             const prompt = `Quel est le temps de trajet en voiture entre "${host.address}" et ${destination} un samedi après-midi? Donne une estimation concise, par exemple : "Environ 25 min en voiture".`;
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            setTravelTime(response.text);
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            });
+            const resultText = extractTextFromGeminiResponse(response);
+            if (resultText) {
+                setTravelTime(resultText);
+            } else {
+                addToast("Réponse IA indisponible pour le trajet.", 'warning');
+            }
         } catch(error) {
             addToast("Impossible de calculer le temps de trajet.", 'error');
         } finally {

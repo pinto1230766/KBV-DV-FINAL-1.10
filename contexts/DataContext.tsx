@@ -72,6 +72,7 @@ interface DataContextType {
   completeVisit: (visit: Visit) => void;
   addFeedbackToVisit: (visitId: string, feedback: Feedback) => void;
   deleteArchivedVisit: (visitId: string) => void;
+  removeDuplicateArchivedVisits: () => void;
   addHost: (hostData: Host) => boolean;
   updateHost: (hostName: string, updatedData: Partial<Host>) => void;
   deleteHost: (hostName: string) => void;
@@ -385,6 +386,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const completeVisit = (visit: Visit) => {
         updateAppData(prev => {
+            // Check if visit is already archived to prevent duplicates
+            const isAlreadyArchived = prev.archivedVisits.some(v => v.visitId === visit.visitId);
+            
+            if (isAlreadyArchived) {
+                addToast(`Cette visite est déjà archivée.`, 'warning');
+                return prev;
+            }
+
             const newSpeakers = prev.speakers.map(s => {
                 if (s.id === visit.id) {
                     const newHistoryEntry: TalkHistory = { date: visit.visitDate, talkNo: visit.talkNoOrType, theme: visit.talkTheme };
@@ -418,6 +427,35 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const deleteArchivedVisit = (visitId: string) => {
         updateAppData(prev => ({ ...prev, archivedVisits: prev.archivedVisits.filter(v => v.visitId !== visitId) }));
         addToast("Visite supprimée définitivement de l'archive.", 'info');
+    };
+
+    const removeDuplicateArchivedVisits = () => {
+        updateAppData(prev => {
+            const uniqueVisits = new Map<string, Visit>();
+            
+            // Keep only the first occurrence of each visitId
+            prev.archivedVisits.forEach(visit => {
+                if (!uniqueVisits.has(visit.visitId)) {
+                    uniqueVisits.set(visit.visitId, visit);
+                }
+            });
+            
+            const deduplicated = Array.from(uniqueVisits.values());
+            const duplicatesRemoved = prev.archivedVisits.length - deduplicated.length;
+            
+            if (duplicatesRemoved > 0) {
+                addToast(`${duplicatesRemoved} doublon(s) supprimé(s) de l'archive.`, 'success');
+            } else {
+                addToast("Aucun doublon trouvé dans l'archive.", 'info');
+            }
+            
+            return {
+                ...prev,
+                archivedVisits: deduplicated.sort((a, b) => 
+                    new Date(b.visitDate + 'T00:00:00').getTime() - new Date(a.visitDate + 'T00:00:00').getTime()
+                )
+            };
+        });
     };
 
     const addHost = (newHost: Host): boolean => {
@@ -655,30 +693,90 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
         if (Capacitor.isNativePlatform()) {
             try {
-                let permStatus = await Filesystem.checkPermissions();
-                if (permStatus.publicStorage !== 'granted') {
-                    permStatus = await Filesystem.requestPermissions();
+                // Vérifier et demander les permissions nécessaires
+                const checkStorage = async () => {
+                    if (Capacitor.getPlatform() === 'android') {
+                        try {
+                            // Essayer d'utiliser le répertoire de cache qui ne nécessite pas de permissions spéciales
+                            const testPath = 'test_permission.txt';
+                            await Filesystem.writeFile({
+                                path: testPath,
+                                data: 'test',
+                                directory: Directory.Cache,
+                                encoding: Encoding.UTF8
+                            });
+                            await Filesystem.deleteFile({
+                                path: testPath,
+                                directory: Directory.Cache
+                            });
+                            return true;
+                        } catch (error) {
+                            console.warn("Impossible d'écrire dans le cache:", error);
+                            return false;
+                        }
+                    } else if (Capacitor.getPlatform() === 'ios') {
+                        // Pour iOS, on utilise Documents qui est accessible via l'application Fichiers
+                        return true;
+                    }
+                    return true;
+                };
+
+                const hasStorageAccess = await checkStorage();
+                if (!hasStorageAccess) {
+                    throw new Error("Impossible d'accéder au stockage de l'appareil. Vérifiez les autorisations de l'application.");
                 }
 
-                if (permStatus.publicStorage !== 'granted') {
-                    throw new Error("Permission de stockage refusée. Veuillez l'activer dans les paramètres de l'application.");
-                }
-
+                // Utiliser le répertoire Documents pour tous les appareils (plus accessible)
                 const directory = Directory.Documents;
-    
+                const finalPath = Capacitor.getPlatform() === 'android' ? `KBV_Lyon_Backups/${fileName}` : fileName;
+
+                // Créer le répertoire de sauvegarde si nécessaire
+                if (Capacitor.getPlatform() === 'android') {
+                    try {
+                        await Filesystem.mkdir({
+                            path: 'KBV_Lyon_Backups',
+                            directory: Directory.Documents,
+                            recursive: true
+                        });
+                    } catch (error) {
+                        console.log('Le dossier de sauvegarde existe déjà ou ne peut pas être créé');
+                    }
+                }
+                
                 await Filesystem.writeFile({
-                    path: fileName,
+                    path: finalPath,
                     data: dataString,
                     directory: directory,
                     encoding: Encoding.UTF8,
+                    recursive: true
                 });
     
                 const platform = Capacitor.getPlatform();
                 let successMessage: string;
                 if (platform === 'ios') {
-                    successMessage = `Sauvegarde enregistrée dans 'Documents' (via l'app Fichiers).`;
+                    successMessage = `Sauvegarde enregistrée dans 'Fichiers' > 'Mon iPhone' > '${appData.congregationProfile.name}'`;
                 } else if (platform === 'android') {
-                    successMessage = `Sauvegarde enregistrée dans votre dossier "Documents".`;
+                    successMessage = `Sauvegarde enregistrée dans Documents > KBV_Lyon_Backups > ${fileName}`;
+
+                    // Pour Android, on peut aussi proposer de partager le fichier si l'utilisateur veut
+                    try {
+                        const file = await Filesystem.getUri({
+                            path: finalPath,
+                            directory: Directory.Documents
+                        });
+
+                        // Optionnel : proposer de partager le fichier
+                        if (file && file.uri && confirm('Voulez-vous aussi partager la sauvegarde ?')) {
+                            await (window as any).Capacitor.Plugins.Share.share({
+                                title: 'Sauvegarde des données KBV Lyon',
+                                text: 'Voici votre sauvegarde de l\'application Gestion des Orateurs Visiteurs',
+                                url: file.uri,
+                                dialogTitle: 'Partager la sauvegarde',
+                            });
+                        }
+                    } catch (shareError) {
+                        console.warn("Le partage optionnel a échoué, mais la sauvegarde est bien enregistrée", shareError);
+                    }
                 } else {
                     successMessage = `Sauvegarde enregistrée: ${fileName}`;
                 }
@@ -694,10 +792,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     }
                 }
 
-                addToast(`${errorMessage} Lancement du téléchargement web en secours.`, 'error', 8000);
+                console.error("Erreur de sauvegarde native:", error);
                 
-                const blob = new Blob([dataString], { type: 'application/json' });
-                downloadFallback(blob, fileName);
+                // Essayer d'utiliser le stockage local comme solution de secours
+                try {
+                    const backupKey = `backup_${Date.now()}`;
+                    localStorage.setItem(backupKey, dataString);
+                    
+                    // Proposer à l'utilisateur de copier les données manuellement
+                    const shouldCopy = confirm(`Impossible d'enregistrer le fichier automatiquement. Voulez-vous copier les données dans le presse-papiers ?`);
+                    if (shouldCopy) {
+                        await navigator.clipboard.writeText(dataString);
+                        addToast("Les données ont été copiées dans le presse-papiers.", "info", 8000);
+                    } else {
+                        addToast("Sauvegarde échouée. Veuillez vérifier les autorisations de l'application.", "error", 8000);
+                    }
+                } catch (fallbackError) {
+                    console.error("Échec de la sauvegarde de secours:", fallbackError);
+                    addToast("Échec de la sauvegarde. Veuillez vérifier les autorisations de l'application.", "error", 8000);
+                }
             }
         } else {
             const blob = new Blob([dataString], { type: 'application/json' });
@@ -729,7 +842,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const speakerNameToInfoMap = new Map<string, Speaker>();
         finalSpeakers.forEach(s => speakerNameToInfoMap.set(s.nom.toLowerCase().trim(), s));
         
-        const visitKey = (v: Visit) => v.visitDate;
+        const visitKey = (v: Visit) => v.visitId; // Use visitId as unique key instead of visitDate
         const visitMap = new Map<string, { visit: Visit; isArchived: boolean }>();
     
         appData.visits.forEach(v => visitMap.set(visitKey(v), { visit: v, isArchived: false }));
@@ -1081,7 +1194,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logoUrl,
         updateLogo,
         addSpeaker, updateSpeaker, deleteSpeaker,
-        addVisit, updateVisit, deleteVisit, completeVisit, addFeedbackToVisit, deleteArchivedVisit,
+        addVisit, updateVisit, deleteVisit, completeVisit, addFeedbackToVisit, deleteArchivedVisit, removeDuplicateArchivedVisits,
         addHost, updateHost, deleteHost,
         saveCustomTemplate, deleteCustomTemplate, saveCustomHostRequestTemplate, deleteCustomHostRequestTemplate,
         logCommunication, exportData, importData, resetData,

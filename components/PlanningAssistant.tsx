@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Visit } from '../types';
 import { useData } from '../contexts/DataContext';
 import { UNASSIGNED_HOST } from '../constants';
@@ -45,6 +45,41 @@ const getUrgencyInfoForPast = (visit: Visit) => {
     return { level: 'normal', text: `Il y a ${days} j.`, color: 'bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' };
 };
 
+const extractTextFromGeminiResponse = (response: any): string | null => {
+    if (!response) return null;
+
+    if (typeof response.output_text === 'string' && response.output_text.trim()) {
+        return response.output_text.trim();
+    }
+
+    const candidates = response.candidates;
+    if (Array.isArray(candidates)) {
+        for (const candidate of candidates) {
+            const parts = candidate?.content?.parts;
+            if (Array.isArray(parts)) {
+                const textParts = parts
+                    .map((part: any) => part?.text)
+                    .filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0);
+                if (textParts.length > 0) {
+                    return textParts.join(' ').trim();
+                }
+            }
+        }
+    }
+
+    const maybeResponse = response.response;
+    if (maybeResponse && typeof maybeResponse.text === 'function') {
+        const text = maybeResponse.text();
+        if (typeof text === 'string' && text.trim()) return text.trim();
+    }
+
+    if (typeof response.text === 'string' && response.text.trim()) {
+        return response.text.trim();
+    }
+
+    return null;
+};
+
 const toYYYYMMDD = (d: Date) => {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -61,19 +96,61 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
     const [isFetchingTravel, setIsFetchingTravel] = useState(false);
 
     const nextVisit = useMemo(() => upcomingVisits[0], [upcomingVisits]);
+    const daysUntilNextVisit = useMemo(() => nextVisit ? daysUntil(nextVisit.visitDate) : null, [nextVisit]);
+    const canFetchWeather = daysUntilNextVisit !== null && daysUntilNextVisit <= 10;
+
+    useEffect(() => {
+        setWeather(null);
+        setTravelTime(null);
+    }, [nextVisit]);
     
     const fetchWeather = async () => {
-        if (!nextVisit || !apiKey || !isOnline) return;
+        if (!nextVisit || !apiKey || !isOnline || !canFetchWeather) return;
         setIsFetchingWeather(true);
         try {
             const ai = new GoogleGenAI({ apiKey });
-            const city = congregationProfile.name.toLowerCase().includes('lyon') ? 'Lyon, France' : 'votre ville';
-            const date = new Date(nextVisit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-            const prompt = `Quelle est la météo prévue pour ${city} le ${date}? Donne une réponse très courte et concise, par exemple : "Ensoleillé, 24°C / 18°C".`;
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            setWeather(response.text);
+            
+            // Utiliser la ville de la congrégation si elle est définie, sinon utiliser les coordonnées GPS
+            let locationInfo = '';
+            if (congregationProfile.city) {
+                locationInfo = congregationProfile.city;
+            } else if (congregationProfile.latitude && congregationProfile.longitude) {
+                locationInfo = `les coordonnées ${congregationProfile.latitude.toFixed(4)}, ${congregationProfile.longitude.toFixed(4)}`;
+            } else {
+                // Si aucune information de localisation n'est disponible, utiliser le nom de la congrégation
+                locationInfo = congregationProfile.name;
+            }
+            
+            const eventDate = new Date(nextVisit.visitDate + 'T00:00:00');
+            const readableDate = eventDate.toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            const daysMessage = daysUntilNextVisit === null
+                ? ''
+                : daysUntilNextVisit === 0
+                    ? "La date est aujourd'hui."
+                    : daysUntilNextVisit === 1
+                        ? "La date est dans 1 jour."
+                        : `La date est dans ${daysUntilNextVisit} jours.`;
+
+            const prompt = `Tu es un assistant météo. Quelle est la météo la plus probable pour ${locationInfo} le ${readableDate} (date exacte ${nextVisit.visitDate})? ${daysMessage} Même si les données sont incertaines, donne une estimation concise du temps attendu avec températures approximatives, par exemple : "Ensoleillé, 24°C / 18°C". N'indique jamais que tu ne peux pas fournir la météo.`;
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            });
+            const resultText = extractTextFromGeminiResponse(response);
+            if (resultText) {
+                setWeather(resultText);
+            } else {
+                addToast("Réponse météo indisponible.", 'warning');
+            }
         } catch (error) {
-            addToast("Impossible de récupérer la météo.", 'error');
+            console.error("Erreur lors de la récupération de la météo:", error);
+            addToast("Impossible de récupérer la météo. Vérifiez votre connexion ou votre clé API.", 'error');
         } finally {
             setIsFetchingWeather(false);
         }
@@ -88,9 +165,17 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
         try {
             const ai = new GoogleGenAI({ apiKey });
             const destination = "Salle du Royaume des Témoins de Jéhovah, 16 Rue Imbert Colomes, 69001 Lyon"; // Example address
-            const prompt = `Quel est le temps de trajet en voiture entre "${host.address}" et "${destination}" un samedi après-midi à Lyon? Donne une estimation concise, par exemple : "Environ 25 min en voiture".`;
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            setTravelTime(response.text);
+            const prompt = `Quel est le temps de trajet en voiture entre "${host.address}" et ${destination} un samedi après-midi à Lyon? Donne une estimation concise, par exemple : "Environ 25 min en voiture".`;
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            });
+            const resultText = extractTextFromGeminiResponse(response);
+            if (resultText) {
+                setTravelTime(resultText);
+            } else {
+                addToast("Réponse IA indisponible pour le trajet.", 'warning');
+            }
         } catch(error) {
             addToast("Impossible de calculer le temps de trajet.", 'error');
         } finally {
@@ -132,7 +217,7 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                             <div className="flex items-center justify-between p-2 bg-white/50 dark:bg-primary-light/10 rounded-md">
-                                {isFetchingWeather ? <SpinnerIcon className="w-5 h-5 text-primary"/> : weather ? <p className="font-semibold">{weather}</p> : <button onClick={fetchWeather} disabled={!apiKey || !isOnline} className="flex items-center gap-2 font-semibold text-primary dark:text-primary-light disabled:opacity-50"><SunIcon className="w-5 h-5"/> Voir la météo</button>}
+                                {isFetchingWeather ? <SpinnerIcon className="w-5 h-5 text-primary"/> : weather ? <p className="font-semibold">{weather}</p> : canFetchWeather ? <button onClick={fetchWeather} disabled={!apiKey || !isOnline || !canFetchWeather} className="flex items-center gap-2 font-semibold text-primary dark:text-primary-light disabled:opacity-50"><SunIcon className="w-5 h-5"/> Voir la météo</button> : <p className="text-text-muted dark:text-text-muted-dark text-xs">Prévisions météo disponibles à partir de J-10.</p>}
                             </div>
                             <div className="flex items-center justify-between p-2 bg-white/50 dark:bg-primary-light/10 rounded-md">
                                 {nextVisit.locationType !== 'physical' || !hosts.find(h => h.nom === nextVisit.host)?.address ? <p className="text-text-muted dark:text-text-muted-dark text-xs">Trajet non applicable</p> : isFetchingTravel ? <SpinnerIcon className="w-5 h-5 text-primary"/> : travelTime ? <p className="font-semibold">{travelTime}</p> : <button onClick={fetchTravelTime} disabled={!apiKey || !isOnline} className="flex items-center gap-2 font-semibold text-primary dark:text-primary-light disabled:opacity-50"><CarIcon className="w-5 h-5"/> Calculer le trajet</button>}

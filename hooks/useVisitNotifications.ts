@@ -15,10 +15,12 @@ const formatDate = (dateString: string) => {
 
 // This function creates a unique numeric ID from a UUID string for notification IDs.
 // It's a simple hashing mechanism to fit the numeric ID requirement of LocalNotifications.
+// Returns a value within Java's int range (0 to 2147483647)
 const visitIdToNumeric = (id: string): number => {
   const numericPart = id.replace(/[^0-9a-fA-F]/g, '');
-  const sliced = numericPart.slice(0, 8);
-  return parseInt(sliced, 16);
+  const sliced = numericPart.slice(0, 7); // Use 7 chars to stay within Java int range
+  const value = parseInt(sliced, 16);
+  return Math.abs(value) % 2147483647; // Ensure it's within Java int range
 };
 
 

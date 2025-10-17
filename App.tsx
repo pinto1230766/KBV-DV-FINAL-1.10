@@ -140,6 +140,24 @@ const App: React.FC = () => {
         checkPermissions();
     }, []);
 
+    useEffect(() => {
+        if (congregationProfile?.name) {
+            document.title = congregationProfile.name;
+            const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]') as HTMLMetaElement | null;
+            if (appleTitle) {
+                appleTitle.setAttribute('content', congregationProfile.name);
+            }
+        }
+    }, [congregationProfile?.name]);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        if (language === 'fr') root.lang = 'fr';
+        else if (language === 'en') root.lang = 'en';
+        else if (language === 'es') root.lang = 'es';
+        else root.lang = language as string;
+    }, [language]);
+
     const handleEnableNotifications = async () => {
         try {
              if (typeof LocalNotifications === 'undefined') {

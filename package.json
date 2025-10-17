@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "kbv-dv-lyon-final",
   "private": true,
   "version": "1.0.0",
