@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     UploadIcon, SpinnerIcon, ExclamationTriangleIcon,
-    ExternalLinkIcon, ShieldCheckIcon, PodiumIcon, BookOpenIcon, ServerStackIcon, LockClosedIcon, LockOpenIcon, CloudArrowDownIcon, InformationCircleIcon, SparklesIcon, DownloadIcon, ChevronDownIcon, ClockIcon, SunIcon, MoonIcon, ComputerDesktopIcon, PaintBrushIcon, EnvelopeIcon, SaveIcon, ArrowUturnLeftIcon, MapPinIcon, EyeIcon, EyeSlashIcon
+    ExternalLinkIcon, ShieldCheckIcon, PodiumIcon, BookOpenIcon, ServerStackIcon, LockClosedIcon, LockOpenIcon, CloudArrowDownIcon, InformationCircleIcon, SparklesIcon, DownloadIcon, ChevronDownIcon, ClockIcon, CalendarIcon, PlusIcon, TrashIcon, EditIcon, EnvelopeIcon, SaveIcon, ArrowUturnLeftIcon, MapPinIcon, EyeIcon, EyeSlashIcon
 } from './Icons';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
 import { ArchivedVisits } from './ArchivedVisits';
 import { EncryptionPrompt } from './EncryptionPrompt';
-import { CongregationProfile, Visit, Language, MessageType, MessageRole } from '../types';
+import { CongregationProfile, Visit, Language, MessageType, MessageRole, SpecialDate, SpecialDateType } from '../types';
 import useOnlineStatus from '../hooks/useOnlineStatus';
 import { DuplicateFinderModal } from './DuplicateFinderModal';
 import { LanguageSelector } from './LanguageSelector';
@@ -24,7 +24,7 @@ interface SettingsProps {
 interface SettingsSectionProps {
     title: string;
     description: string;
-    icon: React.FC<any>;
+    icon: React.FC<{ className?: string }>;
     children: React.ReactNode;
     startsOpen?: boolean;
     containerRef?: React.RefObject<HTMLDivElement>;
@@ -113,7 +113,7 @@ const CongregationProfileContent: React.FC = () => {
             if (error instanceof GeolocationPositionError) {
                 switch(error.code) {
                     case 1: // PERMISSION_DENIED
-                        errorMessage = "Accès à la localisation bloqué. Veuillez l'autoriser dans les paramètres de votre navigateur/appareil pour ce site.";
+                        errorMessage = "Accès à la localisation bloqué. Veuillez l&#39;autoriser dans les paramètres de votre navigateur/appareil pour ce site.";
                         break;
                     case 2: // POSITION_UNAVAILABLE
                         errorMessage = "Information de localisation non disponible. Vérifiez que le GPS est activé.";
@@ -124,7 +124,7 @@ const CongregationProfileContent: React.FC = () => {
                 }
             } else if (error instanceof Error) {
                  if (error.message.includes('not supported')) {
-                     errorMessage = "La géolocalisation n'est pas supportée par ce navigateur.";
+                     errorMessage = "La géolocalisation n&#39;est pas supportée par ce navigateur.";
                 } else if (error.message.includes('Only secure origins are allowed')) {
                     errorMessage = "La géolocalisation requiert une connexion sécurisée (HTTPS).";
                 }
@@ -139,7 +139,7 @@ const CongregationProfileContent: React.FC = () => {
     return (
         <div className="space-y-4">
              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-text-muted dark:text-text-muted-dark">Nom de l'application / Congrégation</label>
+                <label htmlFor="name" className="block text-sm font-medium text-text-muted dark:text-text-muted-dark">Nom de l&#39;application / Congrégation</label>
                 <input type="text" id="name" name="name" value={profile.name} onChange={handleChange} className="mt-1 block w-full border border-border-light dark:border-border-dark rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-secondary focus:border-secondary bg-card-light dark:bg-primary-light/10" />
             </div>
             <div>
@@ -151,7 +151,7 @@ const CongregationProfileContent: React.FC = () => {
                 <input type="time" id="defaultTime" name="defaultTime" value={profile.defaultTime} onChange={handleChange} className="mt-1 block w-full border border-border-light dark:border-border-dark rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-secondary focus:border-secondary bg-card-light dark:bg-primary-light/10" />
             </div>
             <div>
-                <label htmlFor="hospitalityOverseer" className="block text-sm font-medium text-text-muted dark:text-text-muted-dark">Responsable de l'accueil</label>
+                <label htmlFor="hospitalityOverseer" className="block text-sm font-medium text-text-muted dark:text-text-muted-dark">Responsable de l&#39;accueil</label>
                 <input type="text" id="hospitalityOverseer" name="hospitalityOverseer" value={profile.hospitalityOverseer || ''} onChange={handleChange} className="mt-1 block w-full border border-border-light dark:border-border-dark rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-secondary focus:border-secondary bg-card-light dark:bg-primary-light/10" />
             </div>
             <div>
@@ -287,14 +287,14 @@ const TemplateEditorContent: React.FC = () => {
                             <h4 className="font-bold mb-3">{label}</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <TemplateItem
-                                    title="Pour l'orateur"
+                                    title="Pour l&#39;orateur"
                                     template={getVisitTemplate(type, 'speaker').template}
                                     isCustom={getVisitTemplate(type, 'speaker').isCustom}
                                     onSave={(text) => saveCustomTemplate(language, type, 'speaker', text)}
                                     onRestore={() => deleteCustomTemplate(language, type, 'speaker')}
                                 />
                                 <TemplateItem
-                                    title="Pour l'accueil"
+                                    title="Pour l&#39;accueil"
                                     template={getVisitTemplate(type, 'host').template}
                                     isCustom={getVisitTemplate(type, 'host').isCustom}
                                     onSave={(text) => saveCustomTemplate(language, type, 'host', text)}
@@ -307,7 +307,7 @@ const TemplateEditorContent: React.FC = () => {
             </div>
 
             <div className="pt-6 border-t border-border-light dark:border-border-dark">
-                <h3 className="text-lg font-bold font-display text-primary dark:text-white mb-3">Demande d'accueil groupée</h3>
+                <h3 className="text-lg font-bold font-display text-primary dark:text-white mb-3">Demande d&#39;accueil groupée</h3>
                 <TemplateItem
                     title="Modèle pour la demande groupée"
                     template={getHostRequestTemplate().template}
@@ -344,10 +344,10 @@ const GoogleSheetsContent: React.FC<{ onSync: () => Promise<void> }> = ({ onSync
                 <div>
                     <p className="font-semibold">Instructions :</p>
                     <ol className="list-decimal pl-5 mt-1 space-y-1">
-                        <li>L'application est pré-configurée pour se synchroniser avec le Google Sheet de suivi.</li>
-                        <li>Assurez-vous que le Google Sheet est partagé publiquement avec le lien (en mode Lecteur). Allez dans <strong>Partager</strong> &gt; <strong>Accès général</strong> &gt; <strong>"Tous les utilisateurs disposant du lien"</strong>.</li>
-                        <li>Vérifiez que la première feuille est nommée "Planning" et contient les colonnes : <strong className="font-mono">Date, Orateur, Congrégation, N° Discours, Thème</strong>.</li>
-                        <li>Cliquez sur le bouton "Synchroniser" pour importer les dernières visites.</li>
+                        <li>L&#39;application est pré-configurée pour se synchroniser avec le Google Sheet de suivi.</li>
+                        <li>Assurez-vous que le Google Sheet est partagé publiquement avec le lien (en mode Lecteur). Allez dans <strong>Partager</strong> &gt; <strong>Accès général</strong> &gt; <strong>&quot;Tous les utilisateurs disposant du lien&quot;</strong>.</li>
+                        <li>Vérifiez que la première feuille est nommée &quot;Planning&quot; et contient les colonnes : <strong className="font-mono">Date, Orateur, Congrégation, N° Discours, Thème</strong>.</li>
+                        <li>Cliquez sur le bouton &quot;Synchroniser&quot; pour importer les dernières visites.</li>
                     </ol>
                 </div>
             </div>
@@ -416,7 +416,7 @@ const SecurityContent: React.FC = () => {
                    <StatusBadge active={isEncrypted} />
                    <p className="text-sm text-text-muted dark:text-text-muted-dark mt-2 max-w-md">
                         {isEncrypted 
-                            ? "Vos données sont protégées. Un mot de passe est requis à chaque ouverture de l'application."
+                            ? "Vos données sont protégées. Un mot de passe est requis à chaque ouverture de l&#39;application."
                             : "Vos données sont stockées en clair. Activez le chiffrement pour plus de sécurité."
                         }
                    </p>
@@ -435,7 +435,7 @@ const SecurityContent: React.FC = () => {
             <div className="pt-4 mt-4 border-t border-border-light dark:border-border-dark">
                 <h3 className="text-lg font-semibold text-text-main dark:text-text-main-dark mb-2">Clé API Gemini</h3>
                 <p className="text-sm text-text-muted dark:text-text-muted-dark mb-4">
-                    Une clé API est requise pour les fonctionnalités d'IA (suggestions, analyse, etc.). Vous pouvez en obtenir une gratuitement sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary dark:text-secondary hover:underline">Google AI Studio</a>.
+                    Une clé API est requise pour les fonctionnalités d&#39;IA (suggestions, analyse, etc.). Vous pouvez en obtenir une gratuitement sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary dark:text-secondary hover:underline">Google AI Studio</a>.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-2 items-start">
                     <div className="relative flex-grow w-full">
@@ -443,7 +443,7 @@ const SecurityContent: React.FC = () => {
                             type={showKey ? 'text' : 'password'}
                             value={keyInput}
                             onChange={(e) => setKeyInput(e.target.value)}
-                            placeholder={isEnvKeySet ? "Clé API définie par l'environnement" : "Collez votre clé API ici"}
+                            placeholder={isEnvKeySet ? "Clé API définie par l&#39;environnement" : "Collez votre clé API ici"}
                             className="w-full pl-3 pr-10 py-2 border border-border-light dark:border-border-dark rounded-md focus:ring-secondary focus:border-secondary bg-card-light dark:bg-primary-light/10 disabled:opacity-50"
                             disabled={isEnvKeySet}
                         />
@@ -462,7 +462,7 @@ const SecurityContent: React.FC = () => {
                 </div>
                  {isEnvKeySet && (
                     <div className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                        Note: Une clé API est définie dans l'environnement et sera utilisée en priorité. Elle ne peut pas être modifiée ici.
+                        Note: Une clé API est définie dans l&#39;environnement et sera utilisée en priorité. Elle ne peut pas être modifiée ici.
                     </div>
                 )}
             </div>
@@ -476,8 +476,8 @@ const SecurityContent: React.FC = () => {
                         if (success) setIsPromptOpen(false);
                         return success;
                     }}
-                    onDisable={async (pass) => {
-                        const success = await disableEncryption(pass);
+                    onDisable={async () => {
+                        const success = await disableEncryption();
                         if (success) setIsPromptOpen(false);
                         return success;
                     }}
@@ -501,7 +501,7 @@ const StorageManagerContent: React.FC = () => {
                 percent: (bytes / QUOTA) * 100,
             });
         }
-    }, [appData]);
+    }, [appData, QUOTA]);
 
     const usageMB = (usage.bytes / 1024 / 1024).toFixed(2);
     const quotaMB = (QUOTA / 1024 / 1024).toFixed(2);
@@ -526,18 +526,18 @@ const StorageManagerContent: React.FC = () => {
                 <div className={`p-3 rounded-md text-sm flex items-start space-x-3 ${usage.percent > 90 ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}`}>
                     <ExclamationTriangleIcon className="w-6 h-6 flex-shrink-0 mt-0.5" />
                     <p>
-                        <strong>Attention :</strong> L'espace de stockage est presque plein.
+                        <strong>Attention :</strong> L&#39;espace de stockage est presque plein.
                         Si le stockage est plein, vos nouvelles données ne seront pas sauvegardées.
                     </p>
                 </div>
             )}
             <div>
-                <h3 className="font-semibold mt-4">Comment libérer de l'espace ?</h3>
+                <h3 className="font-semibold mt-4">Comment libérer de l&#39;espace ?</h3>
                 <ul className="list-disc pl-5 mt-2 text-sm text-text-muted dark:text-text-muted-dark space-y-1">
-                    <li>Supprimez les photos des orateurs et contacts d'accueil qui ne sont plus nécessaires.</li>
+                    <li>Supprimez les photos des orateurs et contacts d&#39;accueil qui ne sont plus nécessaires.</li>
                     <li>Dans les visites programmées, supprimez les pièces jointes (PDF) qui ne sont plus utiles.</li>
                     <li>Archivez les visites terminées pour alléger la liste active.</li>
-                    <li>Supprimez définitivement les visites très anciennes depuis l'archive.</li>
+                    <li>Supprimez définitivement les visites très anciennes depuis l&#39;archive.</li>
                 </ul>
             </div>
         </div>
@@ -572,17 +572,17 @@ const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'a
                                 <span className="font-semibold">Importer les données</span>
                             </>
                         )}
-                         <span className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Restaurer depuis un fichier</span>
+                        <span className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Restaurer depuis un fichier</span>
                         <input id="import-file" type="file" className="sr-only" onChange={onImport} accept=".json" disabled={isImporting} />
                     </label>
                 </div>
-             </div>
+            </div>
 
             <div>
                 <h3 className="text-lg font-semibold text-red-600 dark:text-red-400">Zone de Danger</h3>
                 <div className="mt-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="flex-1">
-                         <p className="font-semibold text-red-800 dark:text-red-200">Réinitialiser l'application</p>
+                         <p className="font-semibold text-red-800 dark:text-red-200">Réinitialiser l&#39;application</p>
                          <p className="text-sm text-red-700 dark:text-red-300 mt-1">
                             Efface définitivement toutes les visites, orateurs et contacts. Cette action est irréversible.
                          </p>
@@ -625,6 +625,265 @@ const UsefulLinksContent: React.FC = () => {
     );
 };
 
+// Types for special date form
+interface SpecialDateFormData {
+    date: string;
+    name: string;
+    type: SpecialDateType;
+    description: string;
+}
+
+const SpecialDatesContent: React.FC = () => {
+    const { specialDates, addSpecialDate, updateSpecialDate, deleteSpecialDate } = useData();
+    const { addToast } = useToast();
+    const [isAddingNew, setIsAddingNew] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [formData, setFormData] = useState<SpecialDateFormData>({
+        date: '',
+        name: '',
+        type: 'assembly',
+        description: ''
+    });
+
+    const specialDateTypeOptions: { value: SpecialDateType; label: string; color: string }[] = [
+        { value: 'assembly', label: 'Assemblée', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200' },
+        { value: 'co_visit', label: 'Visite du surveillant', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200' },
+        { value: 'special_talk', label: 'Discours spécial', color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200' },
+        { value: 'no_meeting', label: 'Pas de réunion', color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200' },
+        { value: 'other', label: 'Autre', color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-200' }
+    ];
+
+    const resetForm = () => {
+        setFormData({ date: '', name: '', type: 'assembly', description: '' });
+        setIsAddingNew(false);
+        setEditingId(null);
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!formData.date || !formData.name) {
+            addToast("Veuillez remplir la date et le nom.", 'warning');
+            return;
+        }
+
+        const specialDateData: SpecialDate = {
+            id: editingId || `special-date-${Date.now()}`,
+            date: formData.date,
+            name: formData.name,
+            type: formData.type,
+            description: formData.description
+        };
+
+        if (editingId) {
+            updateSpecialDate(specialDateData);
+            addToast("Date spéciale mise à jour.", 'success');
+        } else {
+            addSpecialDate(specialDateData);
+            addToast("Date spéciale ajoutée.", 'success');
+        }
+
+        resetForm();
+    };
+
+    const handleEdit = (specialDate: SpecialDate) => {
+        setFormData({
+            date: specialDate.date,
+            name: specialDate.name,
+            type: specialDate.type,
+            description: specialDate.description || ''
+        });
+        setEditingId(specialDate.id);
+        setIsAddingNew(true);
+    };
+
+    const handleDelete = (id: string, name: string) => {
+        if (window.confirm(`Êtes-vous sûr de vouloir supprimer "${name}" ?`)) {
+            deleteSpecialDate(id);
+            addToast("Date spéciale supprimée.", 'success');
+        }
+    };
+
+    const sortedSpecialDates = [...specialDates].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <p className="text-sm text-text-muted dark:text-text-muted-dark">
+                    Gérez les événements spéciaux qui peuvent affecter la planification des visites.
+                </p>
+                <button
+                    onClick={() => setIsAddingNew(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-transform active:scale-95"
+                >
+                    <PlusIcon className="w-5 h-5" />
+                    Ajouter
+                </button>
+            </div>
+
+            {/* Add/Edit Form */}
+            {isAddingNew && (
+                <div className="p-4 bg-gray-50 dark:bg-primary-light/10 rounded-lg border border-border-light dark:border-border-dark">
+                    <h3 className="text-lg font-semibold text-text-main dark:text-text-main-dark mb-4">
+                        {editingId ? 'Modifier la date spéciale' : 'Nouvelle date spéciale'}
+                    </h3>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-1">
+                                    Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={formData.date}
+                                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                                    className="w-full border border-border-light dark:border-border-dark rounded-md py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary bg-card-light dark:bg-card-dark"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-1">
+                                    Type d&#39;événement
+                                </label>
+                                <select
+                                    value={formData.type}
+                                    onChange={(e) => setFormData({...formData, type: e.target.value as SpecialDateType})}
+                                    className="w-full border border-border-light dark:border-border-dark rounded-md py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary bg-card-light dark:bg-card-dark"
+                                >
+                                    {specialDateTypeOptions.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-1">
+                                Nom de l&#39;événement
+                            </label>
+                            <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                placeholder="Ex: Assemblée de district, Visite du surveillant..."
+                                className="w-full border border-border-light dark:border-border-dark rounded-md py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary bg-card-light dark:bg-card-dark"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-1">
+                                Description (optionnel)
+                            </label>
+                            <textarea
+                                value={formData.description}
+                                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                rows={3}
+                                placeholder="Informations supplémentaires..."
+                                className="w-full border border-border-light dark:border-border-dark rounded-md py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary bg-card-light dark:bg-card-dark"
+                            />
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-transform active:scale-95"
+                            >
+                                {editingId ? 'Mettre à jour' : 'Ajouter'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={resetForm}
+                                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-lg transition-transform active:scale-95"
+                            >
+                                Annuler
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {/* Special Dates List */}
+            <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-text-main dark:text-text-main-dark">
+                    Dates spéciales ({sortedSpecialDates.length})
+                </h3>
+
+                {sortedSpecialDates.length === 0 ? (
+                    <p className="text-sm text-text-muted dark:text-text-muted-dark text-center py-8">
+                        Aucune date spéciale définie. Ajoutez des assemblées, visites du surveillant, etc.
+                    </p>
+                ) : (
+                    <div className="space-y-2">
+                        {sortedSpecialDates.map(specialDate => {
+                            const typeOption = specialDateTypeOptions.find(opt => opt.value === specialDate.type);
+                            return (
+                                <div key={specialDate.id} className="p-4 bg-card-light dark:bg-card-dark rounded-lg border border-border-light dark:border-border-dark">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-grow">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${typeOption?.color || 'bg-gray-100 text-gray-800'}`}>
+                                                    {typeOption?.label || specialDate.type}
+                                                </span>
+                                                <span className="text-sm text-text-muted dark:text-text-muted-dark">
+                                                    {new Date(specialDate.date + 'T00:00:00').toLocaleDateString('fr-FR', {
+                                                        weekday: 'long',
+                                                        day: 'numeric',
+                                                        month: 'long',
+                                                        year: 'numeric'
+                                                    })}
+                                                </span>
+                                            </div>
+                                            <h4 className="font-semibold text-text-main dark:text-text-main-dark">
+                                                {specialDate.name}
+                                            </h4>
+                                            {specialDate.description && (
+                                                <p className="text-sm text-text-muted dark:text-text-muted-dark mt-1">
+                                                    {specialDate.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-2 ml-4">
+                                            <button
+                                                onClick={() => handleEdit(specialDate)}
+                                                className="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors"
+                                                title="Modifier"
+                                            >
+                                                <EditIcon className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(specialDate.id, specialDate.name)}
+                                                className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+                                                title="Supprimer"
+                                            >
+                                                <TrashIcon className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* Information */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="flex items-start gap-3">
+                    <InformationCircleIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                        <p className="font-semibold text-blue-800 dark:text-blue-200 mb-1">À propos des dates spéciales :</p>
+                        <ul className="text-blue-700 dark:text-blue-300 space-y-1">
+                            <li>• <strong>Assemblée/No meeting :</strong> Bloque la programmation (pas de discours visiteur)</li>
+                            <li>• <strong>Visite du surveillant :</strong> Information affichée mais programmation possible</li>
+                            <li>• <strong>Autres :</strong> Événements personnalisés selon vos besoins</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const MaintenanceContent: React.FC = () => {
     const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
     const { removeDuplicateArchivedVisits } = useData();
@@ -633,9 +892,9 @@ const MaintenanceContent: React.FC = () => {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                   <p className="font-semibold text-text-main dark:text-text-main-dark">Rechercher les doublons d'orateurs et contacts</p>
+                   <p className="font-semibold text-text-main dark:text-text-main-dark">Rechercher les doublons d&apos;orateurs et contacts</p>
                    <p className="text-sm text-text-muted dark:text-text-muted-dark mt-1 max-w-md">
-                        Analysez vos listes d'orateurs et de contacts d'accueil pour trouver et fusionner les entrées en double.
+                        Analysez vos listes d&apos;orateurs et de contacts d&apos;accueil pour trouver et fusionner les entrées en double.
                    </p>
                 </div>
                 <button onClick={() => setIsDuplicateModalOpen(true)} className="flex-shrink-0 px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-transform active:scale-95">
@@ -646,9 +905,9 @@ const MaintenanceContent: React.FC = () => {
             <div className="border-t border-border-light dark:border-border-dark pt-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                       <p className="font-semibold text-text-main dark:text-text-main-dark">Supprimer les doublons d'archives</p>
+                       <p className="font-semibold text-text-main dark:text-text-main-dark">Supprimer les doublons d&apos;archives</p>
                        <p className="text-sm text-text-muted dark:text-text-muted-dark mt-1 max-w-md">
-                            Si vous voyez des visites en double dans l'archive, utilisez ce bouton pour les supprimer automatiquement.
+                            Si vous voyez des visites en double dans l&apos;archive, utilisez ce bouton pour les supprimer automatiquement.
                        </p>
                     </div>
                     <button onClick={removeDuplicateArchivedVisits} className="flex-shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition-transform active:scale-95">
@@ -674,6 +933,10 @@ export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImp
         <div className="space-y-6">
             <SettingsSection title="Profil de la Congrégation" description="Personnalisez les informations de l'application." icon={PodiumIcon}>
                 <CongregationProfileContent />
+            </SettingsSection>
+
+            <SettingsSection title="Dates Spéciales" description="Gérez les assemblées, visites du surveillant et autres événements." icon={CalendarIcon}>
+                <SpecialDatesContent />
             </SettingsSection>
 
             <SettingsSection title="Modèles de Messages" description="Personnalisez les messages par défaut pour l'envoi." icon={EnvelopeIcon}>

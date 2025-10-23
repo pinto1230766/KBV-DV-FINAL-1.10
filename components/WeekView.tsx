@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Visit, Holiday, Vacation } from '../types';
-import { ChevronLeftIcon, ChevronRightIcon, HomeIcon, VideoCameraIcon, WifiIcon } from './Icons';
+import { Visit, SpecialDate, SpecialDateType } from '../types';
+import { ChevronLeftIcon, ChevronRightIcon, HomeIcon, VideoCameraIcon, WifiIcon, PodiumIcon, ShieldCheckIcon, UserIcon, InformationCircleIcon } from './Icons';
 import { useData } from '../contexts/DataContext';
 import { holidays, schoolVacations } from '../data/calendar_data';
 
@@ -32,6 +32,14 @@ const toYYYYMMDD = (d: Date) => {
 
 // --- Static Data ---
 const countryFlags: { [key: string]: string } = { FR: '🇫🇷', PT: '🇵🇹', CV: '🇨🇻' };
+
+const specialDateInfo: Record<SpecialDateType, { label: string; icon: React.FC<{ className?: string }>; color: string }> = {
+    assembly: { label: "Assemblée", icon: PodiumIcon, color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200' },
+    co_visit: { label: "Visite surveillant", icon: ShieldCheckIcon, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200' },
+    special_talk: { label: "Discours spécial", icon: UserIcon, color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200' },
+    no_meeting: { label: "Pas de réunion", icon: InformationCircleIcon, color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200' },
+    other: { label: "Autre événement", icon: InformationCircleIcon, color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-200' }
+};
 
 // Status styles for visit cards
 const statusStyles: { [key in Visit['status']]: { border: string; bg: string } } = {
@@ -67,7 +75,7 @@ const WeekVisitCard: React.FC<{ visit: Visit; onEdit: (v: Visit) => void }> = ({
 
 // --- Main Component ---
 export const WeekView: React.FC<WeekViewProps> = ({ onEditVisit }) => {
-    const { upcomingVisits } = useData();
+    const { upcomingVisits, specialDates } = useData();
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const startOfWeek = useMemo(() => getStartOfWeek(currentDate), [currentDate]);
@@ -85,10 +93,14 @@ export const WeekView: React.FC<WeekViewProps> = ({ onEditVisit }) => {
         const nextYear = addDays(startOfWeek, 6).getFullYear();
         const yearHolidays = [...(holidays[year] || []), ...(holidays[nextYear] || [])];
 
+        // Create special dates map for quick lookup
+        const specialDateMap = new Map<string, SpecialDate>();
+        (specialDates || []).forEach(sd => specialDateMap.set(sd.date, sd));
+
         return weekDates.map(date => {
             const dateStr = toYYYYMMDD(date);
             const monthDay = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            
+
             const dayVisits = upcomingVisits.filter(v => {
                 if (v.status === 'cancelled') return false;
                 const visitDateStr = toYYYYMMDD(new Date(v.visitDate + 'T00:00:00'));
@@ -96,7 +108,7 @@ export const WeekView: React.FC<WeekViewProps> = ({ onEditVisit }) => {
             });
 
             const dayHolidays = yearHolidays.filter(h => h.date === monthDay);
-            
+
             const dayVacations = schoolVacations.filter(v => {
                 const start = new Date(v.start + 'T00:00:00');
                 const end = new Date(v.end + 'T00:00:00');
@@ -104,9 +116,11 @@ export const WeekView: React.FC<WeekViewProps> = ({ onEditVisit }) => {
                 return currentDate >= start && currentDate <= end;
             });
 
-            return { date, dayVisits, dayHolidays, dayVacations };
+            const daySpecialDate = specialDateMap.get(dateStr);
+
+            return { date, dayVisits, dayHolidays, dayVacations, daySpecialDate };
         });
-    }, [weekDates, upcomingVisits, startOfWeek]);
+    }, [weekDates, upcomingVisits, startOfWeek, specialDates]);
 
     const handlePrevWeek = () => setCurrentDate(prev => addDays(prev, -7));
     const handleNextWeek = () => setCurrentDate(prev => addDays(prev, 7));
@@ -123,7 +137,7 @@ export const WeekView: React.FC<WeekViewProps> = ({ onEditVisit }) => {
                         <ChevronRightIcon className="w-6 h-6 text-text-muted dark:text-text-muted-dark" />
                     </button>
                      <button onClick={handleToday} className="px-3 py-1.5 border border-border-light dark:border-border-dark rounded-md text-sm font-semibold hover:bg-gray-100 dark:hover:bg-primary-light/20">
-                        Aujourd'hui
+                        Aujourd&apos;hui
                     </button>
                 </div>
                 <h3 className="text-xl font-bold text-text-main dark:text-text-main-dark text-center order-first sm:order-none">
@@ -132,7 +146,7 @@ export const WeekView: React.FC<WeekViewProps> = ({ onEditVisit }) => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-7 border-t border-l border-border-light dark:border-border-dark bg-gray-50 dark:bg-card-dark/20">
-                {weekDetails.map(({ date, dayVisits, dayHolidays, dayVacations }, index) => {
+                {weekDetails.map(({ date, dayVisits, dayHolidays, dayVacations, daySpecialDate }, index) => {
                     const dateStr = toYYYYMMDD(date);
                     const isToday = toYYYYMMDD(new Date()) === dateStr;
                     
@@ -155,6 +169,17 @@ export const WeekView: React.FC<WeekViewProps> = ({ onEditVisit }) => {
                                         <span key={h.name} title={h.name} className="text-text-muted dark:text-text-muted-dark">{countryFlags[h.country]} {h.name}</span>
                                     ))}
                                 </div>
+                                {daySpecialDate && (
+                                    <div className="mt-1">
+                                        {React.createElement(
+                                            specialDateInfo[daySpecialDate.type].icon,
+                                            { className: "w-3 h-3 inline" }
+                                        )}
+                                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-bold rounded-full ml-1 ${specialDateInfo[daySpecialDate.type].color}`} title={daySpecialDate.name}>
+                                            <span className="truncate max-w-20">{daySpecialDate.name}</span>
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                             <div className="p-2 space-y-2">
                                 {dayVisits.map(visit => (

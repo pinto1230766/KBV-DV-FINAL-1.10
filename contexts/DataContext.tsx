@@ -1,16 +1,27 @@
 import React, { createContext, useContext, useMemo, useCallback, ReactNode, useState, useEffect } from 'react';
-import { generateUUID } from '../utils/uuid';
-import { Speaker, Visit, Host, CustomMessageTemplates, CustomHostRequestTemplates, Language, MessageType, MessageRole, TalkHistory, CongregationProfile, PublicTalk, Feedback, SavedView, ActiveFilters, SpecialDate } from '../types';
-import { initialSpeakers, initialHosts, UNASSIGNED_HOST, NO_HOST_NEEDED, initialVisits, initialPublicTalks, initialSpecialDates } from '../constants';
+import { Speaker, Visit, Host, CustomMessageTemplates, CustomHostRequestTemplates, Language, MessageType, MessageRole, CongregationProfile, PublicTalk, Feedback, SavedView, SpecialDate } from '../types';
+import { initialSpeakers, initialHosts, initialVisits, initialPublicTalks, initialSpecialDates } from '../constants';
 import { useToast } from './ToastContext';
 import { encrypt, decrypt } from '../utils/crypto';
 import { EncryptionPrompt } from '../components/EncryptionPrompt';
 import { SpinnerIcon } from '../components/Icons';
 import useOnlineStatus from '../hooks/useOnlineStatus';
-import { Capacitor } from '@capacitor/core';
-import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { get, set, del } from '../utils/idb';
 import useLocalStorage from '../hooks/useLocalStorage';
+
+// Interface pour les données d'importation
+interface ImportData {
+    speakers?: Speaker[];
+    visits?: Visit[];
+    hosts?: Host[];
+    archivedVisits?: Visit[];
+    customTemplates?: CustomMessageTemplates;
+    customHostRequestTemplates?: CustomHostRequestTemplates;
+    congregationProfile?: CongregationProfile;
+    publicTalks?: PublicTalk[];
+    savedViews?: SavedView[];
+    specialDates?: SpecialDate[];
+}
 
 interface AppData {
   speakers: Speaker[];
@@ -92,11 +103,11 @@ interface DataContextType {
   deleteFilterView: (viewId: string) => void;
   
   exportData: () => void;
-  importData: (data: any) => Promise<void>;
+  importData: (data: ImportData) => Promise<void>;
   resetData: () => void;
   
   enableEncryption: (password: string) => Promise<boolean>;
-  disableEncryption: (password: string) => Promise<boolean>;
+  disableEncryption: () => Promise<boolean>;
 
   syncWithGoogleSheet: () => Promise<void>;
   apiKey: string;
@@ -157,6 +168,34 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, [defaultLogo, addToast]);
 
+    const updateAppData = useCallback((updater: (prev: AppData) => AppData) => {
+        setAppData(prev => prev ? updater(prev) : initialData);
+    }, []);
+
+    const upcomingVisits = useMemo(() => {
+        if (!appData) return [];
+        return appData.visits.filter(visit => new Date(visit.visitDate) > new Date() && visit.status !== 'completed');
+    }, [appData]);
+
+    const pastUnarchivedVisits = useMemo(() => {
+        if (!appData) return [];
+        return appData.visits.filter(visit => new Date(visit.visitDate) <= new Date() && visit.status !== 'completed');
+    }, [appData]);
+
+    const allSpeakerTags = useMemo(() => {
+        if (!appData) return [];
+        const tags = new Set<string>();
+        appData.speakers.forEach(speaker => speaker.tags?.forEach(tag => tags.add(tag)));
+        return Array.from(tags);
+    }, [appData]);
+
+    const allHostTags = useMemo(() => {
+        if (!appData) return [];
+        const tags = new Set<string>();
+        appData.hosts.forEach(host => host.tags?.forEach(tag => tags.add(tag)));
+        return Array.from(tags);
+    }, [appData]);
+
     // Initial load effect
     useEffect(() => {
         const loadAndMigrateData = async () => {
@@ -194,9 +233,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 try {
                     const dataFromDb = await get<AppData>('appData');
                     setAppData(dataFromDb || initialData);
-                } catch (error) {
-                    console.error("Error loading plaintext data:", error);
-                    addToast("Erreur de chargement des données.", "error");
+                } catch (error: unknown) {
+            console.error("Erreur lors du chargement des données:", error);
+            addToast("Erreur lors du chargement des données.", "error");
                     setAppData(initialData);
                 }
             }
@@ -245,965 +284,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setIsLocked(false);
             addToast("Données déverrouillées.", "success");
             return true;
-        } catch (error) {
+        } catch {
             addToast("Mot de passe incorrect.", "error");
             return false;
         }
-    };
-    
-    const enableEncryption = async (password: string): Promise<boolean> => {
-        if (!appData) {
-            addToast("Les données ne sont pas prêtes.", "error");
-            return false;
-        }
-        try {
-            const encryptedData = await encrypt(appData, password);
-            await set('encryptedAppData', encryptedData);
-            await set('dataIsEncrypted', true);
-            await del('appData');
-            localStorage.clear(); // Clear all old localStorage data
-            setIsEncrypted(true);
-            setSessionPassword(password);
-            addToast("Chiffrement activé avec succès.", "success");
-            return true;
-        } catch (error) {
-            addToast("L'activation du chiffrement a échoué.", "error");
-            return false;
-        }
-    };
-
-    const disableEncryption = async (password: string): Promise<boolean> => {
-        if (!appData) {
-             addToast("Les données ne sont pas prêtes.", "error");
-             return false;
-        }
-        try {
-            const encryptedData = await get<string>('encryptedAppData');
-            if (!encryptedData) throw new Error("No encrypted data found to decrypt.");
-            await decrypt(encryptedData, password);
-
-            await set('appData', appData);
-            await del('encryptedAppData');
-            await del('dataIsEncrypted');
-            setIsEncrypted(false);
-            setSessionPassword(null);
-            addToast("Chiffrement désactivé.", "success");
-            return true;
-        } catch (error) {
-             addToast("Mot de passe incorrect. Le chiffrement ne peut pas être désactivé.", "error");
-            return false;
-        }
-    };
-
-    // Derived state, memoized for performance.
-    const upcomingVisits = useMemo(() => {
-        if (!appData) return [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return [...appData.visits]
-            .filter(v => new Date(v.visitDate + 'T00:00:00') >= today)
-            .sort((a, b) => new Date(a.visitDate + 'T00:00:00').getTime() - new Date(b.visitDate + 'T00:00:00').getTime());
-    }, [appData]);
-    
-    const pastUnarchivedVisits = useMemo(() => {
-        if (!appData) return [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const ninetyDaysAgo = new Date();
-        ninetyDaysAgo.setDate(today.getDate() - 90);
-
-        return [...appData.visits]
-            .filter(v => {
-                const visitDate = new Date(v.visitDate + 'T00:00:00');
-                return visitDate < today && visitDate >= ninetyDaysAgo && v.status !== 'completed' && v.status !== 'cancelled';
-            })
-            .sort((a, b) => new Date(b.visitDate + 'T00:00:00').getTime() - new Date(a.visitDate + 'T00:00:00').getTime());
-    }, [appData]);
-    
-    const allSpeakerTags = useMemo(() => {
-        if (!appData) return [];
-        const tags = new Set<string>();
-        appData.speakers.forEach(s => s.tags?.forEach(t => tags.add(t)));
-        return Array.from(tags).sort();
-    }, [appData]);
-
-    const allHostTags = useMemo(() => {
-        if (!appData) return [];
-        const tags = new Set<string>();
-        appData.hosts.forEach(h => h.tags?.forEach(t => tags.add(t)));
-        return Array.from(tags).sort();
-    }, [appData]);
-
-    // --- Actions (refactored for single appData state) ---
-    const updateAppData = (updater: (prev: AppData) => AppData) => {
-        setAppData(prev => (prev ? updater(prev) : null));
-    };
-
-    const addSpeaker = (speakerData: Speaker) => {
-        updateAppData(prev => ({
-            ...prev,
-            speakers: [...prev.speakers, speakerData].sort((a, b) => a.nom.localeCompare(b.nom))
-        }));
-        addToast("Orateur ajouté.", 'success');
-    };
-
-    const updateSpeaker = (speakerData: Speaker) => {
-        updateAppData(prev => ({
-            ...prev,
-            speakers: prev.speakers.map(s => s.id === speakerData.id ? speakerData : s).sort((a, b) => a.nom.localeCompare(b.nom)),
-            visits: prev.visits.map(v => v.id === speakerData.id ? { ...v, nom: speakerData.nom, congregation: speakerData.congregation, telephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v)
-        }));
-        addToast("Orateur mis à jour.", 'success');
-    };
-
-    const deleteSpeaker = (speakerId: string) => {
-        const speakerToDelete = appData?.speakers.find(s => s.id === speakerId);
-        if (!speakerToDelete) return;
-        updateAppData(prev => ({
-            ...prev,
-            speakers: prev.speakers.filter(s => s.id !== speakerId),
-            visits: prev.visits.filter(v => v.id !== speakerId)
-        }));
-        addToast(`"${speakerToDelete.nom}" et ses visites associées ont été supprimés.`, 'success');
-    };
-
-    const addVisit = (visitData: Visit) => {
-        const visitWithStatus = { ...visitData, communicationStatus: {} };
-        updateAppData(prev => ({ ...prev, visits: [...prev.visits, visitWithStatus] }));
-        addToast("Visite programmée avec succès.", 'success');
-    };
-    
-    const updateVisit = (visitData: Visit) => {
-        updateAppData(prev => ({ ...prev, visits: prev.visits.map(v => v.visitId === visitData.visitId ? visitData : v) }));
-        addToast("Visite mise à jour avec succès.", 'success');
-    };
-    
-    const deleteVisit = (visitId: string) => {
-        updateAppData(prev => ({ ...prev, visits: prev.visits.filter(v => v.visitId !== visitId) }));
-        addToast("Visite supprimée.", 'success');
-    };
-
-    const completeVisit = (visit: Visit) => {
-        updateAppData(prev => {
-            // Check if visit is already archived to prevent duplicates
-            const isAlreadyArchived = prev.archivedVisits.some(v => v.visitId === visit.visitId);
-            
-            if (isAlreadyArchived) {
-                addToast(`Cette visite est déjà archivée.`, 'warning');
-                return prev;
-            }
-
-            const newSpeakers = prev.speakers.map(s => {
-                if (s.id === visit.id) {
-                    const newHistoryEntry: TalkHistory = { date: visit.visitDate, talkNo: visit.talkNoOrType, theme: visit.talkTheme };
-                    const newTalkHistory = [...(s.talkHistory || []), newHistoryEntry];
-                    const uniqueHistory = Array.from(new Set(newTalkHistory.map(h => h.date)))
-                        .map(date => newTalkHistory.find(h => h.date === date)!)
-                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                    return { ...s, talkHistory: uniqueHistory };
-                }
-                return s;
-            });
-            return {
-                ...prev,
-                speakers: newSpeakers,
-                archivedVisits: [visit, ...prev.archivedVisits],
-                visits: prev.visits.filter(v => v.visitId !== visit.visitId)
-            };
-        });
-        addToast(`Visite de ${visit.nom} marquée comme terminée et archivée.`, 'success');
-    };
-
-    const addFeedbackToVisit = (visitId: string, feedback: Feedback) => {
-        updateAppData(prev => ({
-            ...prev,
-            archivedVisits: prev.archivedVisits.map(v => 
-                v.visitId === visitId ? { ...v, feedback } : v
-            )
-        }));
-    };
-
-    const deleteArchivedVisit = (visitId: string) => {
-        updateAppData(prev => ({ ...prev, archivedVisits: prev.archivedVisits.filter(v => v.visitId !== visitId) }));
-        addToast("Visite supprimée définitivement de l'archive.", 'info');
-    };
-
-    const removeDuplicateArchivedVisits = () => {
-        updateAppData(prev => {
-            const uniqueVisits = new Map<string, Visit>();
-            
-            // Keep only the first occurrence of each visitId
-            prev.archivedVisits.forEach(visit => {
-                if (!uniqueVisits.has(visit.visitId)) {
-                    uniqueVisits.set(visit.visitId, visit);
-                }
-            });
-            
-            const deduplicated = Array.from(uniqueVisits.values());
-            const duplicatesRemoved = prev.archivedVisits.length - deduplicated.length;
-            
-            if (duplicatesRemoved > 0) {
-                addToast(`${duplicatesRemoved} doublon(s) supprimé(s) de l'archive.`, 'success');
-            } else {
-                addToast("Aucun doublon trouvé dans l'archive.", 'info');
-            }
-            
-            return {
-                ...prev,
-                archivedVisits: deduplicated.sort((a, b) => 
-                    new Date(b.visitDate + 'T00:00:00').getTime() - new Date(a.visitDate + 'T00:00:00').getTime()
-                )
-            };
-        });
-    };
-
-    const addHost = (newHost: Host): boolean => {
-        if (newHost.nom && !appData?.hosts.some(h => h.nom.toLowerCase() === newHost.nom.toLowerCase())) {
-            updateAppData(prev => ({ ...prev, hosts: [...prev.hosts, newHost].sort((a, b) => a.nom.localeCompare(b.nom)) }));
-            return true;
-        }
-        return false;
-    };
-    
-    const updateHost = (hostName: string, updatedData: Partial<Host>) => {
-        updateAppData(prev => {
-            const newHosts = prev.hosts.map(h => h.nom === hostName ? { ...h, ...updatedData } : h).sort((a,b) => a.nom.localeCompare(b.nom));
-            let newVisits = prev.visits;
-            let newArchived = prev.archivedVisits;
-            if (updatedData.nom && updatedData.nom !== hostName) {
-                newVisits = prev.visits.map(v => v.host === hostName ? { ...v, host: updatedData.nom! } : v);
-                newArchived = prev.archivedVisits.map(v => v.host === hostName ? { ...v, host: updatedData.nom! } : v);
-            }
-            return { ...prev, hosts: newHosts, visits: newVisits, archivedVisits: newArchived };
-        });
-        addToast(`Informations pour "${updatedData.nom || hostName}" mises à jour.`, 'info');
-    };
-
-    const deleteHost = (hostName: string) => {
-        const assignedVisits = appData?.visits.filter(v => v.host === hostName && v.status !== 'cancelled');
-        updateAppData(prev => ({
-            ...prev,
-            hosts: prev.hosts.filter(h => h.nom !== hostName),
-            visits: assignedVisits && assignedVisits.length > 0
-                ? prev.visits.map(v => v.host === hostName ? { ...v, host: UNASSIGNED_HOST } : v)
-                : prev.visits
-        }));
-        if (assignedVisits && assignedVisits.length > 0) {
-            addToast(`"${hostName}" supprimé. ${assignedVisits.length} visite(s) associée(s) ont été mises à jour.`, 'success');
-        } else {
-            addToast(`"${hostName}" a été supprimé.`, 'success');
-        }
-    };
-    
-    const logCommunication = (visitId: string, messageType: MessageType, role: MessageRole) => {
-        updateAppData(prev => {
-            let confirmedToast = false;
-            const newVisits = prev.visits.map(v => {
-                if (v.visitId === visitId) {
-                    const now = new Date().toISOString();
-                    const updatedStatus = JSON.parse(JSON.stringify(v.communicationStatus || {}));
-                    if (!updatedStatus[messageType]) updatedStatus[messageType] = {};
-                    updatedStatus[messageType]![role] = now;
-                    const newStatus = (messageType === 'preparation' && role === 'host' && v.status === 'pending') ? 'confirmed' : v.status;
-                    if (newStatus === 'confirmed' && v.status === 'pending') confirmedToast = true;
-                    return { ...v, communicationStatus: updatedStatus, status: newStatus };
-                }
-                return v;
-            });
-            if(confirmedToast) addToast("Statut de la visite mis à 'Confirmé'.", 'success');
-            return { ...prev, visits: newVisits };
-        });
-    };
-
-    const saveCustomTemplate = (language: Language, messageType: MessageType, role: MessageRole, text: string) => {
-        updateAppData(prev => {
-            const newTemplates = JSON.parse(JSON.stringify(prev.customTemplates));
-            if (!newTemplates[language]) newTemplates[language] = {};
-            if (!newTemplates[language]![messageType]) newTemplates[language]![messageType] = {};
-            newTemplates[language]![messageType]![role] = text;
-            return { ...prev, customTemplates: newTemplates };
-        });
-        addToast("Modèle de message sauvegardé !", 'success');
-    };
-    
-    const deleteCustomTemplate = (language: Language, messageType: MessageType, role: MessageRole) => {
-        updateAppData(prev => {
-            const newTemplates = JSON.parse(JSON.stringify(prev.customTemplates));
-            if (newTemplates[language]?.[messageType]?.[role]) {
-                delete newTemplates[language]![messageType]![role];
-                if (Object.keys(newTemplates[language]![messageType]!).length === 0) delete newTemplates[language]![messageType];
-                if (Object.keys(newTemplates[language]!).length === 0) delete newTemplates[language];
-            }
-            return { ...prev, customTemplates: newTemplates };
-        });
-        addToast("Modèle par défaut restauré.", 'info');
-    };
-
-    const saveCustomHostRequestTemplate = (language: Language, text: string) => {
-        updateAppData(prev => ({ ...prev, customHostRequestTemplates: { ...prev.customHostRequestTemplates, [language]: text } }));
-        addToast("Modèle de message de demande d'accueil sauvegardé !", 'success');
-    };
-
-    const deleteCustomHostRequestTemplate = (language: Language) => {
-        updateAppData(prev => {
-            const newTemplates = { ...prev.customHostRequestTemplates };
-            delete newTemplates[language];
-            return { ...prev, customHostRequestTemplates: newTemplates };
-        });
-        addToast("Modèle par défaut restauré pour la demande d'accueil.", 'info');
-    };
-    
-    const updateCongregationProfile = (profile: CongregationProfile) => {
-        updateAppData(prev => ({...prev, congregationProfile: profile }));
-        addToast("Profil de la congrégation mis à jour.", 'success');
-    };
-
-    const addTalk = (talkData: PublicTalk) => {
-        updateAppData(prev => {
-            if (prev.publicTalks.some(t => t.number === talkData.number)) {
-                addToast(`Le discours n°${talkData.number} existe déjà.`, 'error');
-                return prev;
-            }
-            const newTalks = [...prev.publicTalks, talkData].sort((a, b) => {
-                const numA = typeof a.number === 'string' ? Infinity : a.number;
-                const numB = typeof b.number === 'string' ? Infinity : b.number;
-                if (numA === Infinity && numB === Infinity) {
-                    return String(a.number).localeCompare(String(b.number));
-                }
-                return numA - numB;
-            });
-            addToast(`Discours n°${talkData.number} ajouté.`, 'success');
-            return { ...prev, publicTalks: newTalks };
-        });
-    };
-
-    const updateTalk = (talkNumber: string | number, updatedData: PublicTalk) => {
-        updateAppData(prev => {
-            const talkExists = prev.publicTalks.some(t => t.number === updatedData.number && t.number !== talkNumber);
-            if (talkExists) {
-                addToast(`Le discours n°${updatedData.number} existe déjà.`, 'error');
-                return prev;
-            }
-            const newTalks = prev.publicTalks.map(t => (t.number === talkNumber ? updatedData : t)).sort((a, b) => {
-                const numA = typeof a.number === 'string' ? Infinity : a.number;
-                const numB = typeof b.number === 'string' ? Infinity : b.number;
-                if (numA === Infinity && numB === Infinity) {
-                    return String(a.number).localeCompare(String(b.number));
-                }
-                return numA - numB;
-            });
-            addToast(`Discours n°${updatedData.number} mis à jour.`, 'success');
-            return { ...prev, publicTalks: newTalks };
-        });
-    };
-
-    const deleteTalk = (talkNumber: string | number) => {
-        const allVisits = [...(appData?.visits || []), ...(appData?.archivedVisits || [])];
-        const isTalkAssigned = allVisits.some(v => v.talkNoOrType === talkNumber.toString());
-
-        if (isTalkAssigned) {
-            addToast(`Impossible de supprimer le discours n°${talkNumber} car il est assigné à une ou plusieurs visites.`, 'error');
-            return;
-        }
-
-        updateAppData(prev => ({
-            ...prev,
-            publicTalks: prev.publicTalks.filter(t => t.number !== talkNumber),
-        }));
-        addToast(`Discours n°${talkNumber} supprimé.`, 'success');
-    };
-    
-    const updatePublicTalksList = (talksList: string) => {
-        let addedCount = 0;
-        let updatedCount = 0;
-
-        updateAppData(prev => {
-            const talkMap = new Map<string | number, PublicTalk>();
-            prev.publicTalks.forEach(t => talkMap.set(t.number, t));
-
-            const lines = talksList.split('\n').filter(line => line.trim());
-            const talkRegex = /^([\w\d]+)\.?\s+(.+)$/;
-
-            lines.forEach(line => {
-                const match = line.trim().match(talkRegex);
-                if (match) {
-                    const numberStr = match[1];
-                    const number = isNaN(parseInt(numberStr, 10)) ? numberStr.toUpperCase() : parseInt(numberStr, 10);
-                    const theme = match[2].trim();
-                    const existing = talkMap.get(number);
-
-                    if (existing) {
-                        if (existing.theme !== theme) {
-                            existing.theme = theme;
-                            updatedCount++;
-                        }
-                    } else {
-                        talkMap.set(number, { number, theme });
-                        addedCount++;
-                    }
-                }
-            });
-
-            const finalTalks = Array.from(talkMap.values()).sort((a, b) => {
-                const numA = typeof a.number === 'string' ? Infinity : a.number;
-                const numB = typeof b.number === 'string' ? Infinity : b.number;
-                if (numA === Infinity && numB === Infinity) {
-                    return String(a.number).localeCompare(String(b.number));
-                }
-                return numA - numB;
-            });
-    
-          return { ...prev, publicTalks: finalTalks };
-        });
-    
-        addToast(`${addedCount} discours ajoutés et ${updatedCount} mis à jour.`, 'success');
-    };
-
-    const saveFilterView = (view: SavedView) => {
-        updateAppData(prev => ({ ...prev, savedViews: [...(prev.savedViews || []), view] }));
-        addToast(`Vue "${view.name}" sauvegardée.`, 'success');
-    };
-    
-    const deleteFilterView = (viewId: string) => {
-        updateAppData(prev => ({ ...prev, savedViews: (prev.savedViews || []).filter(v => v.id !== viewId) }));
-        addToast("Vue supprimée.", 'info');
-    };
-
-    const downloadFallback = useCallback((blob: Blob, fileName: string) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, []);
-
-    const exportData = useCallback(async () => {
-        if (!appData) {
-            addToast("Aucune donnée à exporter.", "warning");
-            return;
-        }
-        
-        const dataString = JSON.stringify(appData, null, 2);
-        const date = new Date().toISOString().slice(0, 10);
-        const fileName = `gestion_visiteurs_tj_backup_${date}.json`;
-    
-        if (Capacitor.isNativePlatform()) {
-            try {
-                // Vérifier et demander les permissions nécessaires
-                const checkStorage = async () => {
-                    if (Capacitor.getPlatform() === 'android') {
-                        try {
-                            // Essayer d'utiliser le répertoire de cache qui ne nécessite pas de permissions spéciales
-                            const testPath = 'test_permission.txt';
-                            await Filesystem.writeFile({
-                                path: testPath,
-                                data: 'test',
-                                directory: Directory.Cache,
-                                encoding: Encoding.UTF8
-                            });
-                            await Filesystem.deleteFile({
-                                path: testPath,
-                                directory: Directory.Cache
-                            });
-                            return true;
-                        } catch (error) {
-                            console.warn("Impossible d'écrire dans le cache:", error);
-                            return false;
-                        }
-                    } else if (Capacitor.getPlatform() === 'ios') {
-                        // Pour iOS, on utilise Documents qui est accessible via l'application Fichiers
-                        return true;
-                    }
-                    return true;
-                };
-
-                const hasStorageAccess = await checkStorage();
-                if (!hasStorageAccess) {
-                    throw new Error("Impossible d'accéder au stockage de l'appareil. Vérifiez les autorisations de l'application.");
-                }
-
-                // Utiliser le répertoire Documents pour tous les appareils (plus accessible)
-                const directory = Directory.Documents;
-                const finalPath = Capacitor.getPlatform() === 'android' ? `KBV_Lyon_Backups/${fileName}` : fileName;
-
-                // Créer le répertoire de sauvegarde si nécessaire
-                if (Capacitor.getPlatform() === 'android') {
-                    try {
-                        await Filesystem.mkdir({
-                            path: 'KBV_Lyon_Backups',
-                            directory: Directory.Documents,
-                            recursive: true
-                        });
-                    } catch (error) {
-                        console.log('Le dossier de sauvegarde existe déjà ou ne peut pas être créé');
-                    }
-                }
-                
-                await Filesystem.writeFile({
-                    path: finalPath,
-                    data: dataString,
-                    directory: directory,
-                    encoding: Encoding.UTF8,
-                    recursive: true
-                });
-    
-                const platform = Capacitor.getPlatform();
-                let successMessage: string;
-                if (platform === 'ios') {
-                    successMessage = `Sauvegarde enregistrée dans 'Fichiers' > 'Mon iPhone' > '${appData.congregationProfile.name}'`;
-                } else if (platform === 'android') {
-                    successMessage = `Sauvegarde enregistrée dans Documents > KBV_Lyon_Backups > ${fileName}`;
-
-                    // Pour Android, on peut aussi proposer de partager le fichier si l'utilisateur veut
-                    try {
-                        const file = await Filesystem.getUri({
-                            path: finalPath,
-                            directory: Directory.Documents
-                        });
-
-                        // Optionnel : proposer de partager le fichier
-                        if (file && file.uri && confirm('Voulez-vous aussi partager la sauvegarde ?')) {
-                            await (window as any).Capacitor.Plugins.Share.share({
-                                title: 'Sauvegarde des données KBV Lyon',
-                                text: 'Voici votre sauvegarde de l\'application Gestion des Orateurs Visiteurs',
-                                url: file.uri,
-                                dialogTitle: 'Partager la sauvegarde',
-                            });
-                        }
-                    } catch (shareError) {
-                        console.warn("Le partage optionnel a échoué, mais la sauvegarde est bien enregistrée", shareError);
-                    }
-                } else {
-                    successMessage = `Sauvegarde enregistrée: ${fileName}`;
-                }
-                
-                addToast(successMessage, 'success', 7000);
-            } catch (error) {
-                console.error("Erreur lors de la sauvegarde native :", error);
-                
-                let errorMessage = "Échec de la sauvegarde native.";
-                if (error instanceof Error) {
-                     if (error.message.toLowerCase().includes('permission') || error.message.includes("Permission de stockage refusée")) {
-                        errorMessage = "Permission de stockage refusée. Veuillez vérifier les autorisations de l'application.";
-                    }
-                }
-
-                console.error("Erreur de sauvegarde native:", error);
-                
-                // Essayer d'utiliser le stockage local comme solution de secours
-                try {
-                    const backupKey = `backup_${Date.now()}`;
-                    localStorage.setItem(backupKey, dataString);
-                    
-                    // Proposer à l'utilisateur de copier les données manuellement
-                    const shouldCopy = confirm(`Impossible d'enregistrer le fichier automatiquement. Voulez-vous copier les données dans le presse-papiers ?`);
-                    if (shouldCopy) {
-                        await navigator.clipboard.writeText(dataString);
-                        addToast("Les données ont été copiées dans le presse-papiers.", "info", 8000);
-                    } else {
-                        addToast("Sauvegarde échouée. Veuillez vérifier les autorisations de l'application.", "error", 8000);
-                    }
-                } catch (fallbackError) {
-                    console.error("Échec de la sauvegarde de secours:", fallbackError);
-                    addToast("Échec de la sauvegarde. Veuillez vérifier les autorisations de l'application.", "error", 8000);
-                }
-            }
-        } else {
-            const blob = new Blob([dataString], { type: 'application/json' });
-            downloadFallback(blob, fileName);
-            addToast("Téléchargement de la sauvegarde démarré.", 'success');
-        }
-    }, [appData, addToast, downloadFallback]);
-
-    const importData = async (data: any) => {
-        if (!data.speakers || !data.visits || !data.hosts) {
-            throw new Error("Fichier de sauvegarde non valide ou corrompu.");
-        }
-        if (!appData) {
-            addToast("Les données actuelles ne sont pas chargées, impossible de fusionner.", "error");
-            return;
-        }
-    
-        addToast("Fusion des données en cours...", "info");
-    
-        const unifyByName = <T extends { nom: string }>(current: T[], imported: T[]): T[] => {
-            const map = new Map<string, T>();
-            current.forEach(item => map.set(item.nom.toLowerCase().trim(), item));
-            (imported || []).forEach(item => map.set(item.nom.toLowerCase().trim(), item));
-            return Array.from(map.values());
-        };
-        const finalSpeakers = unifyByName(appData.speakers, (data.speakers || []) as Speaker[]);
-        const finalHosts = unifyByName(appData.hosts, (data.hosts || []) as Host[]);
-    
-        const normalizeName = (value: string) => value
-            ? value.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            : "";
-
-        const speakerNameToInfoMap = new Map<string, Speaker>();
-        finalSpeakers.forEach(s => speakerNameToInfoMap.set(normalizeName(s.nom), s));
-
-        const visitCompositeKey = (visit: Visit) => `${normalizeName(visit.nom)}|${visit.visitDate}`;
-
-        const mergeVisitRecords = (existing: Visit | undefined, incoming: Visit): Visit => {
-            if (!existing) {
-                const cloned = { ...incoming };
-                if (!cloned.visitId) {
-                    cloned.visitId = generateUUID();
-                }
-                return cloned;
-            }
-
-            const merged: Visit = {
-                ...existing,
-                ...incoming,
-                visitId: existing.visitId || incoming.visitId || generateUUID(),
-                visitTime: incoming.visitTime || existing.visitTime,
-                host: incoming.host || existing.host,
-                accommodation: incoming.accommodation ?? existing.accommodation,
-                meals: incoming.meals ?? existing.meals,
-                status: incoming.status || existing.status,
-                communicationStatus: { ...existing.communicationStatus, ...incoming.communicationStatus },
-            };
-
-            return merged;
-        };
-
-        type VisitBucket = { active?: Visit; archived?: Visit };
-        const visitBuckets = new Map<string, VisitBucket>();
-        let duplicateCount = 0;
-
-        const upsertVisit = (visit: Visit, isArchived: boolean) => {
-            const key = visitCompositeKey(visit);
-            const bucket = visitBuckets.get(key) ?? {};
-
-            if (isArchived) {
-                if (bucket.archived) {
-                    duplicateCount++;
-                }
-                const mergedArchived = mergeVisitRecords(bucket.archived, visit);
-                visitBuckets.set(key, { ...bucket, archived: mergedArchived });
-            } else {
-                if (bucket.active) {
-                    duplicateCount++;
-                }
-                const mergedActive = mergeVisitRecords(bucket.active, visit);
-                visitBuckets.set(key, { ...bucket, active: mergedActive });
-            }
-        };
-
-        const hydrateVisitWithSpeaker = (visit: Visit): Visit => {
-            const speakerInfo = speakerNameToInfoMap.get(normalizeName(visit.nom));
-            if (!speakerInfo) {
-                return { ...visit };
-            }
-
-            return {
-                ...visit,
-                id: speakerInfo.id,
-                nom: speakerInfo.nom,
-                congregation: speakerInfo.congregation,
-                telephone: speakerInfo.telephone,
-                photoUrl: speakerInfo.photoUrl,
-            };
-        };
-
-        appData.visits.forEach(v => upsertVisit(v, false));
-        appData.archivedVisits.forEach(v => upsertVisit(v, true));
-        (data.visits || []).forEach((v: Visit) => upsertVisit(v, false));
-        (data.archivedVisits || []).forEach((v: Visit) => upsertVisit(v, true));
-
-        const finalVisits: Visit[] = [];
-        const finalArchivedVisits: Visit[] = [];
-
-        visitBuckets.forEach(({ active, archived }) => {
-            if (active) {
-                finalVisits.push(hydrateVisitWithSpeaker(active));
-            }
-            if (archived) {
-                finalArchivedVisits.push(hydrateVisitWithSpeaker(archived));
-            }
-        });
-    
-        const unifyTalks = (current: PublicTalk[], imported: PublicTalk[]): PublicTalk[] => {
-            const map = new Map<string | number, PublicTalk>();
-            current.forEach(item => map.set(item.number, item));
-            (imported || []).forEach(item => map.set(item.number, item));
-            return Array.from(map.values());
-        };
-        const finalTalks = unifyTalks(appData.publicTalks, data.publicTalks || []);
-    
-        const newAppData: AppData = {
-            speakers: finalSpeakers.sort((a, b) => a.nom.localeCompare(b.nom)),
-            hosts: finalHosts.sort((a, b) => a.nom.localeCompare(b.nom)),
-            visits: finalVisits,
-            archivedVisits: finalArchivedVisits,
-            congregationProfile: data.congregationProfile || appData.congregationProfile,
-            customTemplates: data.customTemplates || appData.customTemplates,
-            customHostRequestTemplates: data.customHostRequestTemplates || appData.customHostRequestTemplates,
-            publicTalks: finalTalks,
-            savedViews: data.savedViews || appData.savedViews || [],
-            specialDates: data.specialDates || appData.specialDates || [],
-        };
-    
-        setAppData(newAppData);
-        addToast("Les données ont été fusionnées intelligemment pour éviter les doublons !", 'success');
-    };
-
-    const resetData = () => {
-        updateAppData(prev => ({...prev, ...initialData}));
-        addToast("Toutes les données ont été réinitialisées.", 'success');
-    };
-
-    const parseDate = (dateStr: string): Date | null => {
-        if (!dateStr) return null;
-        let date: Date | undefined;
-        if (dateStr.includes('/')) {
-            const parts = dateStr.split('/');
-            if (parts.length === 3) {
-                // Assuming DD/MM/YYYY
-                date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-            }
-        } else if (dateStr.includes('-')) {
-            // Assuming YYYY-MM-DD
-            date = new Date(dateStr + 'T00:00:00');
-        }
-
-        if (date && !isNaN(date.getTime())) {
-            return date;
-        }
-        return null;
-    };
-
-    const syncWithGoogleSheet = async (): Promise<void> => {
-        if (!appData) return;
-        
-        const googleSheetId = '1drIzPPi6AohCroSyUkF1UmMFxuEtMACBF4XATDjBOcg';
-        const googleSheetRange = 'Planning!A:E';
-
-        const rangeParts = googleSheetRange.split('!');
-        const [sheetName, range] = rangeParts;
-
-        const url = `https://docs.google.com/spreadsheets/d/${googleSheetId}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}&tqx=out:json`;
-
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Erreur ${response.status}: Impossible de récupérer les données. Vérifiez que la feuille est partagée publiquement.`);
-            }
-            
-            const rawText = await response.text();
-            const jsonMatch = rawText.match(/google\.visualization\.Query\.setResponse\((.*)\)/);
-            if (!jsonMatch || !jsonMatch[1]) {
-                throw new Error("Réponse de l'API Google Visualization invalide.");
-            }
-            const data = JSON.parse(jsonMatch[1]);
-
-
-            if (data.status === 'error') {
-                throw new Error(data.errors.map((e: any) => e.detailed_message).join(', '));
-            }
-
-            const rows = data.table.rows;
-            const cols = data.table.cols;
-
-            if (!rows || rows.length === 0) {
-                addToast("Aucune donnée trouvée dans la feuille de calcul (après les en-têtes).", 'warning');
-                return;
-            }
-
-            const headers = cols.map((h: any) => h.label.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, ''));
-            const dateIndex = headers.findIndex(h => h.includes('data'));
-            const speakerIndex = headers.findIndex(h => h.includes('orador'));
-            const congIndex = headers.findIndex(h => h.includes('kongregason'));
-            const talkNoIndex = headers.findIndex(h => h.includes('n'));
-            const themeIndex = headers.findIndex(h => h.includes('tema'));
-
-            if ([dateIndex, speakerIndex, congIndex].some(i => i === -1)) {
-                addToast("En-têtes requis manquants: Data, Orador, Kongregason.", 'error');
-                return;
-            }
-
-            let addedCount = 0, updatedCount = 0, skippedCount = 0;
-            const addedVisitsDetails: string[] = [];
-            const updatedVisitsDetails: string[] = [];
-
-            updateAppData(prev => {
-                const newSpeakers = [...prev.speakers];
-                const newVisits = [...prev.visits];
-                const speakerMap = new Map(newSpeakers.map(s => [s.nom.toLowerCase(), s]));
-
-                for (const row of rows) {
-                    const cells = row.c;
-                    const dateValue = cells[dateIndex]?.v;
-                    let visitDateObj: Date | null = null;
-
-                    if (typeof dateValue === 'string' && dateValue.startsWith('Date(')) {
-                        const dateParts = dateValue.substring(5, dateValue.length - 1).split(',');
-                        visitDateObj = new Date(Number(dateParts[0]), Number(dateParts[1]), Number(dateParts[2]));
-                    } else if (typeof dateValue === 'string') {
-                        visitDateObj = parseDate(dateValue);
-                    }
-
-                    const speakerName = cells[speakerIndex]?.v?.trim();
-                    const congregation = cells[congIndex]?.v?.trim() || '';
-                    
-                    if (!visitDateObj || !speakerName) {
-                        skippedCount++;
-                        continue;
-                    }
-
-                    // Timezone-safe date formatting
-                    const year = visitDateObj.getFullYear();
-                    const month = String(visitDateObj.getMonth() + 1).padStart(2, '0');
-                    const day = String(visitDateObj.getDate()).padStart(2, '0');
-                    const formattedDate = `${year}-${month}-${day}`;
-                    
-                    const displayDate = visitDateObj.toLocaleDateString('fr-FR');
-
-                    let speaker = speakerMap.get(speakerName.toLowerCase());
-                    if (!speaker) {
-                        speaker = { id: generateUUID(), nom: speakerName, congregation: congregation || 'À définir', talkHistory: [], gender: 'male' };
-                        newSpeakers.push(speaker);
-                        speakerMap.set(speakerName.toLowerCase(), speaker);
-                    } else if (speaker.congregation !== congregation && congregation) {
-                        // Update congregation if it differs
-                        speaker.congregation = congregation;
-                    }
-
-                    const existingVisitIndex = newVisits.findIndex(v => v.nom.toLowerCase() === speakerName.toLowerCase() && v.visitDate === formattedDate);
-
-                    const talkNoValue = talkNoIndex > -1 ? (cells[talkNoIndex]?.v !== null ? String(cells[talkNoIndex]?.v) : null) : null;
-                    const themeValue = themeIndex > -1 ? (cells[themeIndex]?.v !== null ? String(cells[themeIndex]?.v) : null) : null;
-
-
-                    if (existingVisitIndex > -1) {
-                        const existingVisit = newVisits[existingVisitIndex];
-                        const updates: string[] = [];
-                        
-                        if (existingVisit.id !== speaker.id) {
-                            existingVisit.id = speaker.id;
-                            existingVisit.nom = speaker.nom;
-                            existingVisit.telephone = speaker.telephone;
-                            existingVisit.photoUrl = speaker.photoUrl;
-                            updates.push("Orateur");
-                        }
-                        
-                        if (congregation && existingVisit.congregation !== congregation) {
-                            existingVisit.congregation = congregation;
-                            updates.push("Congrégation");
-                        }
-                        if (talkNoIndex > -1 && existingVisit.talkNoOrType !== talkNoValue) {
-                            existingVisit.talkNoOrType = talkNoValue;
-                            updates.push("N° Discours");
-                        }
-                        if (themeIndex > -1 && existingVisit.talkTheme !== themeValue) {
-                            existingVisit.talkTheme = themeValue;
-                            updates.push("Thème");
-                        }
-
-                        if (updates.length > 0) {
-                            updatedCount++;
-                            updatedVisitsDetails.push(`- ${speaker.nom} (${displayDate}): ${updates.join(', ')}`);
-                        }
-                    } else {
-                        const newVisit: Visit = {
-                            id: speaker.id, nom: speaker.nom, congregation, telephone: speaker.telephone, photoUrl: speaker.photoUrl,
-                            visitId: generateUUID(), visitDate: formattedDate, visitTime: prev.congregationProfile.defaultTime,
-                            host: congregation.toLowerCase().includes('zoom') || congregation.toLowerCase().includes('streaming') ? 'N/A' : UNASSIGNED_HOST,
-                            accommodation: '', meals: '', status: 'pending',
-                            locationType: congregation.toLowerCase().includes('zoom') ? 'zoom' : congregation.toLowerCase().includes('streaming') ? 'streaming' : 'physical',
-                            talkNoOrType: talkNoValue,
-                            talkTheme: themeValue,
-                            communicationStatus: {},
-                        };
-                        newVisits.push(newVisit);
-                        addedCount++;
-                        addedVisitsDetails.push(`- ${newVisit.nom} (${displayDate})`);
-                    }
-                }
-                return { ...prev, speakers: newSpeakers, visits: newVisits };
-            });
-
-            let toastMessage = `Synchronisation terminée !\n- ${addedCount} visite(s) ajoutée(s)\n- ${updatedCount} visite(s) mise(s) à jour\n- ${skippedCount} ligne(s) ignorée(s)`;
-            if (addedVisitsDetails.length > 0) {
-                toastMessage += `\n\nAjouts:\n${addedVisitsDetails.join('\n')}`;
-            }
-            if (updatedVisitsDetails.length > 0) {
-                toastMessage += `\n\nMises à jour:\n${updatedVisitsDetails.join('\n')}`;
-            }
-            localStorage.setItem('lastGoogleSheetSync', new Date().toISOString());
-            addToast(toastMessage, 'success', 15000);
-
-        } catch (error) {
-            console.error("Error syncing with Google Sheet:", error);
-            addToast(`Erreur de synchronisation: ${error instanceof Error ? error.message : 'Inconnue'}.`, 'error');
-        }
-    };
-
-    const mergeSpeakers = (primarySpeakerId: string, duplicateIds: string[]) => {
-        updateAppData(prev => {
-            const primarySpeaker = prev.speakers.find(s => s.id === primarySpeakerId);
-            if (!primarySpeaker) {
-                addToast("Erreur : l'orateur principal n'a pas été trouvé.", 'error');
-                return prev;
-            }
-    
-            const newVisits = prev.visits.map(v => {
-                if (duplicateIds.includes(v.id)) {
-                    return { ...v, id: primarySpeaker.id, nom: primarySpeaker.nom, congregation: primarySpeaker.congregation, telephone: primarySpeaker.telephone, photoUrl: primarySpeaker.photoUrl };
-                }
-                return v;
-            });
-    
-            const newArchivedVisits = prev.archivedVisits.map(v => {
-                if (duplicateIds.includes(v.id)) {
-                    return { ...v, id: primarySpeaker.id, nom: primarySpeaker.nom, congregation: primarySpeaker.congregation, telephone: primarySpeaker.telephone, photoUrl: primarySpeaker.photoUrl };
-                }
-                return v;
-            });
-    
-            const newSpeakers = prev.speakers.filter(s => !duplicateIds.includes(s.id));
-    
-            return {
-                ...prev,
-                speakers: newSpeakers,
-                visits: newVisits,
-                archivedVisits: newArchivedVisits,
-            };
-        });
-        addToast("Orateurs fusionnés avec succès.", "success");
-    };
-
-    const mergeHosts = (primaryHostName: string, duplicateNames: string[]) => {
-        updateAppData(prev => {
-            const newVisits = prev.visits.map(v => {
-                if (duplicateNames.includes(v.host)) {
-                    return { ...v, host: primaryHostName };
-                }
-                return v;
-            });
-    
-            const newArchivedVisits = prev.archivedVisits.map(v => {
-                if (duplicateNames.includes(v.host)) {
-                    return { ...v, host: primaryHostName };
-                }
-                return v;
-            });
-    
-            const newHosts = prev.hosts.filter(h => !duplicateNames.includes(h.nom));
-    
-            return {
-                ...prev,
-                hosts: newHosts,
-                visits: newVisits,
-                archivedVisits: newArchivedVisits,
-            };
-        });
-        addToast("Contacts d'accueil fusionnés avec succès.", "success");
     };
     
     const addSpecialDate = (dateData: SpecialDate) => {
@@ -1229,6 +313,424 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }));
         addToast("Date spéciale supprimée.", 'success');
     };
+
+    // Speaker actions
+    const addSpeaker = useCallback((speakerData: Speaker) => {
+        updateAppData(prev => ({
+            ...prev,
+            speakers: [...prev.speakers, speakerData]
+        }));
+        addToast("Orateur ajouté.", 'success');
+    }, [updateAppData, addToast]);
+
+    const updateSpeaker = useCallback((speakerData: Speaker) => {
+        updateAppData(prev => ({
+            ...prev,
+            speakers: prev.speakers.map(speaker =>
+                speaker.id === speakerData.id ? speakerData : speaker
+            )
+        }));
+        addToast("Orateur mis à jour.", 'success');
+    }, [updateAppData, addToast]);
+
+    const deleteSpeaker = useCallback((speakerId: string) => {
+        updateAppData(prev => ({
+            ...prev,
+            speakers: prev.speakers.filter(speaker => speaker.id !== speakerId)
+        }));
+        addToast("Orateur supprimé.", 'success');
+    }, [updateAppData, addToast]);
+
+    // Visit actions
+    const addVisit = useCallback((visitData: Visit) => {
+        updateAppData(prev => ({
+            ...prev,
+            visits: [...prev.visits, visitData]
+        }));
+        addToast("Visite ajoutée.", 'success');
+    }, [updateAppData, addToast]);
+
+    const updateVisit = useCallback((visitData: Visit) => {
+        updateAppData(prev => ({
+            ...prev,
+            visits: prev.visits.map(visit =>
+                visit.visitId === visitData.visitId ? visitData : visit
+            )
+        }));
+        addToast("Visite mise à jour.", 'success');
+    }, [updateAppData, addToast]);
+
+    const deleteVisit = useCallback((visitId: string) => {
+        updateAppData(prev => ({
+            ...prev,
+            visits: prev.visits.filter(visit => visit.visitId !== visitId)
+        }));
+        addToast("Visite supprimée.", 'success');
+    }, [updateAppData, addToast]);
+
+    const completeVisit = useCallback((visit: Visit) => {
+        updateAppData(prev => ({
+            ...prev,
+            visits: prev.visits.map(v =>
+                v.visitId === visit.visitId
+                    ? { ...v, status: 'completed' as const }
+                    : v
+            ),
+            archivedVisits: [...prev.archivedVisits, { ...visit, status: 'completed' as const }]
+        }));
+        addToast("Visite marquée comme terminée.", 'success');
+    }, [updateAppData, addToast]);
+
+    const addFeedbackToVisit = useCallback((visitId: string, feedback: Feedback) => {
+        updateAppData(prev => ({
+            ...prev,
+            visits: prev.visits.map(visit =>
+                visit.visitId === visitId
+                    ? { ...visit, feedback }
+                    : visit
+            )
+        }));
+        addToast("Retour ajouté à la visite.", 'success');
+    }, [updateAppData, addToast]);
+
+    const deleteArchivedVisit = useCallback((visitId: string) => {
+        updateAppData(prev => ({
+            ...prev,
+            archivedVisits: prev.archivedVisits.filter(visit => visit.visitId !== visitId)
+        }));
+        addToast("Visite archivée supprimée.", 'success');
+    }, [updateAppData, addToast]);
+
+    const removeDuplicateArchivedVisits = useCallback(() => {
+        updateAppData(prev => {
+            const uniqueVisits = prev.archivedVisits.filter((visit, index, self) =>
+                index === self.findIndex(v => v.visitId === visit.visitId)
+            );
+            return {
+                ...prev,
+                archivedVisits: uniqueVisits
+            };
+        });
+        addToast("Doublons supprimés des visites archivées.", 'success');
+    }, [updateAppData, addToast]);
+
+    // Host actions
+    const addHost = useCallback((hostData: Host): boolean => {
+        updateAppData(prev => {
+            const exists = prev.hosts.some(host => host.nom === hostData.nom);
+            if (exists) {
+                addToast("Un hôte avec ce nom existe déjà.", 'warning');
+                return prev;
+            }
+            return {
+                ...prev,
+                hosts: [...prev.hosts, hostData]
+            };
+        });
+        addToast("Hôte ajouté.", 'success');
+        return true;
+    }, [updateAppData, addToast]);
+
+    const updateHost = useCallback((hostName: string, updatedData: Partial<Host>) => {
+        updateAppData(prev => ({
+            ...prev,
+            hosts: prev.hosts.map(host =>
+                host.nom === hostName ? { ...host, ...updatedData } : host
+            )
+        }));
+        addToast("Hôte mis à jour.", 'success');
+    }, [updateAppData, addToast]);
+
+    const deleteHost = useCallback((hostName: string) => {
+        updateAppData(prev => ({
+            ...prev,
+            hosts: prev.hosts.filter(host => host.nom !== hostName)
+        }));
+        addToast("Hôte supprimé.", 'success');
+    }, [updateAppData, addToast]);
+
+    // Template actions
+    const saveCustomTemplate = useCallback((language: Language, messageType: MessageType, role: MessageRole, text: string) => {
+        updateAppData(prev => ({
+            ...prev,
+            customTemplates: {
+                ...prev.customTemplates,
+                [language]: {
+                    ...prev.customTemplates[language],
+                    [messageType]: {
+                        ...prev.customTemplates[language]?.[messageType],
+                        [role]: text
+                    }
+                }
+            }
+        }));
+        addToast("Modèle personnalisé sauvegardé.", 'success');
+    }, [updateAppData, addToast]);
+
+    const deleteCustomTemplate = useCallback((language: Language, messageType: MessageType, role: MessageRole) => {
+        updateAppData(prev => {
+            const newTemplates = { ...prev.customTemplates };
+            if (newTemplates[language]?.[messageType]) {
+                delete newTemplates[language][messageType][role];
+            }
+            return {
+                ...prev,
+                customTemplates: newTemplates
+            };
+        });
+        addToast("Modèle personnalisé supprimé.", 'success');
+    }, [updateAppData, addToast]);
+
+    const saveCustomHostRequestTemplate = useCallback((language: Language, text: string) => {
+        updateAppData(prev => ({
+            ...prev,
+            customHostRequestTemplates: {
+                ...prev.customHostRequestTemplates,
+                [language]: text
+            }
+        }));
+        addToast("Modèle de demande d'accueil sauvegardé.", 'success');
+    }, [updateAppData, addToast]);
+
+    const deleteCustomHostRequestTemplate = useCallback((language: Language) => {
+        updateAppData(prev => {
+            const newTemplates = { ...prev.customHostRequestTemplates };
+            delete newTemplates[language];
+            return {
+                ...prev,
+                customHostRequestTemplates: newTemplates
+            };
+        });
+        addToast("Modèle de demande d'accueil supprimé.", 'success');
+    }, [updateAppData, addToast]);
+
+    // Communication and data actions
+    const logCommunication = useCallback((visitId: string, messageType: MessageType, role: MessageRole) => {
+        const now = new Date().toISOString();
+        updateAppData(prev => ({
+            ...prev,
+            visits: prev.visits.map(visit =>
+                visit.visitId === visitId
+                    ? {
+                        ...visit,
+                        communicationStatus: {
+                            ...visit.communicationStatus,
+                            [messageType]: {
+                                ...visit.communicationStatus?.[messageType],
+                                [role]: now
+                            }
+                        }
+                    }
+                    : visit
+            )
+        }));
+    }, [updateAppData]);
+
+    const updateCongregationProfile = useCallback((profile: CongregationProfile) => {
+        updateAppData(prev => ({
+            ...prev,
+            congregationProfile: profile
+        }));
+        addToast("Profil de congrégation mis à jour.", 'success');
+    }, [updateAppData, addToast]);
+
+    // Talk actions
+    const addTalk = useCallback((talkData: PublicTalk) => {
+        updateAppData(prev => ({
+            ...prev,
+            publicTalks: [...prev.publicTalks, talkData]
+        }));
+        addToast("Exposé ajouté.", 'success');
+    }, [updateAppData, addToast]);
+
+    const updateTalk = useCallback((talkNumber: string | number, updatedData: PublicTalk) => {
+        updateAppData(prev => ({
+            ...prev,
+            publicTalks: prev.publicTalks.map(talk =>
+                talk.number === talkNumber ? updatedData : talk
+            )
+        }));
+        addToast("Exposé mis à jour.", 'success');
+    }, [updateAppData, addToast]);
+
+    const deleteTalk = useCallback((talkNumber: string | number) => {
+        updateAppData(prev => ({
+            ...prev,
+            publicTalks: prev.publicTalks.filter(talk => talk.number !== talkNumber)
+        }));
+        addToast("Exposé supprimé.", 'success');
+    }, [updateAppData, addToast]);
+
+    const updatePublicTalksList = useCallback((talksList: string) => {
+        try {
+            const talks = JSON.parse(talksList);
+            updateAppData(prev => ({
+                ...prev,
+                publicTalks: talks
+            }));
+            addToast("Liste d'exposés mise à jour.", 'success');
+        } catch {
+            addToast("Erreur lors de la mise à jour de la liste d'exposés.", 'error');
+        }
+    }, [updateAppData, addToast]);
+
+    // Filter view actions
+    const saveFilterView = useCallback((view: SavedView) => {
+        updateAppData(prev => ({
+            ...prev,
+            savedViews: [...prev.savedViews, view]
+        }));
+        addToast("Vue de filtre sauvegardée.", 'success');
+    }, [updateAppData, addToast]);
+
+    const deleteFilterView = useCallback((viewId: string) => {
+        updateAppData(prev => ({
+            ...prev,
+            savedViews: prev.savedViews.filter(view => view.id !== viewId)
+        }));
+        addToast("Vue de filtre supprimée.", 'success');
+    }, [updateAppData, addToast]);
+
+    // Data management actions
+    const exportData = useCallback(() => {
+        if (!appData) return;
+
+        const dataToExport = {
+            speakers: appData.speakers,
+            visits: appData.visits,
+            hosts: appData.hosts,
+            archivedVisits: appData.archivedVisits,
+            customTemplates: appData.customTemplates,
+            customHostRequestTemplates: appData.customHostRequestTemplates,
+            congregationProfile: appData.congregationProfile,
+            publicTalks: appData.publicTalks,
+            savedViews: appData.savedViews,
+            specialDates: appData.specialDates,
+        };
+
+        const dataStr = JSON.stringify(dataToExport, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `kbv-dv-lyon-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        addToast("Données exportées avec succès.", 'success');
+    }, [appData, addToast]);
+
+    const importData = useCallback(async (data: ImportData) => {
+        try {
+            updateAppData(prev => ({
+                ...prev,
+                ...data
+            }));
+            addToast("Données importées avec succès.", 'success');
+        } catch {
+            addToast("Erreur lors de l'importation des données.", 'error');
+        }
+    }, [updateAppData, addToast]);
+
+    const resetData = useCallback(() => {
+        setAppData(initialData);
+        addToast("Données réinitialisées.", 'info');
+    }, [addToast]);
+
+    // Encryption actions
+    const enableEncryption = useCallback(async (password: string): Promise<boolean> => {
+        if (!appData) return false;
+
+        try {
+            const encryptedData = await encrypt(appData, password);
+            await set('encryptedAppData', encryptedData);
+            await set('dataIsEncrypted', true);
+            await del('appData');
+            setIsEncrypted(true);
+            setSessionPassword(password);
+            addToast("Chiffrement activé.", 'success');
+            return true;
+        } catch {
+            addToast("Erreur lors de l'activation du chiffrement.", 'error');
+            return false;
+        }
+    }, [appData, addToast]);
+
+    const disableEncryption = useCallback(async (): Promise<boolean> => {
+        if (!appData) return false;
+
+        try {
+            await set('appData', appData);
+            await del('encryptedAppData');
+            await set('dataIsEncrypted', false);
+            setIsEncrypted(false);
+            setSessionPassword(null);
+            addToast("Chiffrement désactivé.", 'success');
+            return true;
+        } catch {
+            addToast("Erreur lors de la désactivation du chiffrement.", 'error');
+            return false;
+        }
+    }, [appData, addToast]);
+
+    // Sync action
+    const syncWithGoogleSheet = useCallback(async () => {
+        addToast("Synchronisation avec Google Sheets non implémentée.", 'info');
+    }, [addToast]);
+
+    // Merge actions
+    const mergeSpeakers = useCallback((primarySpeakerId: string, duplicateIds: string[]) => {
+        updateAppData(prev => {
+            const primarySpeaker = prev.speakers.find(s => s.id === primarySpeakerId);
+            const duplicates = prev.speakers.filter(s => duplicateIds.includes(s.id));
+
+            if (!primarySpeaker) return prev;
+
+            const mergedSpeaker: Speaker = {
+                ...primarySpeaker,
+                talkHistory: [
+                    ...primarySpeaker.talkHistory,
+                    ...duplicates.flatMap(d => d.talkHistory)
+                ]
+            };
+
+            return {
+                ...prev,
+                speakers: prev.speakers
+                    .filter(s => s.id !== primarySpeakerId && !duplicateIds.includes(s.id))
+                    .concat(mergedSpeaker)
+            };
+        });
+        addToast("Orateurs fusionnés avec succès.", 'success');
+    }, [updateAppData, addToast]);
+
+    const mergeHosts = useCallback((primaryHostName: string, duplicateNames: string[]) => {
+        updateAppData(prev => {
+            const primaryHost = prev.hosts.find(h => h.nom === primaryHostName);
+            const duplicates = prev.hosts.filter(h => duplicateNames.includes(h.nom));
+
+            if (!primaryHost) return prev;
+
+            const mergedHost: Host = {
+                ...primaryHost,
+                unavailabilities: [
+                    ...(primaryHost.unavailabilities || []),
+                    ...duplicates.flatMap(d => d.unavailabilities || [])
+                ]
+            };
+
+            return {
+                ...prev,
+                hosts: prev.hosts
+                    .filter(h => h.nom !== primaryHostName && !duplicateNames.includes(h.nom))
+                    .concat(mergedHost)
+            };
+        });
+        addToast("Hôtes fusionnés avec succès.", 'success');
+    }, [updateAppData, addToast]);
     
     const value: DataContextType = {
         appData,

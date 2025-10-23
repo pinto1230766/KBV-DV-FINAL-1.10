@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Visit, MessageRole, Language, MessageType } from '../types';
+import { Visit, MessageRole, MessageType } from '../types';
 import { useData } from '../contexts/DataContext';
 import {
     SearchIcon,
@@ -16,23 +16,25 @@ interface MessagingCenterProps {
 
 // --- SUB-COMPONENTS ---
 const CommunicationProgress: React.FC<{ visit: Visit }> = ({ visit }) => {
-    const steps: { type: MessageType; role: MessageRole }[] = [
-        { type: 'confirmation', role: 'speaker' },
-        { type: 'preparation', role: 'speaker' },
-        { type: 'preparation', role: 'host' },
-        { type: 'reminder-7', role: 'speaker' },
-        { type: 'thanks', role: 'speaker' },
-    ];
+    const applicableSteps = useMemo(() => {
+        const steps: { type: MessageType; role: MessageRole }[] = [
+            { type: 'confirmation', role: 'speaker' },
+            { type: 'preparation', role: 'speaker' },
+            { type: 'preparation', role: 'host' },
+            { type: 'reminder-7', role: 'speaker' },
+            { type: 'thanks', role: 'speaker' },
+        ];
 
-    const applicableSteps = useMemo(() => steps.filter(step => {
-        // Host preparation is not applicable for non-physical visits
-        if (step.role === 'host' && visit.locationType !== 'physical') {
-            return false;
-        }
-        // A reminder is a single step
-        if (step.type === 'reminder-2') return false; 
-        return true;
-    }), [visit.locationType]);
+        return steps.filter(step => {
+            // Host preparation is not applicable for non-physical visits
+            if (step.role === 'host' && visit.locationType !== 'physical') {
+                return false;
+            }
+            // A reminder is a single step
+            if (step.type === 'reminder-2') return false;
+            return true;
+        });
+    }, [visit.locationType]);
     
     const completedSteps = useMemo(() => applicableSteps.filter(step => {
          // A reminder is complete if either J-7 or J-2 is sent
