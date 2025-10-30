@@ -967,6 +967,8 @@ Juste un petit mot pour te remercier encore chaleureusement pour ton excellent d
 
 Nous espérons que tu as passé un bon moment parmi nous et que ton retour s'est bien passé.
 
+PS : Si tu as eu des frais liés à ta venue et que tu souhaites un remboursement, n'hésite surtout pas. Il te suffit de remplir le formulaire H8 (que je peux bien sûr te faire parvenir si tu en as besoin) et d'y joindre les justificatifs correspondants.
+
 Au plaisir de te revoir.
 Fraternellement.
 
@@ -1101,6 +1103,8 @@ Ku amor fraternu.
 Sô un palavrinha pa gradese-u más un bes di korason pa bu eselenti diskursu. Nu fika tudu mutu enkorajadu.
 
 Nu ta spera ma bu pasa un bon momentu na nos meiu i ma bu regresu foi tranquilu.
+
+PS : Si bu tene algun gasta ligadu na bu vizita i bu kre un reembolsu, ka bu ezita. Bu só mesti prenxe formuláriu H8 (ki n pode manda-u si bu mesti) i junta kes justifikativu.
 
 Un abrasu i ti próssima.
 Ku amor fraternu.

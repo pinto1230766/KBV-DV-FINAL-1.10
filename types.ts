@@ -86,6 +86,8 @@ export interface Expense {
   amount: number;
   category: 'transport' | 'repas' | 'hébergement' | 'autre';
   receiptUrl?: string; // data URL for receipt image
+  status?: 'envoyé' | 'en attente' | 'remboursé';
+  pdfUrl?: string; // data URL for PDF expense report
 }
 
 
