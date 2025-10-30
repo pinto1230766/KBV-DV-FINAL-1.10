@@ -5,7 +5,6 @@ import {
 } from './Icons';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
-import { ArchivedVisits } from './ArchivedVisits';
 import { EncryptionPrompt } from './EncryptionPrompt';
 import { CongregationProfile, Visit, Language, MessageType, MessageRole } from '../types';
 import useOnlineStatus from '../hooks/useOnlineStatus';
@@ -19,8 +18,6 @@ interface SettingsProps {
     onImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
     onResetData: () => void;
     isImporting: boolean;
-    onLeaveFeedback: (visit: Visit) => void;
-    archiveSectionRef: React.RefObject<HTMLDivElement>;
 }
 
 interface SettingsSectionProps {
@@ -725,8 +722,8 @@ const MaintenanceContent: React.FC = () => {
 };
 
 
-export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImporting, onLeaveFeedback, archiveSectionRef }) => {
-    const { syncWithGoogleSheet, archivedVisits } = useData();
+export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImporting }) => {
+    const { syncWithGoogleSheet } = useData();
     return (
         <div className="space-y-6">
             <SettingsSection title="Profil de la Congrégation" description="Personnalisez les informations de l'application." icon={PodiumIcon}>
@@ -767,10 +764,6 @@ export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImp
 
             <SettingsSection title="Liens Utiles" description="Accédez rapidement à vos ressources externes." icon={BookOpenIcon}>
                 <UsefulLinksContent />
-            </SettingsSection>
-            
-            <SettingsSection containerRef={archiveSectionRef} title="Archive des visites" description={`Consultez l'historique des visites terminées (${archivedVisits.length}).`} icon={ClockIcon}>
-                <ArchivedVisits onLeaveFeedback={onLeaveFeedback} />
             </SettingsSection>
         </div>
     );
