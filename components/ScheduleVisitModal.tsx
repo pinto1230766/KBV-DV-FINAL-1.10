@@ -90,8 +90,9 @@ const ExpenseManager: React.FC<{
     visitDate: string;
 }> = ({ expenses, onExpensesChange, visitDate }) => {
     const { addToast } = useToast();
-    const [newExpense, setNewExpense] = useState({ date: visitDate, description: '', amount: '', category: 'transport' as Expense['category'] });
+    const [newExpense, setNewExpense] = useState({ date: visitDate, description: '', amount: '', category: 'transport' as Expense['category'], status: 'en attente' as Expense['status'] });
     const [receiptFile, setReceiptFile] = useState<string | null>(null);
+    const [pdfFile, setPdfFile] = useState<string | null>(null);
 
     const totalExpenses = useMemo(() => expenses.reduce((sum, exp) => sum + exp.amount, 0), [expenses]);
 
@@ -112,6 +113,26 @@ const ExpenseManager: React.FC<{
         }
     };
 
+    const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.type !== 'application/pdf') {
+            addToast('Veuillez sélectionner un fichier PDF.', 'error');
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            addToast('Le fichier PDF est trop volumineux (max 2Mo).', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => setPdfFile(reader.result as string);
+        reader.onerror = () => addToast("Erreur lors du chargement du PDF.", 'error');
+        reader.readAsDataURL(file);
+    };
+
     const handleAddExpense = () => {
         const amount = parseFloat(newExpense.amount);
         if (!newExpense.description || isNaN(amount) || amount <= 0) {
@@ -126,11 +147,14 @@ const ExpenseManager: React.FC<{
             amount,
             category: newExpense.category,
             receiptUrl: receiptFile || undefined,
+            pdfUrl: pdfFile || undefined,
+            status: newExpense.status,
         };
 
         onExpensesChange([...expenses, expenseToAdd]);
-        setNewExpense({ date: visitDate, description: '', amount: '', category: 'transport' });
+        setNewExpense({ date: visitDate, description: '', amount: '', category: 'transport', status: 'en attente' });
         setReceiptFile(null);
+        setPdfFile(null);
     };
 
     const handleDeleteExpense = (id: string) => {
@@ -152,8 +176,10 @@ const ExpenseManager: React.FC<{
                             <div className="flex-grow">
                                 <p className="font-semibold">{exp.description} <span className="text-xs text-text-muted dark:text-text-muted-dark capitalize">({exp.category})</span></p>
                                 <p className="text-sm">{exp.amount.toFixed(2)} € - {new Date(exp.date + 'T00:00:00').toLocaleDateString('fr-FR')}</p>
+                                {exp.status && <span className={`text-xs px-2 py-0.5 rounded-full ${exp.status === 'remboursé' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' : exp.status === 'envoyé' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'}`}>{exp.status}</span>}
                             </div>
-                            {exp.receiptUrl && <a href={exp.receiptUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-primary dark:text-primary-light hover:bg-primary/10 rounded-full"><EyeIcon className="w-5 h-5"/></a>}
+                            {exp.pdfUrl && <a href={exp.pdfUrl} download="note-de-frais.pdf" className="p-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-full" title="Télécharger PDF"><ReceiptIcon className="w-5 h-5"/></a>}
+                            {exp.receiptUrl && <a href={exp.receiptUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-primary dark:text-primary-light hover:bg-primary/10 rounded-full" title="Voir justificatif"><EyeIcon className="w-5 h-5"/></a>}
                             <button type="button" onClick={() => handleDeleteExpense(exp.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full"><TrashIcon className="w-5 h-5"/></button>
                         </div>
                     ))
@@ -173,14 +199,26 @@ const ExpenseManager: React.FC<{
                         <option value="hébergement">Hébergement</option>
                         <option value="autre">Autre</option>
                     </select>
+                    <select value={newExpense.status} onChange={e => setNewExpense({...newExpense, status: e.target.value as Expense['status']})} className="w-full border border-border-light dark:border-border-dark rounded-md py-1 px-2 text-sm bg-card-light dark:bg-card-dark">
+                        <option value="en attente">En attente</option>
+                        <option value="envoyé">Envoyé</option>
+                        <option value="remboursé">Remboursé</option>
+                    </select>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                     <label htmlFor="receipt-upload" className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-primary dark:text-primary-light">
                         <CameraIcon className="w-5 h-5"/>
-                        {receiptFile ? 'Justificatif ajouté' : 'Joindre un justificatif'}
+                        {receiptFile ? 'Justificatif ajouté' : 'Joindre justificatif'}
                     </label>
                     <input id="receipt-upload" type="file" accept="image/*" className="sr-only" onChange={handleReceiptUpload}/>
                     {receiptFile && <button type="button" onClick={() => setReceiptFile(null)} className="text-xs text-red-500">Annuler</button>}
+                    
+                    <label htmlFor="pdf-upload" className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-red-600 dark:text-red-400">
+                        <ReceiptIcon className="w-5 h-5"/>
+                        {pdfFile ? 'PDF ajouté' : 'Joindre note de frais (PDF)'}
+                    </label>
+                    <input id="pdf-upload" type="file" accept="application/pdf" className="sr-only" onChange={handlePdfUpload}/>
+                    {pdfFile && <button type="button" onClick={() => setPdfFile(null)} className="text-xs text-red-500">Annuler</button>}
                 </div>
                 <button type="button" onClick={handleAddExpense} className="w-full px-4 py-2 bg-primary/20 text-primary dark:text-primary-light font-bold rounded-lg transition-transform active:scale-95 text-sm">Ajouter</button>
             </div>
