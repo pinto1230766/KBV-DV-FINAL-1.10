@@ -120,6 +120,17 @@ const VisitCardDateInfo: React.FC<{ visit: Visit; isZoom: boolean; isStreaming: 
 );
 
 const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void; hostExists: boolean; isZoom: boolean; isStreaming: boolean; isLocalSpeaker: boolean; isRemote: boolean; isSpecialEvent: boolean; }> = ({ visit, onEdit, hostExists, isZoom, isStreaming, isLocalSpeaker, isRemote, isSpecialEvent }) => {
+    const { congregationProfile } = useData();
+    
+    // Vérifier si c'est un orateur local (de la congrégation KBV DV LYON)
+    const isActualLocalSpeaker = visit.congregation && 
+        (visit.congregation.toLowerCase().includes('kbv') && visit.congregation.toLowerCase().includes('lyon')) ||
+        visit.congregation.toLowerCase() === 'kbv dv lyon' ||
+        visit.congregation.toLowerCase() === 'lyon kbv';
+    
+    // Vérifier si c'est un événement spécial
+    const isActualSpecialEvent = !visit.talkNoOrType || visit.talkNoOrType === 'N/A' || visit.talkNoOrType === '';
+    
     const comms = visit.communicationStatus || {};
     const confirmationDone = !!comms.confirmation?.speaker;
     const prepSpeakerDone = !!comms.preparation?.speaker;
@@ -175,16 +186,33 @@ const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void
 
                 <div className="w-full">
                     <h4 className="text-sm font-bold text-left text-text-muted dark:text-text-muted-dark uppercase mb-2">SUIVI</h4>
-                    <div className="space-y-1.5 text-left">
-                        <ChecklistItem label="Confirmation" done={confirmationDone} icon={CheckIcon} />
-                        <ChecklistItem label="Préparation Orateur" done={prepSpeakerDone} icon={EnvelopeIcon} />
-                        {visit.host !== UNASSIGNED_HOST && visit.locationType === 'physical' && (
-                            <ChecklistItem label="Préparation Accueil" done={prepHostDone} icon={EnvelopeIcon} />
-                        )}
-                        <ChecklistItem label="Rappels" done={reminderDone} icon={BellIcon} />
-                        <ChecklistItem label="Remerciements" done={thanksDone} icon={SparklesIcon} />
-                    </div>
-                    {totalTasks > 0 && (
+                    {isActualSpecialEvent || isActualLocalSpeaker ? (
+                        <div className="text-center text-text-muted dark:text-text-muted-dark text-sm py-4">
+                            <p>{isActualSpecialEvent ? 'Événement spécial' : 'Orateur local'}</p>
+                            <p className="text-xs mt-1">Aucun suivi nécessaire</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-1.5 text-left">
+                            {/* Pour zoom/streaming, seulement confirmation et remerciements */}
+                            {isRemote ? (
+                                <>
+                                    <ChecklistItem label="Confirmation" done={confirmationDone} icon={CheckIcon} />
+                                    <ChecklistItem label="Remerciements" done={thanksDone} icon={SparklesIcon} />
+                                </>
+                            ) : (
+                                <>
+                                    <ChecklistItem label="Confirmation" done={confirmationDone} icon={CheckIcon} />
+                                    <ChecklistItem label="Préparation Orateur" done={prepSpeakerDone} icon={EnvelopeIcon} />
+                                    {visit.host !== UNASSIGNED_HOST && visit.locationType === 'physical' && (
+                                        <ChecklistItem label="Préparation Accueil" done={prepHostDone} icon={EnvelopeIcon} />
+                                    )}
+                                    <ChecklistItem label="Rappels" done={reminderDone} icon={BellIcon} />
+                                    <ChecklistItem label="Remerciements" done={thanksDone} icon={SparklesIcon} />
+                                </>
+                            )}
+                        </div>
+                    )}
+                    {totalTasks > 0 && !isActualSpecialEvent && !isActualLocalSpeaker && (
                         <div className="pt-2 mt-2 border-t border-border-light dark:border-border-dark">
                             <ChecklistItem 
                                 label={`Tâches (${completedTasks}/${totalTasks})`} 
@@ -279,11 +307,14 @@ const VisitCard: React.FC<{
     const { hosts, archivedVisits } = useData();
     const isArchived = useMemo(() => archivedVisits.some(v => v.visitId === visit.visitId), [archivedVisits, visit.visitId]);
     const hostExists = useMemo(() => visit.host === UNASSIGNED_HOST || visit.host === NO_HOST_NEEDED || hosts.some(h => h.nom === visit.host), [hosts, visit.host]);
-    const isLocalSpeaker = visit.congregation.toLowerCase().includes('lyon');
+    const isLocalSpeaker = visit.congregation && 
+        (visit.congregation.toLowerCase().includes('kbv') && visit.congregation.toLowerCase().includes('lyon')) ||
+        visit.congregation.toLowerCase() === 'kbv dv lyon' ||
+        visit.congregation.toLowerCase() === 'lyon kbv';
     const isZoom = visit.locationType === 'zoom';
     const isStreaming = visit.locationType === 'streaming';
     const isRemote = isZoom || isStreaming;
-    const isSpecialEvent = visit.congregation === 'Événement spécial';
+    const isSpecialEvent = !visit.talkNoOrType || visit.talkNoOrType === 'N/A' || visit.talkNoOrType === '';
 
     const status = isArchived ? 'completed' : visit.status;
     const statusStyle = statusStyles[status];
@@ -368,7 +399,7 @@ const VisitRow: React.FC<Omit<UpcomingVisitsProps, 'visits' | 'onScheduleFirst' 
     const { visit, onEdit, onOpenMessageGenerator, index } = props;
     const { archivedVisits } = useData();
     const isArchived = useMemo(() => archivedVisits.some(v => v.visitId === visit.visitId), [archivedVisits, visit.visitId]);
-    const isSpecialEvent = visit.congregation === 'Événement spécial';
+    const isSpecialEvent = !visit.talkNoOrType || visit.talkNoOrType === 'N/A' || visit.talkNoOrType === '';
     const isUrgent = visit.host === UNASSIGNED_HOST && visit.locationType === 'physical';
 
     const status = isArchived ? 'completed' : visit.status;
