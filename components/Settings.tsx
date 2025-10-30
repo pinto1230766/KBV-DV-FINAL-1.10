@@ -13,6 +13,7 @@ import { DuplicateFinderModal } from './DuplicateFinderModal';
 import { LanguageSelector } from './LanguageSelector';
 import { messageTemplates, hostRequestMessageTemplates } from '../constants';
 import { NotificationSettings } from './NotificationSettings';
+import { PermissionsManager } from './PermissionsManager';
 
 interface SettingsProps {
     onImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -734,6 +735,10 @@ export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImp
 
             <SettingsSection title="Notifications" description="Configurez les rappels automatiques pour les visites." icon={BellIcon}>
                 <NotificationSettings />
+            </SettingsSection>
+
+            <SettingsSection title="Permissions de l'application" description="Gérez les accès de l'application à votre appareil." icon={ShieldCheckIcon}>
+                <PermissionsManager />
             </SettingsSection>
 
             <SettingsSection title="Modèles de Messages" description="Personnalisez les messages par défaut pour l'envoi." icon={EnvelopeIcon}>
