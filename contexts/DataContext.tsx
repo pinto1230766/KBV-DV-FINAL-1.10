@@ -11,6 +11,7 @@ import { Capacitor } from '@capacitor/core';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { get, set, del } from '../utils/idb';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { checkStorageWarning, formatSize } from '../utils/storage';
 
 interface AppData {
   speakers: Speaker[];
@@ -101,6 +102,9 @@ interface DataContextType {
   syncWithGoogleSheet: () => Promise<void>;
   apiKey: string;
   updateApiKey: (key: string) => void;
+  sheetTabs: Array<{ name: string; gid: string }>;
+  addSheetTab: (name: string, gid: string) => void;
+  removeSheetTab: (gid: string) => void;
 
   mergeSpeakers: (primarySpeakerId: string, duplicateIds: string[]) => void;
   mergeHosts: (primaryHostName: string, duplicateNames: string[]) => void;
@@ -123,10 +127,29 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [sessionPassword, setSessionPassword] = useState<string | null>(null);
     const [storedApiKey, setStoredApiKey] = useLocalStorage<string>('gemini-api-key', '');
     const apiKey = useMemo(() => (typeof process !== 'undefined' && process.env?.API_KEY) ? process.env.API_KEY : storedApiKey, [storedApiKey]);
+    
+    const [sheetTabs, setSheetTabs] = useLocalStorage<Array<{ name: string; gid: string }>>('google-sheet-tabs', [
+        { name: 'MAIU 2026', gid: '1817293373' },
+        { name: 'JUNHU 2026', gid: '1474640023' },
+    ]);
 
     const updateApiKey = (key: string) => {
         setStoredApiKey(key);
         addToast("Clé API enregistrée.", 'success');
+    };
+    
+    const addSheetTab = (name: string, gid: string) => {
+        if (sheetTabs.some(t => t.gid === gid)) {
+            addToast("Cet onglet existe déjà.", 'warning');
+            return;
+        }
+        setSheetTabs([...sheetTabs, { name, gid }]);
+        addToast("Onglet ajouté.", 'success');
+    };
+    
+    const removeSheetTab = (gid: string) => {
+        setSheetTabs(sheetTabs.filter(t => t.gid !== gid));
+        addToast("Onglet supprimé.", 'success');
     };
 
     const defaultLogo = useMemo(() => {
@@ -210,6 +233,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!appData || isLoading) return;
 
         const saveData = async (dataToSave: AppData) => {
+            // Vérifier la taille avant de sauvegarder
+            const { shouldWarn, percentage, size } = checkStorageWarning(dataToSave);
+            
+            if (shouldWarn) {
+                addToast(
+                    `Attention : Stockage à ${percentage}% (${formatSize(size)}). Supprimez des photos ou pièces jointes.`,
+                    'warning',
+                    8000
+                );
+            }
+
             try {
                 if (isEncrypted && sessionPassword) {
                     const encryptedData = await encrypt(dataToSave, sessionPassword);
@@ -958,23 +992,54 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addToast("Toutes les données ont été réinitialisées.", 'success');
     };
 
+    // Fonction utilitaire pour parser les dates au format français (JJ/MM/AAAA) ou ISO (AAAA-MM-JJ)
     const parseDate = (dateStr: string): Date | null => {
         if (!dateStr) return null;
-        let date: Date | undefined;
-        if (dateStr.includes('/')) {
-            const parts = dateStr.split('/');
-            if (parts.length === 3) {
-                // Assuming DD/MM/YYYY
-                date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        
+        // Format Google Sheets: Date(2025,0,19)
+        const googleDateMatch = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (googleDateMatch) {
+            const year = parseInt(googleDateMatch[1], 10);
+            const month = parseInt(googleDateMatch[2], 10);
+            const day = parseInt(googleDateMatch[3], 10);
+            // Utiliser UTC pour éviter les problèmes de fuseau horaire
+            return new Date(Date.UTC(year, month, day));
+        }
+        
+        // Essayer de parser la date au format JJ/MM/AAAA
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1; // Les mois commencent à 0
+            const year = parseInt(parts[2], 10);
+            
+            // Vérifier que les valeurs sont valides
+            if (isNaN(day) || isNaN(month) || isNaN(year)) {
+                return null;
             }
-        } else if (dateStr.includes('-')) {
-            // Assuming YYYY-MM-DD
-            date = new Date(dateStr + 'T00:00:00');
+            
+            const date = new Date(year, month, day);
+            
+            // Vérifier que la date est valide
+            if (!isNaN(date.getTime())) {
+                return date;
+            }
         }
-
-        if (date && !isNaN(date.getTime())) {
-            return date;
+        
+        // Essayer de parser la date au format ISO (AAAA-MM-JJ) ou autre format reconnu par le constructeur Date
+        const isoDate = new Date(dateStr);
+        if (!isNaN(isoDate.getTime())) {
+            return isoDate;
         }
+        
+        // Si le format contient des tirets mais n'a pas pu être parsé directement, essayer avec l'heure minuit
+        if (dateStr.includes('-')) {
+            const dateWithTime = new Date(dateStr + 'T00:00:00');
+            if (!isNaN(dateWithTime.getTime())) {
+                return dateWithTime;
+            }
+        }
+        
         return null;
     };
 
@@ -982,165 +1047,266 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!appData) return;
         
         const googleSheetId = '1drIzPPi6AohCroSyUkF1UmMFxuEtMACBF4XATDjBOcg';
-        const googleSheetRange = 'Planning!A:E';
-
-        const rangeParts = googleSheetRange.split('!');
-        const [sheetName, range] = rangeParts;
-
-        const url = `https://docs.google.com/spreadsheets/d/${googleSheetId}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}&tqx=out:json`;
-
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Erreur ${response.status}: Impossible de récupérer les données. Vérifiez que la feuille est partagée publiquement.`);
-            }
+        const sheetsToSync = sheetTabs;
+        
+        // Filtrer uniquement les dates >= 2026
+        const minYear = 2026;
+        
+        // Fonction pour récupérer les données d'un onglet spécifique avec gestion des erreurs améliorée
+        const fetchSheetData = async (sheetInfo: { name: string; gid: string }, retryCount = 3): Promise<any> => {
+            const range = 'A2:Z100';
+            const url = `https://docs.google.com/spreadsheets/d/${googleSheetId}/gviz/tq?gid=${sheetInfo.gid}&range=${encodeURIComponent(range)}&tqx=out:json`;
             
-            const rawText = await response.text();
-            const jsonMatch = rawText.match(/google\.visualization\.Query\.setResponse\((.*)\)/);
-            if (!jsonMatch || !jsonMatch[1]) {
-                throw new Error("Réponse de l'API Google Visualization invalide.");
-            }
-            const data = JSON.parse(jsonMatch[1]);
-
-
-            if (data.status === 'error') {
-                throw new Error(data.errors.map((e: any) => e.detailed_message).join(', '));
-            }
-
-            const rows = data.table.rows;
-            const cols = data.table.cols;
-
-            if (!rows || rows.length === 0) {
-                addToast("Aucune donnée trouvée dans la feuille de calcul (après les en-têtes).", 'warning');
-                return;
-            }
-
-            const headers = cols.map((h: any) => h.label.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, ''));
-            const dateIndex = headers.findIndex(h => h.includes('data'));
-            const speakerIndex = headers.findIndex(h => h.includes('orador'));
-            const congIndex = headers.findIndex(h => h.includes('kongregason'));
-            const talkNoIndex = headers.findIndex(h => h.includes('n'));
-            const themeIndex = headers.findIndex(h => h.includes('tema'));
-
-            if ([dateIndex, speakerIndex, congIndex].some(i => i === -1)) {
-                addToast("En-têtes requis manquants: Data, Orador, Kongregason.", 'error');
-                return;
-            }
-
-            let addedCount = 0, updatedCount = 0, skippedCount = 0;
-            const addedVisitsDetails: string[] = [];
-            const updatedVisitsDetails: string[] = [];
-
-            updateAppData(prev => {
-                const newSpeakers = [...prev.speakers];
-                const newVisits = [...prev.visits];
-                const speakerMap = new Map(newSpeakers.map(s => [s.nom.toLowerCase(), s]));
-
-                for (const row of rows) {
-                    const cells = row.c;
-                    const dateValue = cells[dateIndex]?.v;
-                    let visitDateObj: Date | null = null;
-
-                    if (typeof dateValue === 'string' && dateValue.startsWith('Date(')) {
-                        const dateParts = dateValue.substring(5, dateValue.length - 1).split(',');
-                        visitDateObj = new Date(Number(dateParts[0]), Number(dateParts[1]), Number(dateParts[2]));
-                    } else if (typeof dateValue === 'string') {
-                        visitDateObj = parseDate(dateValue);
-                    }
-
-                    const speakerName = cells[speakerIndex]?.v?.trim();
-                    const congregation = cells[congIndex]?.v?.trim() || '';
+            let lastError: Error | null = null;
+            
+            // Tentative avec réessai en cas d'échec
+            for (let attempt = 1; attempt <= retryCount; attempt++) {
+                try {
+                    const response = await fetch(url);
                     
-                    if (!visitDateObj || !speakerName) {
-                        skippedCount++;
-                        continue;
+                    if (!response.ok) {
+                        throw new Error(`Erreur HTTP ${response.status} - ${response.statusText}`);
                     }
-
-                    // Timezone-safe date formatting
-                    const year = visitDateObj.getFullYear();
-                    const month = String(visitDateObj.getMonth() + 1).padStart(2, '0');
-                    const day = String(visitDateObj.getDate()).padStart(2, '0');
-                    const formattedDate = `${year}-${month}-${day}`;
                     
-                    const displayDate = visitDateObj.toLocaleDateString('fr-FR');
-
-                    let speaker = speakerMap.get(speakerName.toLowerCase());
-                    if (!speaker) {
-                        speaker = { id: generateUUID(), nom: speakerName, congregation: congregation || 'À définir', talkHistory: [], gender: 'male' };
-                        newSpeakers.push(speaker);
-                        speakerMap.set(speakerName.toLowerCase(), speaker);
-                    } else if (speaker.congregation !== congregation && congregation) {
-                        // Update congregation if it differs
-                        speaker.congregation = congregation;
+                    const rawText = await response.text();
+                    const jsonMatch = rawText.match(/google\.visualization\.Query\.setResponse\((.*)\)/s);
+                    
+                    if (!jsonMatch) {
+                        throw new Error("Format de réponse inattendu de l'API Google Sheets");
                     }
-
-                    const existingVisitIndex = newVisits.findIndex(v => v.nom.toLowerCase() === speakerName.toLowerCase() && v.visitDate === formattedDate);
-
-                    const talkNoValue = talkNoIndex > -1 ? (cells[talkNoIndex]?.v !== null ? String(cells[talkNoIndex]?.v) : null) : null;
-                    const themeValue = themeIndex > -1 ? (cells[themeIndex]?.v !== null ? String(cells[themeIndex]?.v) : null) : null;
-
-
-                    if (existingVisitIndex > -1) {
-                        const existingVisit = newVisits[existingVisitIndex];
-                        const updates: string[] = [];
-                        
-                        if (existingVisit.id !== speaker.id) {
-                            existingVisit.id = speaker.id;
-                            existingVisit.nom = speaker.nom;
-                            existingVisit.telephone = speaker.telephone;
-                            existingVisit.photoUrl = speaker.photoUrl;
-                            updates.push("Orateur");
-                        }
-                        
-                        if (congregation && existingVisit.congregation !== congregation) {
-                            existingVisit.congregation = congregation;
-                            updates.push("Congrégation");
-                        }
-                        if (talkNoIndex > -1 && existingVisit.talkNoOrType !== talkNoValue) {
-                            existingVisit.talkNoOrType = talkNoValue;
-                            updates.push("N° Discours");
-                        }
-                        if (themeIndex > -1 && existingVisit.talkTheme !== themeValue) {
-                            existingVisit.talkTheme = themeValue;
-                            updates.push("Thème");
-                        }
-
-                        if (updates.length > 0) {
-                            updatedCount++;
-                            updatedVisitsDetails.push(`- ${speaker.nom} (${displayDate}): ${updates.join(', ')}`);
-                        }
-                    } else {
-                        const newVisit: Visit = {
-                            id: speaker.id, nom: speaker.nom, congregation, telephone: speaker.telephone, photoUrl: speaker.photoUrl,
-                            visitId: generateUUID(), visitDate: formattedDate, visitTime: prev.congregationProfile.defaultTime,
-                            host: congregation.toLowerCase().includes('zoom') || congregation.toLowerCase().includes('streaming') ? 'N/A' : UNASSIGNED_HOST,
-                            accommodation: '', meals: '', status: 'pending',
-                            locationType: congregation.toLowerCase().includes('zoom') ? 'zoom' : congregation.toLowerCase().includes('streaming') ? 'streaming' : 'physical',
-                            talkNoOrType: talkNoValue,
-                            talkTheme: themeValue,
-                            communicationStatus: {},
-                        };
-                        newVisits.push(newVisit);
-                        addedCount++;
-                        addedVisitsDetails.push(`- ${newVisit.nom} (${displayDate})`);
+                    
+                    const data = JSON.parse(jsonMatch[1]);
+                    
+                    if (data.status === 'error') {
+                        throw new Error(data.errors?.map((e: any) => e.detailed_message || e.message || 'Erreur inconnue').join('; ') || 'Erreur inconnue');
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    lastError = error as Error;
+                    console.warn(`Tentative ${attempt}/${retryCount} échouée pour ${sheetName}:`, error);
+                    
+                    // Attendre avant de réessayer (backoff exponentiel)
+                    if (attempt < retryCount) {
+                        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
                     }
                 }
-                return { ...prev, speakers: newSpeakers, visits: newVisits };
-            });
-
-            let toastMessage = `Synchronisation terminée !\n- ${addedCount} visite(s) ajoutée(s)\n- ${updatedCount} visite(s) mise(s) à jour\n- ${skippedCount} ligne(s) ignorée(s)`;
-            if (addedVisitsDetails.length > 0) {
-                toastMessage += `\n\nAjouts:\n${addedVisitsDetails.join('\n')}`;
             }
-            if (updatedVisitsDetails.length > 0) {
-                toastMessage += `\n\nMises à jour:\n${updatedVisitsDetails.join('\n')}`;
-            }
-            localStorage.setItem('lastGoogleSheetSync', new Date().toISOString());
-            addToast(toastMessage, 'success', 15000);
+            
+            // Si on arrive ici, toutes les tentatives ont échoué
+            throw new Error(`Impossible de récupérer les données de l'onglet "${sheetName}" après ${retryCount} tentatives: ${lastError?.message}`);
+        };
 
+        // Fonction pour valider et formater une visite
+        const validateAndFormatVisit = (visit: Partial<Visit>): Visit | null => {
+            try {
+                if (!visit.nom || !visit.visitDate) {
+                    console.warn('Visite invalide: nom ou date manquant', visit);
+                    return null;
+                }
+                
+                // Vérifier que la date est valide
+                const visitDate = parseDate(visit.visitDate);
+                if (!visitDate) {
+                    console.warn('Date de visite invalide:', visit.visitDate);
+                    return null;
+                }
+                
+                // Formater la date au format YYYY-MM-DD
+                const formattedDate = visitDate.toISOString().split('T')[0];
+                
+                // Créer une visite valide avec des valeurs par défaut
+                return {
+                    id: visit.id || generateUUID(),
+                    visitId: visit.visitId || generateUUID(),
+                    nom: visit.nom.trim(),
+                    congregation: visit.congregation?.trim() || '',
+                    telephone: visit.telephone?.trim() || '',
+                    photoUrl: visit.photoUrl?.trim() || '',
+                    visitDate: formattedDate,
+                    visitTime: visit.visitTime || '14:30',
+                    host: visit.host || '',
+                    accommodation: visit.accommodation || '',
+                    meals: visit.meals || '',
+                    status: visit.status || 'confirmed',
+                    locationType: visit.locationType || 'physical',
+                    talkNoOrType: visit.talkNoOrType || '',
+                    talkTheme: visit.talkTheme || '',
+                    arrivalDate: visit.arrivalDate || '',
+                    departureDate: visit.departureDate || '',
+                    notes: visit.notes || '',
+                    attachments: visit.attachments || [],
+                    expenses: visit.expenses || [],
+                    communicationStatus: visit.communicationStatus || {},
+                    checklist: visit.checklist || [],
+                    feedback: visit.feedback
+                };
+            } catch (error) {
+                console.error('Erreur lors de la validation de la visite:', error);
+                return null;
+            }
+        };
+
+        try {
+            addToast('Début de la synchronisation avec Google Sheets...', 'info');
+            const allVisits: Visit[] = [];
+            const processedSpeakers = new Set<string>();
+            let totalProcessed = 0;
+            
+            // Créer ou trouver l'orateur "À définir"
+            let undefinedSpeaker = appData.speakers.find(s => s.nom === 'À définir');
+            if (!undefinedSpeaker) {
+                undefinedSpeaker = {
+                    id: generateUUID(),
+                    nom: 'À définir',
+                    congregation: '',
+                    telephone: '',
+                    photoUrl: '',
+                    tags: [],
+                    talkHistory: [],
+                    availableDiscourses: []
+                };
+                updateAppData(prev => ({
+                    ...prev,
+                    speakers: [...prev.speakers, undefinedSpeaker!]
+                }));
+            }
+            
+            // Récupérer les données de tous les onglets en parallèle avec Promise.all
+            await Promise.all(sheetsToSync.map(async (sheetInfo) => {
+                try {
+                    const data = await fetchSheetData(sheetInfo);
+                    
+                    if (!data.table || !data.table.rows || !Array.isArray(data.table.rows)) {
+                        console.warn(`Aucune donnée valide dans l'onglet ${sheetInfo.name}`);
+                        return;
+                    }
+                    
+                    const headers = data.table.cols.map((h: any) => 
+                        h.label?.toLowerCase().trim()
+                            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                            .replace(/[^a-z0-9]/g, '') || ''
+                    );
+                    
+
+                    
+                    const dateIndex = headers.findIndex(h => h.includes('date') || h.includes('data'));
+                    const speakerIndex = headers.findIndex(h => h.includes('orateur') || h.includes('speaker') || h.includes('orador'));
+                    const congregationIndex = headers.findIndex(h => h.includes('congregation') || h.includes('kongregason'));
+                    const talkIndex = headers.findIndex(h => h.includes('discours') || h.includes('talk') || h.includes('theme') || h.includes('tema'));
+                    
+                    if (dateIndex === -1 || speakerIndex === -1) {
+                        console.warn(`En-têtes requis manquants dans ${sheetInfo.name}. Colonnes trouvées:`, headers);
+                        return;
+                    }
+                    
+                    for (const row of data.table.rows) {
+                        try {
+                            const dateStr = row.c[dateIndex]?.v;
+                            const speaker = row.c[speakerIndex]?.v;
+                            const congregation = congregationIndex !== -1 ? row.c[congregationIndex]?.v : '';
+                            const talk = talkIndex !== -1 ? row.c[talkIndex]?.v : '';
+                            
+                            if (!dateStr) continue;
+                            
+                            const visitDate = parseDate(dateStr);
+                            if (!visitDate) continue;
+                            
+                            // Nettoyer le nom de l'orateur (enlever guillemets et sauts de ligne)
+                            const speakerName = speaker 
+                                ? speaker.toString().replace(/"/g, '').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() 
+                                : 'À définir';
+                            
+                            // Filtrer uniquement les dates >= 2026
+                            if (visitDate.getFullYear() < minYear) continue;
+                            
+                            const maxDate = new Date('2030-12-31T23:59:59');
+                            if (visitDate > maxDate) continue;
+                            
+                            const speakerKey = `${speakerName.toLowerCase()}_${visitDate.toISOString().split('T')[0]}`;
+                            if (processedSpeakers.has(speakerKey)) continue;
+                            processedSpeakers.add(speakerKey);
+                            
+                            // Trouver ou créer l'orateur (recherche flexible)
+                            let speakerId = undefinedSpeaker!.id;
+                            if (speaker) {
+                                let existingSpeaker = appData.speakers.find(s => {
+                                    const cleanDbName = s.nom.toLowerCase().replace(/\s+/g, ' ').trim();
+                                    const cleanSheetName = speakerName.toLowerCase().replace(/\s+/g, ' ').trim();
+                                    return cleanDbName === cleanSheetName;
+                                });
+                                
+
+                                
+                                if (!existingSpeaker) {
+                                    // Créer un nouvel orateur
+                                    existingSpeaker = {
+                                        id: generateUUID(),
+                                        nom: speakerName,
+                                        congregation: congregation?.toString() || '',
+                                        telephone: '',
+                                        photoUrl: '',
+                                        tags: [],
+                                        talkHistory: [],
+                                        availableDiscourses: []
+                                    };
+                                    updateAppData(prev => ({
+                                        ...prev,
+                                        speakers: [...prev.speakers, existingSpeaker!]
+                                    }));
+                                }
+                                speakerId = existingSpeaker.id;
+                            }
+                            
+                            const visit: Partial<Visit> = {
+                                id: speakerId,
+                                nom: speakerName,
+                                congregation: congregation?.toString() || '',
+                                visitDate: visitDate.toISOString().split('T')[0],
+                                talkNoOrType: talk?.toString() || '',
+                                talkTheme: talk?.toString() || ''
+                            };
+                            
+                            const validVisit = validateAndFormatVisit(visit);
+                            if (validVisit) {
+                                allVisits.push(validVisit);
+                                totalProcessed++;
+                            }
+                        } catch (error) {
+                            console.error(`Erreur lors du traitement d'une ligne dans ${sheetName}:`, error);
+                        }
+                    }
+                    
+
+                } catch (error) {
+                    console.error(`Erreur avec l'onglet ${sheetInfo.name}:`, error);
+                    addToast(
+                        `Erreur avec l'onglet ${sheetInfo.name}: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+                        'error'
+                    );
+                }
+            }));
+
+            if (allVisits.length === 0) {
+                addToast("Aucune donnée valide trouvée dans les onglets spécifiés.", 'warning');
+                return;
+            }
+            
+            updateAppData(prev => ({
+                ...prev,
+                visits: [...allVisits, ...prev.visits.filter(v => 
+                    !allVisits.some(av => av.visitDate === v.visitDate && av.nom === v.nom)
+                )]
+            }));
+            
+            addToast(`Synchronisation réussie : ${totalProcessed} visites chargées.`, 'success');
+            
         } catch (error) {
-            console.error("Error syncing with Google Sheet:", error);
-            addToast(`Erreur de synchronisation: ${error instanceof Error ? error.message : 'Inconnue'}.`, 'error');
+            console.error('Erreur lors de la synchronisation avec Google Sheets:', error);
+            addToast(
+                `Erreur lors de la synchronisation: ${error.message}`,
+                'error'
+            );
         }
     };
 
@@ -1252,6 +1418,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         saveFilterView, deleteFilterView,
         apiKey,
         updateApiKey,
+        sheetTabs,
+        addSheetTab,
+        removeSheetTab,
         mergeSpeakers,
         mergeHosts,
         addSpecialDate, updateSpecialDate, deleteSpecialDate,

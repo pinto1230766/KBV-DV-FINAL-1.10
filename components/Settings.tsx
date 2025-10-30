@@ -322,8 +322,11 @@ const TemplateEditorContent: React.FC = () => {
 
 
 const GoogleSheetsContent: React.FC<{ onSync: () => Promise<void> }> = ({ onSync }) => {
+    const { sheetTabs, addSheetTab, removeSheetTab } = useData();
     const [isSyncing, setIsSyncing] = useState(false);
     const [lastSync, setLastSync] = useState<string | null>(null);
+    const [newTabName, setNewTabName] = useState('');
+    const [newTabGid, setNewTabGid] = useState('');
     const isOnline = useOnlineStatus();
     
     useEffect(() => {
@@ -336,22 +339,74 @@ const GoogleSheetsContent: React.FC<{ onSync: () => Promise<void> }> = ({ onSync
         setLastSync(new Date().toISOString());
         setIsSyncing(false);
     };
+    
+    const handleAddTab = () => {
+        if (!newTabName.trim() || !newTabGid.trim()) return;
+        addSheetTab(newTabName.trim(), newTabGid.trim());
+        setNewTabName('');
+        setNewTabGid('');
+    };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <div className="p-4 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 text-sm flex items-start space-x-3">
                 <InformationCircleIcon className="w-8 h-8 flex-shrink-0" />
                 <div>
                     <p className="font-semibold">Instructions :</p>
                     <ol className="list-decimal pl-5 mt-1 space-y-1">
-                        <li>L'application est pré-configurée pour se synchroniser avec le Google Sheet de suivi.</li>
-                        <li>Assurez-vous que le Google Sheet est partagé publiquement avec le lien (en mode Lecteur). Allez dans <strong>Partager</strong> &gt; <strong>Accès général</strong> &gt; <strong>"Tous les utilisateurs disposant du lien"</strong>.</li>
-                        <li>Vérifiez que la première feuille est nommée "Planning" et contient les colonnes : <strong className="font-mono">Date, Orateur, Congrégation, N° Discours, Thème</strong>.</li>
-                        <li>Cliquez sur le bouton "Synchroniser" pour importer les dernières visites.</li>
+                        <li>Ouvrez le Google Sheet et cliquez sur l'onglet à synchroniser</li>
+                        <li>Copiez le numéro GID de l'URL (après <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">gid=</code>)</li>
+                        <li>Ajoutez-le ci-dessous avec un nom descriptif</li>
+                        <li>Cliquez sur "Synchroniser" pour importer les visites</li>
                     </ol>
                 </div>
             </div>
-            <div className="flex flex-col sm:flex-row justify-end items-center gap-4">
+            
+            <div className="border-t border-border-light dark:border-border-dark pt-4">
+                <h3 className="font-semibold mb-3">Onglets configurés ({sheetTabs.length})</h3>
+                <div className="space-y-2 mb-4">
+                    {sheetTabs.map(tab => (
+                        <div key={tab.gid} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-primary-light/10 rounded-lg">
+                            <div>
+                                <p className="font-medium">{tab.name}</p>
+                                <p className="text-xs text-text-muted dark:text-text-muted-dark font-mono">GID: {tab.gid}</p>
+                            </div>
+                            <button onClick={() => removeSheetTab(tab.gid)} className="text-red-600 dark:text-red-400 hover:underline text-sm">
+                                Supprimer
+                            </button>
+                        </div>
+                    ))}
+                </div>
+                
+                <div className="p-4 bg-gray-50 dark:bg-primary-light/10 rounded-lg">
+                    <h4 className="font-semibold mb-3">Ajouter un nouvel onglet</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input
+                            type="text"
+                            placeholder="Nom (ex: JULHU-AGOSTU 2026)"
+                            value={newTabName}
+                            onChange={(e) => setNewTabName(e.target.value)}
+                            className="px-3 py-2 border border-border-light dark:border-border-dark rounded-md bg-card-light dark:bg-card-dark"
+                        />
+                        <input
+                            type="text"
+                            placeholder="GID (ex: 123456789)"
+                            value={newTabGid}
+                            onChange={(e) => setNewTabGid(e.target.value)}
+                            className="px-3 py-2 border border-border-light dark:border-border-dark rounded-md bg-card-light dark:bg-card-dark"
+                        />
+                    </div>
+                    <button
+                        onClick={handleAddTab}
+                        disabled={!newTabName.trim() || !newTabGid.trim()}
+                        className="mt-3 w-full px-4 py-2 bg-secondary hover:bg-secondary/90 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Ajouter l'onglet
+                    </button>
+                </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row justify-end items-center gap-4 border-t border-border-light dark:border-border-dark pt-4">
                  {lastSync && (
                     <p className="text-xs text-text-muted dark:text-text-muted-dark">
                         Dernière synchro: {new Date(lastSync).toLocaleString('fr-FR')}

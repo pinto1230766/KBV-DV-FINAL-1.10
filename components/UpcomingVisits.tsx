@@ -97,55 +97,46 @@ const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void
                 </div>
             );
         }
-        if (isRemote) {
-            return (
-                 <div className={`flex items-center ${isZoom ? 'text-indigo-600 dark:text-indigo-400' : 'text-purple-600 dark:text-purple-400'}`}>
-                    <VideoCameraIcon className="w-5 h-5 mr-2" />
-                    <span className="font-semibold">{isZoom ? 'Visite par Zoom' : 'Visite par Streaming'}</span>
-                </div>
-            );
-        }
-        if (isLocalSpeaker) {
-            return (
-                <div className="flex items-center text-blue-600 dark:text-blue-400">
-                   <HomeIcon className="w-5 h-5 mr-2" />
-                   <span className="font-semibold">Orateur local</span>
-               </div>
-           );
-        }
-        if (visit.host === NO_HOST_NEEDED) {
-             return (
-                <div className="flex items-center text-gray-500 dark:text-gray-400">
-                    <HomeIcon className="w-5 h-5 mr-2" />
-                    <span className="font-semibold">Accueil non nécessaire</span>
-                </div>
-            );
-        }
-        if (visit.host === UNASSIGNED_HOST) {
-            return (
-                <div className="space-y-2">
-                    <div className="flex items-center justify-center text-orange dark:text-orange">
-                        <ExclamationTriangleIcon className="w-5 h-5 mr-2" />
-                        <span className="font-semibold">Accueil à définir</span>
-                    </div>
-                    <button onClick={() => onEdit(visit)} className="w-full px-4 py-2 bg-orange hover:bg-orange/80 text-white font-bold rounded-lg transition-transform active:scale-95">
-                        Assigner
-                    </button>
-                </div>
-            );
-        }
+        
         return (
             <div className="flex flex-col items-center space-y-2 w-full">
-                <div>
-                    <p className="text-sm text-text-muted dark:text-text-muted-dark">Accueil par :</p>
-                    <p className="font-bold text-lg text-text-main dark:text-text-main-dark truncate" title={visit.host}>{visit.host}</p>
-                    {!hostExists && (
-                        <div title="Cet hôte a été supprimé. Veuillez modifier la visite." className="flex items-center justify-center text-orange dark:text-orange mt-1">
-                            <ExclamationTriangleIcon className="w-5 h-5" />
+                {isRemote ? (
+                    <div className={`flex items-center ${isZoom ? 'text-indigo-600 dark:text-indigo-400' : 'text-purple-600 dark:text-purple-400'}`}>
+                        <VideoCameraIcon className="w-5 h-5 mr-2" />
+                        <span className="font-semibold">{isZoom ? 'Visite par Zoom' : 'Visite par Streaming'}</span>
+                    </div>
+                ) : isLocalSpeaker ? (
+                    <div className="flex items-center text-blue-600 dark:text-blue-400">
+                        <HomeIcon className="w-5 h-5 mr-2" />
+                        <span className="font-semibold">Orateur local</span>
+                    </div>
+                ) : visit.host === NO_HOST_NEEDED ? (
+                    <div className="flex items-center text-gray-500 dark:text-gray-400">
+                        <HomeIcon className="w-5 h-5 mr-2" />
+                        <span className="font-semibold">Accueil non nécessaire</span>
+                    </div>
+                ) : visit.host === UNASSIGNED_HOST ? (
+                    <div className="space-y-2 w-full">
+                        <div className="flex items-center justify-center text-orange dark:text-orange">
+                            <ExclamationTriangleIcon className="w-5 h-5 mr-2" />
+                            <span className="font-semibold">Accueil à définir</span>
                         </div>
-                    )}
-                </div>
-                 <div className="mt-4 w-full bg-white/40 dark:bg-black/20 p-3 rounded-lg space-y-2 text-left">
+                        <button onClick={() => onEdit(visit)} className="w-full px-4 py-2 bg-orange hover:bg-orange/80 text-white font-bold rounded-lg transition-transform active:scale-95">
+                            Assigner
+                        </button>
+                    </div>
+                ) : (
+                    <div>
+                        <p className="text-sm text-text-muted dark:text-text-muted-dark">Accueil par :</p>
+                        <p className="font-bold text-lg text-text-main dark:text-text-main-dark truncate" title={visit.host}>{visit.host}</p>
+                        {!hostExists && (
+                            <div title="Cet hôte a été supprimé. Veuillez modifier la visite." className="flex items-center justify-center text-orange dark:text-orange mt-1">
+                                <ExclamationTriangleIcon className="w-5 h-5" />
+                            </div>
+                        )}
+                    </div>
+                )}
+                <div className="mt-4 w-full bg-white/40 dark:bg-black/20 p-3 rounded-lg space-y-2 text-left">
                     <h4 className="text-sm font-bold text-left text-text-muted dark:text-text-muted-dark uppercase mb-1">Suivi</h4>
                     <div className="space-y-1.5">
                         <ChecklistItem label="Confirmation" done={confirmationDone} icon={CheckIcon} />
@@ -296,7 +287,7 @@ const VisitCard: React.FC<{
     return (
         <div
             style={{ animationDelay: `${index * 100}ms` }}
-            className={`relative ${isMenuOpen ? 'z-40' : ''} animate-fade-in-up opacity-0`}
+            className={`relative ${isMenuOpen ? 'z-40' : ''} animate-fade-in-up opacity-0 h-full`}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -305,7 +296,7 @@ const VisitCard: React.FC<{
                 className={`rounded-xl shadow-soft-lg border border-white/20 dark:border-white/10 backdrop-blur-xl ${isMenuOpen ? 'bg-card-light dark:bg-card-dark' : 'bg-glass dark:bg-glass-dark'}`}
             >
                 <div className={`absolute top-0 left-0 bottom-0 w-2 ${statusStyle.cardBorder} rounded-l-xl`}></div>
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-4 pl-6 w-full items-center">
+                <div className={`grid grid-cols-1 ${isSpecialEvent ? 'md:grid-cols-1' : 'md:grid-cols-12'} gap-6 p-4 pl-6 w-full items-center`}>
                     <VisitCardDateInfo 
                         visit={visit} 
                         isZoom={isZoom} 
