@@ -234,19 +234,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const saveData = async (dataToSave: AppData) => {
             // Vérifier la taille avant de sauvegarder
-            const { shouldWarn, percentage, size } = checkStorageWarning(dataToSave);
+            const dataSize = JSON.stringify(dataToSave).length;
+            const { warning, message } = checkStorageWarning(dataSize);
             
-            if (shouldWarn) {
-                addToast(
-                    `Attention : Stockage à ${percentage}% (${formatSize(size)}). Supprimez des photos ou pièces jointes.`,
-                    'warning',
-                    8000
-                );
+            if (warning && message) {
+                addToast(message, 'warning', 8000);
             }
 
             try {
                 if (isEncrypted && sessionPassword) {
-                    const encryptedData = await encrypt(dataToSave, sessionPassword);
+                    const dataString = JSON.stringify(dataToSave);
+                    const encryptedData = await encrypt(dataString, sessionPassword);
                     await set('encryptedAppData', encryptedData);
                     await del('appData');
                 } else if (!isEncrypted) {
@@ -273,7 +271,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return false;
         }
         try {
-            const decryptedData = await decrypt<AppData>(encryptedData, password);
+            const decryptedString = await decrypt(encryptedData, password);
+            const decryptedData = JSON.parse(decryptedString) as AppData;
             setAppData(decryptedData);
             setSessionPassword(password);
             setIsLocked(false);
@@ -291,7 +290,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return false;
         }
         try {
-            const encryptedData = await encrypt(appData, password);
+            const dataString = JSON.stringify(appData);
+            const encryptedData = await encrypt(dataString, password);
             await set('encryptedAppData', encryptedData);
             await set('dataIsEncrypted', true);
             await del('appData');
@@ -1084,7 +1084,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     return data;
                 } catch (error) {
                     lastError = error as Error;
-                    console.warn(`Tentative ${attempt}/${retryCount} échouée pour ${sheetName}:`, error);
+                    console.warn(`Tentative ${attempt}/${retryCount} échouée pour ${sheetInfo.name}:`, error);
                     
                     // Attendre avant de réessayer (backoff exponentiel)
                     if (attempt < retryCount) {
@@ -1094,7 +1094,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
             
             // Si on arrive ici, toutes les tentatives ont échoué
-            throw new Error(`Impossible de récupérer les données de l'onglet "${sheetName}" après ${retryCount} tentatives: ${lastError?.message}`);
+            throw new Error(`Impossible de récupérer les données de l'onglet "${sheetInfo.name}" après ${retryCount} tentatives: ${lastError?.message}`);
         };
 
         // Fonction pour valider et formater une visite
@@ -1163,8 +1163,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     telephone: '',
                     photoUrl: '',
                     tags: [],
-                    talkHistory: [],
-                    availableDiscourses: []
+                    talkHistory: []
                 };
                 updateAppData(prev => ({
                     ...prev,
@@ -1236,8 +1235,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                     return cleanDbName === cleanSheetName;
                                 });
                                 
-
-                                
                                 if (!existingSpeaker) {
                                     // Créer un nouvel orateur
                                     existingSpeaker = {
@@ -1247,8 +1244,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                         telephone: '',
                                         photoUrl: '',
                                         tags: [],
-                                        talkHistory: [],
-                                        availableDiscourses: []
+                                        talkHistory: []
                                     };
                                     updateAppData(prev => ({
                                         ...prev,
@@ -1273,11 +1269,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                 totalProcessed++;
                             }
                         } catch (error) {
-                            console.error(`Erreur lors du traitement d'une ligne dans ${sheetName}:`, error);
+                            console.error(`Erreur lors du traitement d'une ligne dans ${sheetInfo.name}:`, error);
                         }
                     }
-                    
-
                 } catch (error) {
                     console.error(`Erreur avec l'onglet ${sheetInfo.name}:`, error);
                     addToast(
@@ -1304,7 +1298,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } catch (error) {
             console.error('Erreur lors de la synchronisation avec Google Sheets:', error);
             addToast(
-                `Erreur lors de la synchronisation: ${error.message}`,
+                `Erreur lors de la synchronisation: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
                 'error'
             );
         }
