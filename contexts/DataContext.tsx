@@ -12,6 +12,7 @@ import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { get, set, del } from '../utils/idb';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { checkStorageWarning, formatSize } from '../utils/storage';
+import { scheduleVisitNotifications, cancelVisitNotifications } from '../utils/notifications';
 
 interface AppData {
   speakers: Speaker[];
@@ -405,16 +406,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const addVisit = (visitData: Visit) => {
         const visitWithStatus = { ...visitData, communicationStatus: {} };
         updateAppData(prev => ({ ...prev, visits: [...prev.visits, visitWithStatus] }));
+        scheduleVisitNotifications(visitWithStatus);
         addToast("Visite programmée avec succès.", 'success');
     };
     
     const updateVisit = (visitData: Visit) => {
         updateAppData(prev => ({ ...prev, visits: prev.visits.map(v => v.visitId === visitData.visitId ? visitData : v) }));
+        cancelVisitNotifications(visitData.visitId);
+        scheduleVisitNotifications(visitData);
         addToast("Visite mise à jour avec succès.", 'success');
     };
     
     const deleteVisit = (visitId: string) => {
         updateAppData(prev => ({ ...prev, visits: prev.visits.filter(v => v.visitId !== visitId) }));
+        cancelVisitNotifications(visitId);
         addToast("Visite supprimée.", 'success');
     };
 

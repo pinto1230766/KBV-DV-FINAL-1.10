@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     UploadIcon, SpinnerIcon, ExclamationTriangleIcon,
-    ExternalLinkIcon, ShieldCheckIcon, PodiumIcon, BookOpenIcon, ServerStackIcon, LockClosedIcon, LockOpenIcon, CloudArrowDownIcon, InformationCircleIcon, SparklesIcon, DownloadIcon, ChevronDownIcon, ClockIcon, SunIcon, MoonIcon, ComputerDesktopIcon, PaintBrushIcon, EnvelopeIcon, SaveIcon, ArrowUturnLeftIcon, MapPinIcon, EyeIcon, EyeSlashIcon
+    ExternalLinkIcon, ShieldCheckIcon, PodiumIcon, BookOpenIcon, ServerStackIcon, LockClosedIcon, LockOpenIcon, CloudArrowDownIcon, InformationCircleIcon, SparklesIcon, DownloadIcon, ChevronDownIcon, ClockIcon, SunIcon, MoonIcon, ComputerDesktopIcon, PaintBrushIcon, EnvelopeIcon, SaveIcon, ArrowUturnLeftIcon, MapPinIcon, EyeIcon, EyeSlashIcon, BellIcon
 } from './Icons';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
@@ -12,6 +12,7 @@ import useOnlineStatus from '../hooks/useOnlineStatus';
 import { DuplicateFinderModal } from './DuplicateFinderModal';
 import { LanguageSelector } from './LanguageSelector';
 import { messageTemplates, hostRequestMessageTemplates } from '../constants';
+import { NotificationSettings } from './NotificationSettings';
 
 interface SettingsProps {
     onImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -729,6 +730,10 @@ export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImp
         <div className="space-y-6">
             <SettingsSection title="Profil de la Congrégation" description="Personnalisez les informations de l'application." icon={PodiumIcon}>
                 <CongregationProfileContent />
+            </SettingsSection>
+
+            <SettingsSection title="Notifications" description="Configurez les rappels automatiques pour les visites." icon={BellIcon}>
+                <NotificationSettings />
             </SettingsSection>
 
             <SettingsSection title="Modèles de Messages" description="Personnalisez les messages par défaut pour l'envoi." icon={EnvelopeIcon}>
