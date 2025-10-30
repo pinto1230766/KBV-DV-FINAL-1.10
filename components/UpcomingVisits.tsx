@@ -129,7 +129,7 @@ const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void
         visit.congregation.toLowerCase() === 'lyon kbv';
     
     // Vérifier si c'est un événement spécial
-    const isActualSpecialEvent = !visit.talkNoOrType || visit.talkNoOrType === 'N/A' || visit.talkNoOrType === '';
+    const isActualSpecialEvent = visit.congregation === 'Événement spécial';
     
     const comms = visit.communicationStatus || {};
     const confirmationDone = !!comms.confirmation?.speaker;
@@ -314,7 +314,7 @@ const VisitCard: React.FC<{
     const isZoom = visit.locationType === 'zoom';
     const isStreaming = visit.locationType === 'streaming';
     const isRemote = isZoom || isStreaming;
-    const isSpecialEvent = !visit.talkNoOrType || visit.talkNoOrType === 'N/A' || visit.talkNoOrType === '';
+    const isSpecialEvent = visit.congregation === 'Événement spécial';
 
     const status = isArchived ? 'completed' : visit.status;
     const statusStyle = statusStyles[status];
@@ -399,7 +399,7 @@ const VisitRow: React.FC<Omit<UpcomingVisitsProps, 'visits' | 'onScheduleFirst' 
     const { visit, onEdit, onOpenMessageGenerator, index } = props;
     const { archivedVisits } = useData();
     const isArchived = useMemo(() => archivedVisits.some(v => v.visitId === visit.visitId), [archivedVisits, visit.visitId]);
-    const isSpecialEvent = !visit.talkNoOrType || visit.talkNoOrType === 'N/A' || visit.talkNoOrType === '';
+    const isSpecialEvent = visit.congregation === 'Événement spécial';
     const isUrgent = visit.host === UNASSIGNED_HOST && visit.locationType === 'physical';
 
     const status = isArchived ? 'completed' : visit.status;

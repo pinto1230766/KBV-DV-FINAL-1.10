@@ -19,7 +19,7 @@ const CommunicationProgress: React.FC<{ visit: Visit }> = ({ visit }) => {
     const { congregationProfile } = useData();
     
     // Vérifier si c'est un événement spécial
-    const isSpecialEvent = !visit.talkNoOrType || visit.talkNoOrType === 'N/A' || visit.talkNoOrType === '';
+    const isSpecialEvent = visit.congregation === 'Événement spécial';
     
     // Vérifier si c'est un orateur local (de la congrégation KBV DV LYON)
     const isLocalSpeaker = visit.congregation && 
@@ -154,8 +154,8 @@ const ConversationDetailView: React.FC<{ visit: Visit, onOpenMessageGenerator: M
         }
     };
 
-    // Vérifier si c'est un événement spécial (pas de numéro de discours)
-    const isSpecialEvent = !visit.talkNoOrType || visit.talkNoOrType === 'N/A' || visit.talkNoOrType === '';
+    // Vérifier si c'est un événement spécial
+    const isSpecialEvent = visit.congregation === 'Événement spécial';
     
     // Vérifier si c'est un orateur local (de la congrégation KBV DV LYON)
     const isLocalSpeaker = visit.congregation && 
