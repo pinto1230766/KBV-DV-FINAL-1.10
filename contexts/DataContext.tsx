@@ -121,7 +121,7 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): JSX.Element => {
     const { addToast } = useToast();
     const isOnline = useOnlineStatus();
 
@@ -416,8 +416,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }));
         
         analytics.track('speaker_updated', { congregation: speakerData.congregation });
-        addToast("Orateur mis à jour.", 'success');ephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v)
-        }));
+        addToast("Orateur mis à jour.", 'success');
     };
 
     const deleteSpeaker = (speakerId: string) => {

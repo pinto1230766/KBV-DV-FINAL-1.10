@@ -16,16 +16,16 @@ export const SpeakerSchema = z.object({
   isVehiculed: z.boolean().optional(),
   talkHistory: z.array(z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    talkNo: z.string().nullable(),
-    theme: z.string().nullable()
-  }))
+    talkNo: z.string().optional(),
+    theme: z.string().optional()
+  })).optional()
 });
 
 export const HostSchema = z.object({
   nom: z.string().min(1).max(100),
   telephone: z.string().max(20),
   gender: z.enum(['male', 'female', 'couple']),
-  address: z.string().max(200).optional(),
+  adresse: z.string().max(200).optional(),
   photoUrl: z.string().url().optional().or(z.literal('')),
   notes: z.string().max(1000).optional(),
   tags: z.array(z.string().max(50)).optional(),
@@ -44,16 +44,16 @@ export const VisitSchema = z.object({
   photoUrl: z.string().url().optional().or(z.literal('')),
   visitDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   visitTime: z.string().regex(/^\d{2}:\d{2}$/),
-  arrivalDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  arrivalDate: z.string().optional(),
+  departureDate: z.string().optional(),
   host: z.string().max(100),
-  accommodation: z.string().max(500),
-  meals: z.string().max(500),
+  accommodation: z.string().max(500).optional(),
+  meals: z.string().max(500).optional(),
   notes: z.string().max(1000).optional(),
   status: z.enum(['confirmed', 'pending', 'cancelled', 'completed']),
   locationType: z.enum(['physical', 'zoom', 'streaming']),
-  talkNoOrType: z.string().nullable(),
-  talkTheme: z.string().nullable(),
+  talkNoOrType: z.string().optional(),
+  talkTheme: z.string().optional(),
   attachments: z.array(z.object({
     name: z.string().max(255),
     dataUrl: z.string(),
