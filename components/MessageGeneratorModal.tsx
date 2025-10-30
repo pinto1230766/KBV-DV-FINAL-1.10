@@ -8,6 +8,7 @@ import { LanguageSelector } from './LanguageSelector';
 import { GoogleGenAI } from '@google/genai';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
+import { sanitizeHtml } from '../utils/sanitize';
 
 interface MessageGeneratorModalProps {
   isOpen: boolean;
@@ -222,9 +223,9 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
         try {
             const ai = new GoogleGenAI({ apiKey });
 
-            const speakerDetails = speaker ? `Nom: ${speaker.nom}, Congrégation: ${speaker.congregation}, Notes: ${speaker.notes || 'Aucune'}, Tags: ${(speaker.tags || []).join(', ')}` : 'Non applicable';
-            const hostDetails = host ? `Nom: ${host.nom}, Notes: ${host.notes || 'Aucune'}, Tags: ${(host.tags || []).join(', ')}` : 'Non applicable';
-            const visitDetails = visit ? `Date: ${formatFullDate(visit.visitDate)}, Hébergement: ${visit.accommodation || 'N/D'}, Repas: ${visit.meals || 'N/D'}` : 'Pas de visite associée.';
+            const speakerDetails = speaker ? `Nom: ${sanitizeHtml(speaker.nom)}, Congrégation: ${sanitizeHtml(speaker.congregation)}, Notes: ${sanitizeHtml(speaker.notes || 'Aucune')}, Tags: ${(speaker.tags || []).map(tag => sanitizeHtml(tag)).join(', ')}` : 'Non applicable';
+            const hostDetails = host ? `Nom: ${sanitizeHtml(host.nom)}, Notes: ${sanitizeHtml(host.notes || 'Aucune')}, Tags: ${(host.tags || []).map(tag => sanitizeHtml(tag)).join(', ')}` : 'Non applicable';
+            const visitDetails = visit ? `Date: ${formatFullDate(visit.visitDate)}, Hébergement: ${sanitizeHtml(visit.accommodation || 'N/D')}, Repas: ${sanitizeHtml(visit.meals || 'N/D')}` : 'Pas de visite associée.';
 
             const prompt = `
             Tu es un assistant rédigeant des messages pour un responsable d'accueil. Le ton doit être chaleureux, respectueux et fraternel.
@@ -239,7 +240,7 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
 
             **Modèle de message à améliorer :**
             """
-            ${messageText}
+            ${sanitizeHtml(messageText)}
             """
 
             **Instructions :**
