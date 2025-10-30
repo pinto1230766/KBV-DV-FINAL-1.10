@@ -102,7 +102,6 @@ const App: React.FC = () => {
     const confirm = useConfirm();
     const speakerListRef = useRef<HTMLDivElement>(null);
     const hostListRef = useRef<HTMLDivElement>(null);
-    const archiveSectionRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
         const root = window.document.documentElement;
@@ -153,10 +152,7 @@ const App: React.FC = () => {
 
     useEffect(() => {
         const root = document.documentElement;
-        if (language === 'fr') root.lang = 'fr';
-        else if (language === 'en') root.lang = 'en';
-        else if (language === 'es') root.lang = 'es';
-        else root.lang = language as string;
+        root.lang = language;
     }, [language]);
 
     const handleEnableNotifications = async () => {
@@ -336,19 +332,6 @@ const App: React.FC = () => {
 
     const handleGoToSettings = useCallback(() => {
         setActiveTab('settings');
-        // Use a timeout to ensure the settings tab has rendered before we try to scroll and expand
-        setTimeout(() => {
-            const archiveSection = archiveSectionRef.current;
-            if (archiveSection) {
-                archiveSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                
-                // Programmatically expand the section if it's not already open
-                const expandButton = archiveSection.querySelector('[role="button"]') as HTMLElement;
-                if (expandButton && expandButton.getAttribute('aria-expanded') === 'false') {
-                    expandButton.click();
-                }
-            }
-        }, 150); // A small delay is safer
     }, []);
 
     const handleGoToArchive = useCallback(() => {
@@ -472,8 +455,6 @@ const App: React.FC = () => {
                     onImport={handleImportData}
                     onResetData={handleResetData}
                     isImporting={isImporting}
-                    onLeaveFeedback={handleOpenFeedbackModal}
-                    archiveSectionRef={archiveSectionRef}
                 />;
             default:
                 return null;
