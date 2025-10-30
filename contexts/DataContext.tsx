@@ -72,9 +72,9 @@ interface DataContextType {
   addSpeaker: (speakerData: Speaker) => void;
   updateSpeaker: (speakerData: Speaker) => void;
   deleteSpeaker: (speakerId: string) => void;
-  addVisit: (visitData: Visit) => void;
-  updateVisit: (visitData: Visit) => void;
-  deleteVisit: (visitId: string) => void;
+  addVisit: (visitData: Visit) => Promise<void>;
+  updateVisit: (visitData: Visit) => Promise<void>;
+  deleteVisit: (visitId: string) => Promise<void>;
   completeVisit: (visit: Visit) => void;
   addFeedbackToVisit: (visitId: string, feedback: Feedback) => void;
   deleteArchivedVisit: (visitId: string) => void;
@@ -121,7 +121,7 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): JSX.Element => {
+export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): React.JSX.Element => {
     const { addToast } = useToast();
     const isOnline = useOnlineStatus();
 
@@ -386,14 +386,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): J
         // Validation des données
         const validation = validateData(SpeakerSchema, speakerData);
         if (!validation.success) {
-            logger.error('Données orateur invalides', undefined, { errors: validation.errors });
-            addToast('Données invalides: ' + validation.errors.join(', '), 'error');
+            const errors = 'errors' in validation ? validation.errors : ['Erreur de validation'];
+            logger.error('Données orateur invalides', undefined, { errors });
+            addToast('Données invalides: ' + errors.join(', '), 'error');
             return;
         }
 
+        const validatedSpeaker = { ...validation.data, talkHistory: validation.data.talkHistory || [] } as Speaker;
         updateAppData(prev => ({
             ...prev,
-            speakers: [...prev.speakers, validation.data].sort((a, b) => a.nom.localeCompare(b.nom))
+            speakers: [...prev.speakers, validatedSpeaker].sort((a, b) => a.nom.localeCompare(b.nom))
         }));
         
         analytics.track('speaker_added', { congregation: speakerData.congregation });
@@ -404,15 +406,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): J
         // Validation des données
         const validation = validateData(SpeakerSchema, speakerData);
         if (!validation.success) {
-            logger.error('Données orateur invalides lors de la mise à jour', undefined, { errors: validation.errors });
-            addToast('Données invalides: ' + validation.errors.join(', '), 'error');
+            const errors = 'errors' in validation ? validation.errors : ['Erreur de validation'];
+            logger.error('Données orateur invalides lors de la mise à jour', undefined, { errors });
+            addToast('Données invalides: ' + errors.join(', '), 'error');
             return;
         }
 
+        const validatedSpeaker = { ...validation.data, talkHistory: validation.data.talkHistory || [] } as Speaker;
         updateAppData(prev => ({
             ...prev,
-            speakers: prev.speakers.map(s => s.id === speakerData.id ? validation.data : s).sort((a, b) => a.nom.localeCompare(b.nom)),
-            visits: prev.visits.map(v => v.id === speakerData.id ? { ...v, nom: validation.data.nom, congregation: validation.data.congregation, telephone: validation.data.telephone, photoUrl: validation.data.photoUrl } : v)
+            speakers: prev.speakers.map(s => s.id === speakerData.id ? validatedSpeaker : s).sort((a, b) => a.nom.localeCompare(b.nom)),
+            visits: prev.visits.map(v => v.id === speakerData.id ? { ...v, nom: validatedSpeaker.nom, congregation: validatedSpeaker.congregation, telephone: validatedSpeaker.telephone, photoUrl: validatedSpeaker.photoUrl } : v)
         }));
         
         analytics.track('speaker_updated', { congregation: speakerData.congregation });
@@ -434,45 +438,48 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): J
         addToast(`"${speakerToDelete.nom}" et ses visites associées ont été supprimés.`, 'success');
     };
 
-    const addVisit = (visitData: Visit) => {
+    const addVisit = async (visitData: Visit) => {
         // Validation des données
         const validation = validateData(VisitSchema, visitData);
         if (!validation.success) {
-            logger.error('Données visite invalides', undefined, { errors: validation.errors });
-            addToast('Données invalides: ' + validation.errors.join(', '), 'error');
+            const errors = 'errors' in validation ? validation.errors : ['Erreur de validation'];
+            logger.error('Données visite invalides', undefined, { errors });
+            addToast('Données invalides: ' + errors.join(', '), 'error');
             return;
         }
 
-        const visitWithStatus = { ...validation.data, communicationStatus: {} };
+        const visitWithStatus = { ...validation.data, communicationStatus: {} } as Visit;
         updateAppData(prev => ({ ...prev, visits: [...prev.visits, visitWithStatus] }));
-        scheduleVisitNotifications(visitWithStatus);
+        await scheduleVisitNotifications(visitWithStatus);
         
         trackVisitCreated(visitWithStatus);
         addToast("Visite programmée avec succès.", 'success');
     };
     
-    const updateVisit = (visitData: Visit) => {
+    const updateVisit = async (visitData: Visit) => {
         // Validation des données
         const validation = validateData(VisitSchema, visitData);
         if (!validation.success) {
-            logger.error('Données visite invalides lors de la mise à jour', undefined, { errors: validation.errors });
-            addToast('Données invalides: ' + validation.errors.join(', '), 'error');
+            const errors = 'errors' in validation ? validation.errors : ['Erreur de validation'];
+            logger.error('Données visite invalides lors de la mise à jour', undefined, { errors });
+            addToast('Données invalides: ' + errors.join(', '), 'error');
             return;
         }
 
-        updateAppData(prev => ({ ...prev, visits: prev.visits.map(v => v.visitId === validation.data.visitId ? validation.data : v) }));
-        cancelVisitNotifications(validation.data.visitId);
-        scheduleVisitNotifications(validation.data);
+        const validatedVisit = validation.data as Visit;
+        updateAppData(prev => ({ ...prev, visits: prev.visits.map(v => v.visitId === validatedVisit.visitId ? validatedVisit : v) }));
+        await cancelVisitNotifications(validatedVisit.visitId);
+        await scheduleVisitNotifications(validatedVisit);
         
-        analytics.track('visit_updated', { locationType: validation.data.locationType });
+        analytics.track('visit_updated', { locationType: validatedVisit.locationType });
         addToast("Visite mise à jour avec succès.", 'success');
     };
     
-    const deleteVisit = (visitId: string) => {
+    const deleteVisit = async (visitId: string) => {
         const visitToDelete = appData?.visits.find(v => v.visitId === visitId);
         
         updateAppData(prev => ({ ...prev, visits: prev.visits.filter(v => v.visitId !== visitId) }));
-        cancelVisitNotifications(visitId);
+        await cancelVisitNotifications(visitId);
         
         if (visitToDelete) {
             analytics.track('visit_deleted', { locationType: visitToDelete.locationType });
@@ -566,15 +573,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): J
         // Validation des données
         const validation = validateData(HostSchema, newHost);
         if (!validation.success) {
-            logger.error('Données hôte invalides', undefined, { errors: validation.errors });
-            addToast('Données invalides: ' + validation.errors.join(', '), 'error');
+            const errors = 'errors' in validation ? validation.errors : ['Erreur de validation'];
+            logger.error('Données hôte invalides', undefined, { errors });
+            addToast('Données invalides: ' + errors.join(', '), 'error');
             return false;
         }
 
         if (validation.data.nom && !appData?.hosts.some(h => h.nom.toLowerCase() === validation.data.nom.toLowerCase())) {
-            updateAppData(prev => ({ ...prev, hosts: [...prev.hosts, validation.data].sort((a, b) => a.nom.localeCompare(b.nom)) }));
+            updateAppData(prev => ({ ...prev, hosts: [...prev.hosts, validation.data as Host].sort((a, b) => a.nom.localeCompare(b.nom)) }));
             
-            analytics.track('host_added', { hasAddress: !!validation.data.adresse });
+            analytics.track('host_added', { hasAddress: !!(validation.data as any).adresse });
             addToast("Contact d'accueil ajouté.", 'success');
             return true;
         }
