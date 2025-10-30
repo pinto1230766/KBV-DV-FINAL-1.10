@@ -22,6 +22,7 @@ class Analytics {
   private events: AnalyticsEvent[] = [];
   private readonly MAX_EVENTS = 1000;
   private readonly STORAGE_KEY = 'app_analytics';
+  private readonly API_ENDPOINT = process.env.REACT_APP_ANALYTICS_ENDPOINT || null;
 
   constructor() {
     this.loadEvents();

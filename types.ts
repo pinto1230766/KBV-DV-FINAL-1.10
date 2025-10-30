@@ -20,15 +20,15 @@ export interface CongregationProfile {
 
 export interface TalkHistory {
   date: string;
-  talkNo: string | null;
-  theme: string | null;
+  talkNo?: string;
+  theme?: string;
 }
 
 export interface Speaker {
   id: string;
   nom: string;
   congregation: string;
-  talkHistory: TalkHistory[];
+  talkHistory?: TalkHistory[];
   telephone?: string;
   notes?: string;
   photoUrl?: string;
@@ -124,8 +124,8 @@ export interface Visit {
   feedback?: Feedback;
   
   // Talk details for this visit
-  talkNoOrType: string | null;
-  talkTheme: string | null;
+  talkNoOrType?: string;
+  talkTheme?: string;
 }
 
 

@@ -5,31 +5,37 @@
 Votre application KBV Lyon utilise les fonctionnalités suivantes qui nécessitent des autorisations Android spécifiques :
 
 ### 1. **Notifications Locales** (@capacitor/local-notifications)
+
 - `POST_NOTIFICATIONS` - Pour afficher des notifications (Android 13+)
 - `SCHEDULE_EXACT_ALARM` - Pour planifier des notifications précises
 - `USE_EXACT_ALARM` - Pour utiliser des alarmes exactes
 
 ### 2. **Caméra** (@capacitor/camera)
+
 - `CAMERA` - Pour accéder à l'appareil photo
 - `READ_EXTERNAL_STORAGE` - Pour lire les photos de la galerie (Android 12 et inférieur)
 - `WRITE_EXTERNAL_STORAGE` - Pour sauvegarder les photos (Android 12 et inférieur)
 - `READ_MEDIA_IMAGES` - Pour lire les images (Android 13+)
 
 ### 3. **Géolocalisation** (@capacitor/geolocation)
+
 - `ACCESS_FINE_LOCATION` - Pour la localisation précise
 - `ACCESS_COARSE_LOCATION` - Pour la localisation approximative
 - `ACCESS_BACKGROUND_LOCATION` - Pour la localisation en arrière-plan (si nécessaire)
 
 ### 4. **Système de fichiers** (@capacitor/filesystem)
+
 - `READ_EXTERNAL_STORAGE` - Pour lire les fichiers
 - `WRITE_EXTERNAL_STORAGE` - Pour écrire les fichiers
 
 ### 5. **Internet et Réseau**
+
 - `INTERNET` - Pour les appels API (Google Gemini)
 - `ACCESS_NETWORK_STATE` - Pour vérifier l'état de la connexion
 - `ACCESS_WIFI_STATE` - Pour vérifier l'état du WiFi
 
 ### 6. **Autres autorisations système**
+
 - `VIBRATE` - Pour les vibrations lors des notifications
 - `WAKE_LOCK` - Pour maintenir l'appareil éveillé si nécessaire
 - `RECEIVE_BOOT_COMPLETED` - Pour redémarrer les notifications après le redémarrage
@@ -37,21 +43,25 @@ Votre application KBV Lyon utilise les fonctionnalités suivantes qui nécessite
 ## Étapes d'installation
 
 ### 1. Installer les dépendances
+
 ```bash
 npm install
 ```
 
 ### 2. Construire l'application web
+
 ```bash
 npm run build
 ```
 
 ### 3. Ajouter la plateforme Android
+
 ```bash
 npx cap add android
 ```
 
 ### 4. Synchroniser les fichiers
+
 ```bash
 npx cap sync android
 ```
@@ -118,6 +128,7 @@ android {
 ```
 
 ### 7. Ouvrir le projet dans Android Studio
+
 ```bash
 npx cap open android
 ```
@@ -125,6 +136,7 @@ npx cap open android
 ### 8. Tester sur votre Samsung Galaxy Tab S10 Ultra
 
 #### Option A : Via USB
+
 1. Activez le mode développeur sur votre tablette :
    - Allez dans **Paramètres** > **À propos de la tablette**
    - Appuyez 7 fois sur **Numéro de build**
@@ -133,13 +145,16 @@ npx cap open android
 4. Dans Android Studio, cliquez sur **Run** (▶️)
 
 #### Option B : Via WiFi (ADB sans fil)
+
 1. Assurez-vous que votre PC et votre tablette sont sur le même réseau WiFi
 2. Sur la tablette, activez **Débogage sans fil** dans **Options de développeur**
 3. Notez l'adresse IP et le port affichés
 4. Sur votre PC, exécutez :
+
    ```bash
    adb connect [IP_TABLETTE]:[PORT]
    ```
+
 5. Dans Android Studio, sélectionnez votre appareil et cliquez sur **Run**
 
 ## Scripts npm disponibles
@@ -164,19 +179,24 @@ npm run android
 ## Résolution des problèmes courants
 
 ### Erreur : "SDK location not found"
+
 Définissez la variable d'environnement `ANDROID_HOME` pointant vers votre SDK Android.
 
 ### Erreur : "Execution failed for task ':app:processDebugManifest'"
+
 Vérifiez que toutes les autorisations dans AndroidManifest.xml sont correctement formatées.
 
 ### L'application se ferme au démarrage
+
 Vérifiez les logs dans Android Studio (Logcat) pour identifier l'erreur spécifique.
 
 ### Les notifications ne fonctionnent pas
+
 1. Vérifiez que l'autorisation POST_NOTIFICATIONS est accordée
 2. Sur Android 13+, l'utilisateur doit accepter manuellement les notifications
 
 ### La caméra ne s'ouvre pas
+
 1. Vérifiez que l'autorisation CAMERA est accordée
 2. Testez sur un appareil physique (l'émulateur peut ne pas avoir de caméra)
 
@@ -193,6 +213,7 @@ Avant de publier sur le Google Play Store :
 ## Support
 
 Pour plus d'informations sur Capacitor et Android :
+
 - [Documentation Capacitor](https://capacitorjs.com/docs)
 - [Documentation Android](https://developer.android.com/guide)
 - [Capacitor Android Configuration](https://capacitorjs.com/docs/android/configuration)

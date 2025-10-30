@@ -1,5 +1,6 @@
-const fs = require('fs');
-const path = require('path');
+// Chargement paresseux des modules
+const getFS = () => require('fs');
+const getPath = () => require('path');
 
 // Liste des fichiers Markdown à corriger
 const files = [
@@ -48,6 +49,8 @@ function fixMarkdown(content) {
 
 // Corriger tous les fichiers
 files.forEach(file => {
+  const fs = getFS();
+  const path = getPath();
   const filePath = path.join(__dirname, file);
   
   if (fs.existsSync(filePath)) {

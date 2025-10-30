@@ -107,6 +107,8 @@ interface DataContextType {
   syncWithGoogleSheet: () => Promise<void>;
   apiKey: string;
   updateApiKey: (key: string) => void;
+  googleSheetId: string;
+  updateGoogleSheetId: (id: string) => void;
   sheetTabs: Array<{ name: string; gid: string }>;
   addSheetTab: (name: string, gid: string) => void;
   removeSheetTab: (gid: string) => void;
@@ -132,6 +134,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
     const [sessionPassword, setSessionPassword] = useState<string | null>(null);
     const [storedApiKey, setStoredApiKey] = useLocalStorage<string>('gemini-api-key', '');
     const apiKey = useMemo(() => (typeof process !== 'undefined' && process.env?.API_KEY) ? process.env.API_KEY : storedApiKey, [storedApiKey]);
+
+    const [storedGoogleSheetId, setStoredGoogleSheetId] = useLocalStorage<string>('google-sheet-id', '1drIzPPi6AohCroSyUkF1UmMFxuEtMACBF4XATDjBOcg');
+    const googleSheetId = useMemo(() => (typeof process !== 'undefined' && process.env?.GOOGLE_SHEET_ID) ? process.env.GOOGLE_SHEET_ID : storedGoogleSheetId, [storedGoogleSheetId]);
     
     const [sheetTabs, setSheetTabs] = useLocalStorage<Array<{ name: string; gid: string }>>('google-sheet-tabs', [
         { name: 'MAIU 2026', gid: '1817293373' },
@@ -141,6 +146,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
     const updateApiKey = (key: string) => {
         setStoredApiKey(key);
         addToast("Clé API enregistrée.", 'success');
+    };
+
+    const updateGoogleSheetId = (id: string) => {
+        setStoredGoogleSheetId(id);
+        addToast("ID Google Sheet enregistré.", 'success');
     };
     
     const addSheetTab = (name: string, gid: string) => {
@@ -171,6 +181,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
         const appleTouchIcon = document.getElementById('apple-touch-icon') as HTMLLinkElement | null;
 
         if (newUrl) {
+            // Validation de sécurité pour prévenir XSS
+            try {
+                const url = new URL(newUrl);
+                // Autoriser seulement data: URLs et HTTPS
+                if (!['data:', 'https:'].includes(url.protocol)) {
+                    addToast("URL non autorisée. Utilisez une URL HTTPS ou data:.", 'error');
+                    return;
+                }
+                // Limiter la taille pour éviter les attaques DoS
+                if (newUrl.length > 100000) {
+                    addToast("URL trop longue.", 'error');
+                    return;
+                }
+            } catch {
+                addToast("URL invalide.", 'error');
+                return;
+            }
+            
             localStorage.setItem('customAppLogo', newUrl);
             setLogoUrl(newUrl);
             if (favicon) favicon.href = newUrl;
@@ -387,7 +415,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
         const validation = validateData(SpeakerSchema, speakerData);
         if (!validation.success) {
             const errors = 'errors' in validation ? validation.errors : ['Erreur de validation'];
-            logger.error('Données orateur invalides', undefined, { errors });
+            logger.error('Données orateur invalides', undefined, { errors: errors.map(e => String(e).replace(/[\r\n]/g, ' ')) });
             addToast('Données invalides: ' + errors.join(', '), 'error');
             return;
         }
@@ -407,7 +435,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
         const validation = validateData(SpeakerSchema, speakerData);
         if (!validation.success) {
             const errors = 'errors' in validation ? validation.errors : ['Erreur de validation'];
-            logger.error('Données orateur invalides lors de la mise à jour', undefined, { errors });
+            logger.error('Données orateur invalides lors de la mise à jour', undefined, { errors: errors.map(e => String(e).replace(/[\r\n]/g, ' ')) });
             addToast('Données invalides: ' + errors.join(', '), 'error');
             return;
         }
@@ -434,7 +462,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
         }));
         
         analytics.track('speaker_deleted', { congregation: speakerToDelete.congregation });
-        logger.info('Orateur supprimé', { speakerId, speakerName: speakerToDelete.nom });
+        logger.info('Orateur supprimé', { speakerId: String(speakerId).replace(/[\r\n]/g, ' '), speakerName: String(speakerToDelete.nom).replace(/[\r\n]/g, ' ') });
         addToast(`"${speakerToDelete.nom}" et ses visites associées ont été supprimés.`, 'success');
     };
 
@@ -443,7 +471,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
         const validation = validateData(VisitSchema, visitData);
         if (!validation.success) {
             const errors = 'errors' in validation ? validation.errors : ['Erreur de validation'];
-            logger.error('Données visite invalides', undefined, { errors });
+            logger.error('Données visite invalides', undefined, { errors: errors.map(e => String(e).replace(/[\r\n]/g, ' ')) });
             addToast('Données invalides: ' + errors.join(', '), 'error');
             return;
         }
@@ -452,7 +480,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
         updateAppData(prev => ({ ...prev, visits: [...prev.visits, visitWithStatus] }));
         await scheduleVisitNotifications(visitWithStatus);
         
-        trackVisitCreated(visitWithStatus);
+        trackVisitCreated(visitWithStatus.locationType || 'physical');
         addToast("Visite programmée avec succès.", 'success');
     };
     
@@ -461,7 +489,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
         const validation = validateData(VisitSchema, visitData);
         if (!validation.success) {
             const errors = 'errors' in validation ? validation.errors : ['Erreur de validation'];
-            logger.error('Données visite invalides lors de la mise à jour', undefined, { errors });
+            logger.error('Données visite invalides lors de la mise à jour', undefined, { errors: errors.map(e => String(e).replace(/[\r\n]/g, ' ')) });
             addToast('Données invalides: ' + errors.join(', '), 'error');
             return;
         }
@@ -483,7 +511,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
         
         if (visitToDelete) {
             analytics.track('visit_deleted', { locationType: visitToDelete.locationType });
-            logger.info('Visite supprimée', { visitId, speakerName: visitToDelete.nom });
+            logger.info('Visite supprimée', { visitId: String(visitId).replace(/[\r\n]/g, ' '), speakerName: String(visitToDelete.nom).replace(/[\r\n]/g, ' ') });
         }
         addToast("Visite supprimée.", 'success');
     };
@@ -514,7 +542,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
                 locationType: visit.locationType,
                 hasFeedback: !!visit.feedback 
             });
-            logger.info('Visite terminée', { visitId: visit.visitId, speakerName: visit.nom });
+            logger.info('Visite terminée', { visitId: String(visit.visitId).replace(/[\r\n]/g, ' '), speakerName: String(visit.nom).replace(/[\r\n]/g, ' ') });
             
             return {
                 ...prev,
@@ -574,7 +602,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
         const validation = validateData(HostSchema, newHost);
         if (!validation.success) {
             const errors = 'errors' in validation ? validation.errors : ['Erreur de validation'];
-            logger.error('Données hôte invalides', undefined, { errors });
+            logger.error('Données hôte invalides', undefined, { errors: errors.map(e => String(e).replace(/[\r\n]/g, ' ')) });
             addToast('Données invalides: ' + errors.join(', '), 'error');
             return false;
         }
@@ -632,7 +660,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
                     if (newStatus === 'confirmed' && v.status === 'pending') confirmedToast = true;
                     
                     analytics.track('communication_logged', { messageType, role, visitId });
-                    logger.info('Communication enregistrée', { visitId, messageType, role, speakerName: v.nom });
+                    logger.info('Communication enregistrée', { visitId: String(visitId).replace(/[\r\n]/g, ' '), messageType: String(messageType).replace(/[\r\n]/g, ' '), role: String(role).replace(/[\r\n]/g, ' '), speakerName: String(v.nom).replace(/[\r\n]/g, ' ') });
                     
                     return { ...v, communicationStatus: updatedStatus, status: newStatus };
                 }
@@ -1096,9 +1124,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
     
         setAppData(newAppData);
         logger.info('Données importées avec succès', { 
-            finalSpeakers: finalSpeakers.length,
-            finalVisits: finalVisits.length,
-            finalHosts: finalHosts.length
+            finalSpeakers: Number(finalSpeakers.length),
+            finalVisits: Number(finalVisits.length),
+            finalHosts: Number(finalHosts.length)
         });
         addToast("Les données ont été fusionnées intelligemment pour éviter les doublons !", 'success');
     };
@@ -1165,7 +1193,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
     const syncWithGoogleSheet = async (): Promise<void> => {
         if (!appData) return;
         
-        const googleSheetId = '1drIzPPi6AohCroSyUkF1UmMFxuEtMACBF4XATDjBOcg';
         const sheetsToSync = sheetTabs;
         
         // Filtrer uniquement les dates >= 2026
@@ -1458,7 +1485,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
                 primarySpeakerId,
                 mergedCount: duplicateIds.length
             });
-            logger.info('Orateurs fusionnés', { primarySpeakerId, duplicateIds });
+            logger.info('Orateurs fusionnés', { primarySpeakerId: String(primarySpeakerId).replace(/[\r\n]/g, ' '), duplicateIds: duplicateIds.map(id => String(id).replace(/[\r\n]/g, ' ')) });
     
             return {
                 ...prev,
@@ -1492,7 +1519,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
                 primaryHostName,
                 mergedCount: duplicateNames.length
             });
-            logger.info('Contacts d\'accueil fusionnés', { primaryHostName, duplicateNames });
+            logger.info('Contacts d\'accueil fusionnés', { primaryHostName: String(primaryHostName).replace(/[\r\n]/g, ' '), duplicateNames: duplicateNames.map(name => String(name).replace(/[\r\n]/g, ' ')) });
     
             return {
                 ...prev,
@@ -1560,6 +1587,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
         saveFilterView, deleteFilterView,
         apiKey,
         updateApiKey,
+        googleSheetId,
+        updateGoogleSheetId,
         sheetTabs,
         addSheetTab,
         removeSheetTab,

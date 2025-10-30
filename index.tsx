@@ -13,9 +13,13 @@ if ('serviceWorker' in navigator) {
     // Construct the full URL to sw.js to ensure it's on the correct origin
     const swUrl = new URL('/sw.js', window.location.origin).href;
     navigator.serviceWorker.register(swUrl).then(registration => {
-      console.log('SW registered: ', registration);
+      console.log('SW registered successfully');
     }).catch(registrationError => {
-      console.log('SW registration failed: ', registrationError);
+      // Sanitiser l'erreur pour prévenir l'injection de log
+      const errorMessage = registrationError instanceof Error 
+        ? registrationError.message.replace(/[\r\n\t]/g, ' ').substring(0, 200)
+        : 'Unknown error';
+      console.log('SW registration failed:', errorMessage);
     });
   });
 }

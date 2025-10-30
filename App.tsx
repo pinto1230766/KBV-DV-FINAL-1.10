@@ -56,6 +56,29 @@ const App: React.FC = () => {
         };
     }, []);
 
+    const handleAddSpeaker = useCallback(() => {
+        setSelectedSpeaker(null);
+        setIsSpeakerDetailsModalOpen(true);
+    }, []);
+
+    const handleAddHost = useCallback(() => {
+        setSelectedHost(null);
+        setIsHostDetailsModalOpen(true);
+    }, []);
+
+    const handleScheduleFromShortcut = useCallback(() => {
+        setActiveTab('planning');
+        setIsSpeakerListExpanded(true);
+        // Use timeout to ensure the list has rendered before scrolling
+        setTimeout(() => {
+            speakerListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }, []);
+
+    const toggleTheme = () => {
+       setIsDarkMode(prev => !prev);
+    };
+
     // Configuration des raccourcis clavier
     const keyboardShortcuts = useMemo(() => getAppShortcuts({
         openSearch: () => setIsSearchModalOpen(true),
@@ -243,10 +266,6 @@ const App: React.FC = () => {
     }, [visitForThankYou, handleOpenMessageGenerator]);
 
 
-    const toggleTheme = () => {
-       setIsDarkMode(prev => !prev);
-    };
-
     const handleScheduleVisit = useCallback((speaker: Speaker) => {
         setSpeakerToSchedule(speaker);
         setEditingVisit(null);
@@ -279,21 +298,11 @@ const App: React.FC = () => {
             addToast(`${visitsToArchive.length} visite(s) archivée(s) avec succès.`, 'success');
         }
     }, [confirm, completeVisit, addToast]);
-    
-    const handleAddSpeaker = useCallback(() => {
-        setSelectedSpeaker(null);
-        setIsSpeakerDetailsModalOpen(true);
-    }, []);
 
     const handleEditSpeaker = (speaker: Speaker) => {
         setSelectedSpeaker(speaker);
         setIsSpeakerDetailsModalOpen(true);
     };
-    
-    const handleAddHost = useCallback(() => {
-        setSelectedHost(null);
-        setIsHostDetailsModalOpen(true);
-    }, []);
 
     const handleEditHost = (host: Host) => {
         setSelectedHost(host);
@@ -337,15 +346,6 @@ const App: React.FC = () => {
             resetData();
         }
     }, [confirm, resetData]);
-
-    const handleScheduleFromShortcut = useCallback(() => {
-        setActiveTab('planning');
-        setIsSpeakerListExpanded(true);
-        // Use timeout to ensure the list has rendered before scrolling
-        setTimeout(() => {
-            speakerListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-    }, []);
     
     // --- Navigation handlers from Dashboard ---
     const handleGoToSpeakers = useCallback(() => {
@@ -664,7 +664,6 @@ const App: React.FC = () => {
                     />
                 </PrintPreviewModal>
             )}
-            </div>
         </ErrorBoundary>
     );
 };

@@ -19,6 +19,18 @@ interface HostRequestModalProps {
 }
 
 export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onClose, visits, language, onLanguageChange }) => {
+    const sanitizeInput = (input: string): string => {
+        return input.replace(/[<>"'&]/g, (match) => {
+            const entities: Record<string, string> = {
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#x27;',
+                '&': '&amp;'
+            };
+            return entities[match] || match;
+        });
+    };
     const { congregationProfile, apiKey, customHostRequestTemplates, saveCustomHostRequestTemplate, deleteCustomHostRequestTemplate } = useData();
     const { addToast } = useToast();
     const [message, setMessage] = useState('');
@@ -44,8 +56,8 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
         ).join('\n');
         
         let generated = templateText.replace('{visitList}', visitList);
-        generated = generated.replace(/{hospitalityOverseer}/g, congregationProfile.hospitalityOverseer || '');
-        generated = generated.replace(/{hospitalityOverseerPhone}/g, congregationProfile.hospitalityOverseerPhone || '');
+        generated = generated.replace(/{hospitalityOverseer}/g, this.sanitizeInput(congregationProfile.hospitalityOverseer || ''));
+        generated = generated.replace(/{hospitalityOverseerPhone}/g, this.sanitizeInput(congregationProfile.hospitalityOverseerPhone || ''));
 
         return generated;
     }, [visits, congregationProfile]);

@@ -2,6 +2,15 @@ import { useEffect } from 'react';
 import { Visit } from '../types';
 import { LocalNotifications, LocalNotificationSchema } from '@capacitor/local-notifications';
 
+// Fonction de sanitisation pour prévenir XSS
+const sanitizeText = (text: string): string => {
+    return text
+        .replace(/[<>"'&]/g, '') // Supprimer les caractères dangereux
+        .replace(/[\r\n\t]/g, ' ') // Remplacer les caractères de contrôle
+        .trim()
+        .substring(0, 100); // Limiter la longueur
+};
+
 const formatDate = (dateString: string) => {
     // Appending 'T00:00:00' ensures the date string is parsed in the local timezone, not as UTC midnight.
     // This prevents off-by-one day errors in different timezones.
@@ -57,10 +66,15 @@ const useVisitNotifications = (
                 futureVisits.forEach(visit => {
                     const visitDate = new Date(visit.visitDate + 'T00:00:00');
                     
+                    // Sanitiser les données utilisateur
+                    const safeName = sanitizeText(visit.nom);
+                    const safeHost = sanitizeText(visit.host);
+                    const safeTime = sanitizeText(visit.visitTime);
+                    
                     const reminderSetups = [
-                        { days: 7, title: `Rappel J-7: Visite de ${visit.nom}`, body: `Le ${formatDate(visit.visitDate)} à ${visit.visitTime}.\nAccueil par : ${visit.host}`},
-                        { days: 2, title: `Rappel J-2: Visite de ${visit.nom}`, body: `Dans 2 jours: ${formatDate(visit.visitDate)}.\nN'oubliez pas les derniers détails avec ${visit.host}.`},
-                        { days: 1, title: `Rappel J-1: Visite de ${visit.nom}`, body: `Demain à ${visit.visitTime}.\nNous avons hâte de l'accueillir !`},
+                        { days: 7, title: `Rappel J-7: Visite de ${safeName}`, body: `Le ${formatDate(visit.visitDate)} à ${safeTime}.\nAccueil par : ${safeHost}`},
+                        { days: 2, title: `Rappel J-2: Visite de ${safeName}`, body: `Dans 2 jours: ${formatDate(visit.visitDate)}.\nN'oubliez pas les derniers détails avec ${safeHost}.`},
+                        { days: 1, title: `Rappel J-1: Visite de ${safeName}`, body: `Demain à ${safeTime}.\nNous avons hâte de l'accueillir !`},
                     ];
 
                     reminderSetups.forEach(setup => {

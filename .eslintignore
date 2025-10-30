@@ -1,0 +1,23 @@
+# Fichiers de build et assets générés
+android/
+dist/
+build/
+node_modules/
+
+# Fichiers de configuration
+*.config.js
+*.config.ts
+vite.config.*
+capacitor.config.*
+
+# Service Worker
+sw.js
+
+# Fichiers temporaires
+*.tmp
+*.temp
+.cache/
+
+# Documentation
+*.md
+docs/

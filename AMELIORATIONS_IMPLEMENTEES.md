@@ -14,9 +14,11 @@ Suite à l'analyse approfondie du code, les améliorations prioritaires suivante
 ## 📦 Nouveaux Fichiers Créés
 
 ### 1. **contexts/ModalContext.tsx** ✅
+
 **Objectif** : Optimiser les re-renders en centralisant la gestion des modals
 
 **Avant** :
+
 ```typescript
 // 15+ states dans App.tsx provoquant des re-renders
 const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -25,6 +27,7 @@ const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
 ```
 
 **Après** :
+
 ```typescript
 // Un seul reducer pour tous les modals
 const { state, dispatch } = useModal();
@@ -32,6 +35,7 @@ dispatch({ type: 'OPEN_SCHEDULE', visit });
 ```
 
 **Impact** :
+
 - ⚡ **Réduction de 80%** des re-renders inutiles
 - 🎯 État centralisé et prévisible
 - 🔧 Plus facile à maintenir
@@ -39,15 +43,18 @@ dispatch({ type: 'OPEN_SCHEDULE', visit });
 ---
 
 ### 2. **components/ErrorBoundary.tsx** ✅
+
 **Objectif** : Capturer les erreurs React et éviter les crashs
 
 **Fonctionnalités** :
+
 - Capture toutes les erreurs React non gérées
 - Affiche une interface utilisateur élégante en cas d'erreur
 - Permet de recharger l'application facilement
 - Log les erreurs pour le débogage
 
 **Utilisation** :
+
 ```typescript
 <ErrorBoundary>
   <App />
@@ -55,6 +62,7 @@ dispatch({ type: 'OPEN_SCHEDULE', visit });
 ```
 
 **Impact** :
+
 - 🛡️ Protection contre les crashs complets
 - 👤 Meilleure expérience utilisateur
 - 🐛 Facilite le débogage
@@ -62,14 +70,17 @@ dispatch({ type: 'OPEN_SCHEDULE', visit });
 ---
 
 ### 3. **utils/storage.ts** ✅
+
 **Objectif** : Surveiller et gérer la taille du stockage
 
 **Fonctions** :
+
 - `estimateStorageSize(data)` - Calcule la taille des données
 - `checkStorageWarning(data)` - Vérifie si on approche de la limite
 - `formatSize(bytes)` - Formate la taille en unités lisibles
 
 **Utilisation** :
+
 ```typescript
 const { shouldWarn, percentage, size } = checkStorageWarning(appData);
 if (shouldWarn) {
@@ -78,6 +89,7 @@ if (shouldWarn) {
 ```
 
 **Impact** :
+
 - 📊 Surveillance proactive du stockage
 - ⚠️ Avertissements avant saturation
 - 🗑️ Aide l'utilisateur à gérer l'espace
@@ -85,9 +97,11 @@ if (shouldWarn) {
 ---
 
 ### 4. **hooks/useAsyncAction.ts** ✅
+
 **Objectif** : Simplifier la gestion des actions asynchrones
 
 **Avant** :
+
 ```typescript
 // Code répété dans chaque composant
 const [isLoading, setIsLoading] = useState(false);
@@ -105,6 +119,7 @@ const handleAction = async () => {
 ```
 
 **Après** :
+
 ```typescript
 const { isLoading, execute } = useAsyncAction();
 await execute(
@@ -114,6 +129,7 @@ await execute(
 ```
 
 **Impact** :
+
 - 🔄 Réduction de la duplication de code
 - 🎯 Gestion cohérente des erreurs
 - 📝 Code plus lisible
@@ -199,6 +215,7 @@ useEffect(() => {
 ### Phase 2 - Accessibilité (P2)
 
 1. **Ajouter des ARIA labels**
+
    ```typescript
    <button 
      aria-label="Fermer la fenêtre"
@@ -215,6 +232,7 @@ useEffect(() => {
 ### Phase 3 - Tests (P2)
 
 1. **Installer Vitest**
+
    ```bash
    npm install -D vitest @testing-library/react @testing-library/jest-dom
    ```
@@ -227,6 +245,7 @@ useEffect(() => {
 ### Phase 4 - Optimisations (P3)
 
 1. **Mémoïser les composants lourds**
+
    ```typescript
    export const UpcomingVisits = React.memo(({ visits, onEdit }) => {
      // ...
@@ -234,6 +253,7 @@ useEffect(() => {
    ```
 
 2. **Implémenter le code splitting**
+
    ```typescript
    const Dashboard = React.lazy(() => import('./components/Dashboard'));
    ```

@@ -239,6 +239,8 @@ Si vous avez des problèmes :
 
 ---
 
-*Guide créé : 2025-10-09 11:44*  
-*Objectif : Installer Java 21*  
-*Méthode recommandée : Via Android Studio*
+## 📝 Informations du Guide
+
+- **Guide créé** : 2025-10-09 11:44
+- **Objectif** : Installer Java 21
+- **Méthode recommandée** : Via Android Studio

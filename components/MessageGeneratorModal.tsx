@@ -223,9 +223,24 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
         try {
             const ai = new GoogleGenAI({ apiKey });
 
-            const speakerDetails = speaker ? `Nom: ${sanitizeHtml(speaker.nom)}, Congrégation: ${sanitizeHtml(speaker.congregation)}, Notes: ${sanitizeHtml(speaker.notes || 'Aucune')}, Tags: ${(speaker.tags || []).map(tag => sanitizeHtml(tag)).join(', ')}` : 'Non applicable';
-            const hostDetails = host ? `Nom: ${sanitizeHtml(host.nom)}, Notes: ${sanitizeHtml(host.notes || 'Aucune')}, Tags: ${(host.tags || []).map(tag => sanitizeHtml(tag)).join(', ')}` : 'Non applicable';
-            const visitDetails = visit ? `Date: ${formatFullDate(visit.visitDate)}, Hébergement: ${sanitizeHtml(visit.accommodation || 'N/D')}, Repas: ${sanitizeHtml(visit.meals || 'N/D')}` : 'Pas de visite associée.';
+            const sanitizeForPrompt = (text: string): string => {
+                return text.replace(/[<>"'&\r\n]/g, (match) => {
+                    const entities: Record<string, string> = {
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#x27;',
+                        '&': '&amp;',
+                        '\r': ' ',
+                        '\n': ' '
+                    };
+                    return entities[match] || match;
+                });
+            };
+
+            const speakerDetails = speaker ? `Nom: ${sanitizeForPrompt(speaker.nom)}, Congrégation: ${sanitizeForPrompt(speaker.congregation)}, Notes: ${sanitizeForPrompt(speaker.notes || 'Aucune')}, Tags: ${(speaker.tags || []).map(tag => sanitizeForPrompt(tag)).join(', ')}` : 'Non applicable';
+            const hostDetails = host ? `Nom: ${sanitizeForPrompt(host.nom)}, Notes: ${sanitizeForPrompt(host.notes || 'Aucune')}, Tags: ${(host.tags || []).map(tag => sanitizeForPrompt(tag)).join(', ')}` : 'Non applicable';
+            const visitDetails = visit ? `Date: ${formatFullDate(visit.visitDate)}, Hébergement: ${sanitizeForPrompt(visit.accommodation || 'N/D')}, Repas: ${sanitizeForPrompt(visit.meals || 'N/D')}` : 'Pas de visite associée.';
 
             const prompt = `
             Tu es un assistant rédigeant des messages pour un responsable d'accueil. Le ton doit être chaleureux, respectueux et fraternel.
@@ -240,7 +255,7 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
 
             **Modèle de message à améliorer :**
             """
-            ${sanitizeHtml(messageText)}
+            ${sanitizeForPrompt(messageText)}
             """
 
             **Instructions :**

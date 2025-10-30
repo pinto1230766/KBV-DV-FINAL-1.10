@@ -172,6 +172,8 @@ gradlew -q javaToolchains
 
 ---
 
-*Solution créée : 2025-10-09 11:43*  
-*Erreur : Unsupported class file major version 69*  
-*Solution : Configurer JDK 17 ou 21 dans Android Studio*
+## 📋 Informations de la Solution
+
+- **Solution créée** : 2025-10-09 11:43
+- **Erreur** : Unsupported class file major version 69
+- **Solution** : Configurer JDK 17 ou 21 dans Android Studio

@@ -112,7 +112,7 @@ const speakersWithTalksRaw: SpeakerRaw[] = [
     },
     {
         "id": "57",
-        "nom": "Jeje ou JP",
+        "nom": "Jean-Pierre",
         "congregation": "",
         "talkHistory": [
             {
@@ -236,7 +236,7 @@ const speakersWithTalksRaw: SpeakerRaw[] = [
             }
         ],
         "telephone": "33690123456",
-        "notes": "Allergique aux chats.",
+        "notes": "Allergie aux chats.",
         "tags": ["allergie-chat"],
         "isVehiculed": false
     },

@@ -1,0 +1,27 @@
+# Fichiers de build et assets générés
+android/app/src/main/assets/public/assets/*.js
+android/app/src/main/assets/public/assets/*.css
+dist/
+build/
+node_modules/
+
+# Fichiers de configuration
+*.config.js
+*.config.ts
+vite.config.*
+capacitor.config.*
+
+# Fichiers temporaires
+*.tmp
+*.temp
+.cache/
+
+# Fichiers de test
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
+
+# Documentation
+*.md
+docs/

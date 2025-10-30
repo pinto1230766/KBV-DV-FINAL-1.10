@@ -1,7 +1,20 @@
 export async function resizeImage(file: File, maxWidth: number = 800, maxHeight: number = 800): Promise<string> {
+    // Validation du type de fichier pour prévenir XSS
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        throw new Error('Type de fichier non autorisé');
+    }
+    
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
+            const result = e.target?.result;
+            // Validation du résultat
+            if (typeof result !== 'string' || !result.startsWith('data:image/')) {
+                reject(new Error('Contenu de fichier invalide'));
+                return;
+            }
+            
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
@@ -27,7 +40,7 @@ export async function resizeImage(file: File, maxWidth: number = 800, maxHeight:
                 resolve(canvas.toDataURL('image/jpeg', 0.8));
             };
             img.onerror = reject;
-            img.src = e.target?.result as string;
+            img.src = result;
         };
         reader.onerror = reject;
         reader.readAsDataURL(file);

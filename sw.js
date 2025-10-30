@@ -104,6 +104,36 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Liste des domaines autorisés pour prévenir SSRF
+const ALLOWED_ORIGINS = [
+  self.location.origin,
+  'https://fonts.googleapis.com',
+  'https://cdn.tailwindcss.com'
+];
+
+// Fonction de validation d'URL renforcée
+function isUrlAllowed(url) {
+  try {
+    const urlObj = new URL(url);
+    // Bloquer les protocoles dangereux
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      return false;
+    }
+    // Bloquer les IPs privées et localhost
+    const hostname = urlObj.hostname.toLowerCase();
+    if (hostname === 'localhost' || 
+        hostname.startsWith('127.') ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)) {
+      return false;
+    }
+    return ALLOWED_ORIGINS.some(origin => urlObj.origin === origin);
+  } catch {
+    return false;
+  }
+}
+
 // Fetch event with network-first strategy for app files
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') {
@@ -111,12 +141,18 @@ self.addEventListener('fetch', event => {
   }
 
   const url = new URL(event.request.url);
+  
+  // Validation SSRF - bloquer les URLs non autorisées
+  if (!isUrlAllowed(event.request.url)) {
+    return;
+  }
 
   // Use network-first for app's own resources to ensure freshness
   if (url.origin === self.location.origin && APP_SHELL_URLS.includes(url.pathname)) {
     event.respondWith(
-      fetch(event.request)
-        .then(networkResponse => {
+      // Validation finale avant fetch
+      isUrlAllowed(event.request.url) ? 
+        fetch(event.request).then(networkResponse => {
           if (networkResponse.ok) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME)
@@ -149,7 +185,14 @@ self.addEventListener('fetch', event => {
           if (response) {
             return response;
           }
-          return fetch(event.request).then(networkResponse => {
+          // Validation supplémentaire avant fetch
+          if (!isUrlAllowed(event.request.url)) {
+            return new Response('URL non autorisée', { 
+              status: 403, 
+              statusText: 'Forbidden' 
+            });
+          }
+          return isUrlAllowed(event.request.url) ? fetch(event.request).then(networkResponse => {
             if (networkResponse.ok) {
               const responseToCache = networkResponse.clone();
               caches.open(CACHE_NAME)
@@ -158,7 +201,7 @@ self.addEventListener('fetch', event => {
                 });
             }
             return networkResponse;
-          });
+          }) : new Response('URL non autorisée', { status: 403 });
         })
     );
   }

@@ -422,21 +422,29 @@ const GoogleSheetsContent: React.FC<{ onSync: () => Promise<void> }> = ({ onSync
 };
 
 const SecurityContent: React.FC = () => {
-    const { isEncrypted, enableEncryption, disableEncryption, apiKey, updateApiKey } = useData();
+    const { isEncrypted, enableEncryption, disableEncryption, apiKey, updateApiKey, googleSheetId, updateGoogleSheetId } = useData();
     const [isPromptOpen, setIsPromptOpen] = useState(false);
     const [promptMode, setPromptMode] = useState<'setup' | 'disable'>('setup');
     const [keyInput, setKeyInput] = useState('');
     const [showKey, setShowKey] = useState(false);
+    const [sheetIdInput, setSheetIdInput] = useState('');
 
     const isEnvKeySet = useMemo(() => (typeof process !== 'undefined' && !!process.env?.API_KEY), []);
+    const isEnvSheetIdSet = useMemo(() => (typeof process !== 'undefined' && !!process.env?.GOOGLE_SHEET_ID), []);
 
     useEffect(() => {
         setKeyInput(apiKey);
-    }, [apiKey]);
+        setSheetIdInput(googleSheetId);
+    }, [apiKey, googleSheetId]);
 
     const handleKeySave = () => {
         if (isEnvKeySet) return;
         updateApiKey(keyInput);
+    };
+
+    const handleSheetIdSave = () => {
+        if (isEnvSheetIdSet) return;
+        updateGoogleSheetId(sheetIdInput);
     };
 
     const handleEnableClick = () => {
@@ -515,11 +523,43 @@ const SecurityContent: React.FC = () => {
                     </button>
                 </div>
                  {isEnvKeySet && (
-                    <div className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                        Note: Une clé API est définie dans l'environnement et sera utilisée en priorité. Elle ne peut pas être modifiée ici.
-                    </div>
-                )}
-            </div>
+                   <div className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                       Note: Une clé API est définie dans l'environnement et sera utilisée en priorité. Elle ne peut pas être modifiée ici.
+                   </div>
+               )}
+           </div>
+
+           <div className="pt-4 mt-4 border-t border-border-light dark:border-border-dark">
+               <h3 className="text-lg font-semibold text-text-main dark:text-text-main-dark mb-2">ID Google Sheet</h3>
+               <p className="text-sm text-text-muted dark:text-text-muted-dark mb-4">
+                   L'ID du Google Sheet utilisé pour la synchronisation des visites. Vous pouvez le trouver dans l'URL du sheet (après <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">/d/</code> et avant <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">/edit</code>).
+               </p>
+               <div className="flex flex-col sm:flex-row gap-2 items-start">
+                   <div className="relative flex-grow w-full">
+                       <input
+                           type="text"
+                           value={sheetIdInput}
+                           onChange={(e) => setSheetIdInput(e.target.value)}
+                           placeholder={isEnvSheetIdSet ? "ID défini par l'environnement" : "Collez l'ID du Google Sheet ici"}
+                           className="w-full pl-3 pr-3 py-2 border border-border-light dark:border-border-dark rounded-md focus:ring-secondary focus:border-secondary bg-card-light dark:bg-primary-light/10 disabled:opacity-50"
+                           disabled={isEnvSheetIdSet}
+                       />
+                   </div>
+                   <button
+                       onClick={handleSheetIdSave}
+                       disabled={isEnvSheetIdSet}
+                       className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                   >
+                       <SaveIcon className="w-5 h-5"/>
+                       Enregistrer
+                   </button>
+               </div>
+               {isEnvSheetIdSet && (
+                   <div className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                       Note: Un ID Google Sheet est défini dans l'environnement et sera utilisé en priorité. Il ne peut pas être modifié ici.
+                   </div>
+               )}
+           </div>
 
             {isPromptOpen && (
                 <EncryptionPrompt
@@ -652,7 +692,8 @@ const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'a
 };
 
 const UsefulLinksContent: React.FC = () => {
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/1drIzPPi6AohCroSyUkF1UmMFxuEtMACBF4XATDjBOcg/edit?usp=drivesdk";
+    const { googleSheetId } = useData();
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${googleSheetId}/edit?usp=drivesdk`;
     const keaUrl = "https://jw.org/kea";
 
     return (
