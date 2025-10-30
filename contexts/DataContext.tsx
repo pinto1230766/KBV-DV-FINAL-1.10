@@ -986,13 +986,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
     }, [appData, addToast, downloadFallback]);
 
     const importData = async (data: any) => {
-        if (!data.speakers || !data.visits || !data.hosts) {
-            throw new Error("Fichier de sauvegarde non valide ou corrompu.");
-        }
-        if (!appData) {
-            addToast("Les données actuelles ne sont pas chargées, impossible de fusionner.", "error");
-            return;
-        }
+        try {
+            if (!data.speakers || !data.visits || !data.hosts) {
+                throw new Error("Fichier de sauvegarde non valide ou corrompu.");
+            }
+            if (!appData) {
+                addToast("Les données actuelles ne sont pas chargées, impossible de fusionner.", "error");
+                return;
+            }
     
         analytics.track('data_imported', { 
             importedSpeakers: data.speakers?.length || 0,
@@ -1122,13 +1123,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
             specialDates: data.specialDates || appData.specialDates || [],
         };
     
-        setAppData(newAppData);
+        updateAppData(() => newAppData);
         logger.info('Données importées avec succès', { 
             finalSpeakers: Number(finalSpeakers.length),
             finalVisits: Number(finalVisits.length),
             finalHosts: Number(finalHosts.length)
         });
         addToast("Les données ont été fusionnées intelligemment pour éviter les doublons !", 'success');
+        } catch (error) {
+            console.error('Erreur lors de l\'importation:', error);
+            logger.error('Erreur importation données', error as Error);
+            addToast(`Erreur lors de l'importation: ${error instanceof Error ? error.message : 'Erreur inconnue'}`, 'error');
+            throw error; // Re-throw pour que l'appelant puisse gérer l'erreur
+        }
     };
 
     const resetData = () => {

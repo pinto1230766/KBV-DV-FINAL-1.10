@@ -323,15 +323,22 @@ const App: React.FC = () => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        if (await confirm("Êtes-vous sûr de vouloir importer ces données ? Cela écrasera toutes les données actuelles.")) {
+        if (await confirm("Êtes-vous sûr de vouloir importer ces données ? Cela fusionnera intelligemment avec vos données actuelles.")) {
             setIsImporting(true);
             try {
                 const text = await file.text();
                 const data = JSON.parse(text);
-                importData(data);
+                await importData(data);
+                addToast("Importation réussie !", 'success');
             } catch (error) {
                 console.error("Failed to import data:", error);
-                addToast(`Erreur lors de l'importation : ${error instanceof Error ? error.message : 'Format non valide.'}`, 'error');
+                const errorMessage = error instanceof Error ? error.message : 'Format de fichier non valide.';
+                addToast(`Erreur lors de l'importation : ${errorMessage}`, 'error');
+                // Ne pas laisser l'application dans un état cassé
+                if (errorMessage.includes('corrompu') || errorMessage.includes('invalide')) {
+                    addToast("L'application va se recharger pour éviter tout problème.", 'info');
+                    setTimeout(() => window.location.reload(), 2000);
+                }
             } finally {
                 setIsImporting(false);
                 event.target.value = '';

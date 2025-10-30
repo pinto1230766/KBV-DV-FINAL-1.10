@@ -15,8 +15,8 @@ const DuplicateSpeakerGroup: React.FC<{ group: Speaker[], onMerge: () => void }>
     const { visits, archivedVisits, mergeSpeakers } = useData();
 
     const getVisitCount = useCallback((speakerId: string) => {
-        const upcoming = visits.filter(v => v.id === speakerId).length;
-        const past = archivedVisits.filter(v => v.id === speakerId).length;
+        const upcoming = visits.filter(v => v.speakerId === speakerId).length;
+        const past = archivedVisits.filter(v => v.speakerId === speakerId).length;
         return { upcoming, past };
     }, [visits, archivedVisits]);
 
