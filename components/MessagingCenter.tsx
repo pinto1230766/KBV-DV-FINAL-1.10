@@ -16,6 +16,29 @@ interface MessagingCenterProps {
 
 // --- SUB-COMPONENTS ---
 const CommunicationProgress: React.FC<{ visit: Visit }> = ({ visit }) => {
+    const { congregationProfile } = useData();
+    
+    // Vérifier si c'est un événement spécial
+    const isSpecialEvent = !visit.talkNoOrType || visit.talkNoOrType === 'N/A' || visit.talkNoOrType === '';
+    
+    // Vérifier si c'est un orateur local (de la congrégation KBV DV LYON)
+    const isLocalSpeaker = visit.congregation && 
+        (visit.congregation.toLowerCase().includes('kbv') && visit.congregation.toLowerCase().includes('lyon')) ||
+        visit.congregation.toLowerCase() === 'kbv dv lyon' ||
+        visit.congregation.toLowerCase() === 'lyon kbv';
+    
+    // Pour les événements spéciaux ou orateurs locaux, pas de progression
+    if (isSpecialEvent || isLocalSpeaker) {
+        return (
+            <div className="w-full bg-gray-200 dark:bg-primary-light/20 rounded-full h-1.5 mt-2 group-hover:bg-gray-300 dark:group-hover:bg-primary-light/30 transition-colors">
+                <div className="bg-gray-400 dark:bg-gray-600 rounded-full h-1.5 w-full"></div>
+                <span className="sr-only">
+                    {isSpecialEvent ? 'Événement spécial' : 'Orateur local'} - Aucune communication requise
+                </span>
+            </div>
+        );
+    }
+
     const steps: { type: MessageType; role: MessageRole }[] = [
         { type: 'confirmation', role: 'speaker' },
         { type: 'preparation', role: 'speaker' },
@@ -24,15 +47,22 @@ const CommunicationProgress: React.FC<{ visit: Visit }> = ({ visit }) => {
         { type: 'thanks', role: 'speaker' },
     ];
 
-    const applicableSteps = useMemo(() => steps.filter(step => {
-        // Host preparation is not applicable for non-physical visits
-        if (step.role === 'host' && visit.locationType !== 'physical') {
-            return false;
+    const applicableSteps = useMemo(() => {
+        // Pour zoom/streaming, seulement les remerciements
+        if (visit.locationType === 'zoom' || visit.locationType === 'streaming') {
+            return [{ type: 'thanks' as MessageType, role: 'speaker' as MessageRole }];
         }
-        // A reminder is a single step
-        if (step.type === 'reminder-2') return false; 
-        return true;
-    }), [visit.locationType]);
+        
+        return steps.filter(step => {
+            // Host preparation is not applicable for non-physical visits
+            if (step.role === 'host' && visit.locationType !== 'physical') {
+                return false;
+            }
+            // A reminder is a single step
+            if (step.type === 'reminder-2') return false; 
+            return true;
+        });
+    }, [visit.locationType]);
     
     const completedSteps = useMemo(() => applicableSteps.filter(step => {
          // A reminder is complete if either J-7 or J-2 is sent
@@ -115,6 +145,7 @@ const CommunicationStep: React.FC<{ visit: Visit; type: MessageType; role: Messa
 
 const ConversationDetailView: React.FC<{ visit: Visit, onOpenMessageGenerator: MessagingCenterProps['onOpenMessageGenerator'], onBack: () => void, isMobile: boolean }> = ({ visit, onOpenMessageGenerator, onBack, isMobile }) => {
     const [personalMessage, setPersonalMessage] = useState('');
+    const { congregationProfile } = useData();
 
     const handleOpenPersonalMessage = () => {
         if (personalMessage.trim()) {
@@ -122,6 +153,52 @@ const ConversationDetailView: React.FC<{ visit: Visit, onOpenMessageGenerator: M
             setPersonalMessage('');
         }
     };
+
+    // Vérifier si c'est un événement spécial (pas de numéro de discours)
+    const isSpecialEvent = !visit.talkNoOrType || visit.talkNoOrType === 'N/A' || visit.talkNoOrType === '';
+    
+    // Vérifier si c'est un orateur local (de la congrégation KBV DV LYON)
+    const isLocalSpeaker = visit.congregation && 
+        (visit.congregation.toLowerCase().includes('kbv') && visit.congregation.toLowerCase().includes('lyon')) ||
+        visit.congregation.toLowerCase() === 'kbv dv lyon' ||
+        visit.congregation.toLowerCase() === 'lyon kbv';
+    
+    // Pour les événements spéciaux ou orateurs locaux, ne pas afficher de messages
+    if (isSpecialEvent || isLocalSpeaker) {
+        return (
+            <div className="flex flex-col bg-card-light dark:bg-card-dark rounded-xl shadow-soft-lg h-full">
+                {/* Header */}
+                <div className="p-4 border-b border-border-light dark:border-border-dark flex items-center gap-4 flex-shrink-0">
+                    {isMobile && (
+                        <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-light/20">
+                            <ChevronLeftIcon className="w-6 h-6" />
+                        </button>
+                    )}
+                    <Avatar item={visit} size="w-10 h-10" />
+                    <div>
+                        <h3 className="text-lg font-bold text-primary dark:text-white">{visit.nom}</h3>
+                        <p className="text-sm text-text-muted dark:text-text-muted-dark capitalize">
+                            {new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </p>
+                    </div>
+                </div>
+                {/* Content */}
+                <div className="p-4 md:p-6 flex items-center justify-center h-full">
+                    <div className="text-center text-text-muted dark:text-text-muted-dark">
+                        <p className="text-lg font-medium mb-2">
+                            {isSpecialEvent ? 'Événement spécial' : 'Orateur local'}
+                        </p>
+                        <p>
+                            {isSpecialEvent 
+                                ? "Aucun message automatique n'est nécessaire pour ce type d'événement."
+                                : "Aucun message automatique n'est nécessaire pour les orateurs locaux."
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col bg-card-light dark:bg-card-dark rounded-xl shadow-soft-lg h-full">
@@ -145,35 +222,45 @@ const ConversationDetailView: React.FC<{ visit: Visit, onOpenMessageGenerator: M
                 <div>
                     <h4 className="font-bold text-text-main dark:text-text-main-dark mb-3">Communications Orateur</h4>
                     <div className="space-y-3">
-                        <CommunicationStep visit={visit} type="confirmation" role="speaker" label="Confirmation & Besoins" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'confirmation')} />
-                        <CommunicationStep visit={visit} type="preparation" role="speaker" label="Détails de préparation" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'preparation')} />
-                        <CommunicationStep visit={visit} type="reminder-7" role="speaker" label="Rappel J-7" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'reminder-7')} />
-                        <CommunicationStep visit={visit} type="reminder-2" role="speaker" label="Rappel J-2" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'reminder-2')} />
-                        <CommunicationStep visit={visit} type="thanks" role="speaker" label="Remerciements" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'thanks')} />
+                        {/* Pour zoom/streaming, afficher seulement les remerciements */}
+                        {visit.locationType === 'zoom' || visit.locationType === 'streaming' ? (
+                            <CommunicationStep visit={visit} type="thanks" role="speaker" label="Remerciements" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'thanks')} />
+                        ) : (
+                            <>
+                                <CommunicationStep visit={visit} type="confirmation" role="speaker" label="Confirmation & Besoins" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'confirmation')} />
+                                <CommunicationStep visit={visit} type="preparation" role="speaker" label="Détails de préparation" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'preparation')} />
+                                <CommunicationStep visit={visit} type="reminder-7" role="speaker" label="Rappel J-7" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'reminder-7')} />
+                                <CommunicationStep visit={visit} type="reminder-2" role="speaker" label="Rappel J-2" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'reminder-2')} />
+                                <CommunicationStep visit={visit} type="thanks" role="speaker" label="Remerciements" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'thanks')} />
+                            </>
+                        )}
                     </div>
                 </div>
 
-                <div className="pt-6 border-t border-border-light dark:border-border-dark">
-                    <h4 className="font-bold text-text-main dark:text-text-main-dark mb-3">Communication Personnalisée (Orateur)</h4>
-                     <div className="bg-gray-100 dark:bg-primary-light/10 rounded-lg p-4">
-                        <textarea
-                            value={personalMessage}
-                            onChange={(e) => setPersonalMessage(e.target.value)}
-                            rows={4}
-                            placeholder="Écrivez votre message personnalisé ici pour des situations spécifiques (ex: invitation à un repas par une autre famille, etc.)."
-                            className="w-full p-2 border rounded-md bg-card-light dark:bg-card-dark border-border-light dark:border-border-dark"
-                        />
-                        <div className="text-right mt-2">
-                             <button
-                                onClick={handleOpenPersonalMessage}
-                                disabled={!personalMessage.trim()}
-                                className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-light transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Générer le message
-                            </button>
+                {/* Communication personnalisée seulement pour les visites physiques */}
+                {visit.locationType === 'physical' && (
+                    <div className="pt-6 border-t border-border-light dark:border-border-dark">
+                        <h4 className="font-bold text-text-main dark:text-text-main-dark mb-3">Communication Personnalisée (Orateur)</h4>
+                         <div className="bg-gray-100 dark:bg-primary-light/10 rounded-lg p-4">
+                            <textarea
+                                value={personalMessage}
+                                onChange={(e) => setPersonalMessage(e.target.value)}
+                                rows={4}
+                                placeholder="Écrivez votre message personnalisé ici pour des situations spécifiques (ex: invitation à un repas par une autre famille, etc.)."
+                                className="w-full p-2 border rounded-md bg-card-light dark:bg-card-dark border-border-light dark:border-border-dark"
+                            />
+                            <div className="text-right mt-2">
+                                 <button
+                                    onClick={handleOpenPersonalMessage}
+                                    disabled={!personalMessage.trim()}
+                                    className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-light transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Générer le message
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                  {(visit.locationType === 'physical' && visit.host !== 'N/A') && (
                     <div className="pt-6 border-t border-border-light dark:border-border-dark">
