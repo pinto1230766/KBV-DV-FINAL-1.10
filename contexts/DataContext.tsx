@@ -12,7 +12,11 @@ import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { get, set, del } from '../utils/idb';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { checkStorageWarning, formatSize } from '../utils/storage';
-import { scheduleVisitNotifications, cancelVisitNotifications } from '../utils/notifications';
+import { scheduleVisitNotifications, cancelVisitNotifications } from '../utils/notifications-enhanced';
+import { backupManager } from '../utils/backup';
+import { analytics, trackVisitCreated, trackFeatureUsed } from '../utils/analytics';
+import { logger } from '../utils/logger';
+import { validateData, VisitSchema, SpeakerSchema, HostSchema } from '../utils/validation';
 
 interface AppData {
   speakers: Speaker[];
@@ -263,6 +267,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
 
         saveData(appData);
+        
+        // Backup automatique quotidien
+        backupManager.scheduleAutoBackup(appData);
     }, [appData, isEncrypted, sessionPassword, isLoading, addToast]);
 
     const unlock = async (password: string): Promise<boolean> => {
@@ -376,10 +383,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addSpeaker = (speakerData: Speaker) => {
+        // Validation des données
+        const validation = validateData(SpeakerSchema, speakerData);
+        if (!validation.success) {
+            logger.error('Données orateur invalides', undefined, { errors: validation.errors });
+            addToast('Données invalides: ' + validation.errors.join(', '), 'error');
+            return;
+        }
+
         updateAppData(prev => ({
             ...prev,
-            speakers: [...prev.speakers, speakerData].sort((a, b) => a.nom.localeCompare(b.nom))
+            speakers: [...prev.speakers, validation.data].sort((a, b) => a.nom.localeCompare(b.nom))
         }));
+        
+        analytics.track('speaker_added', { congregation: speakerData.congregation });
         addToast("Orateur ajouté.", 'success');
     };
 
