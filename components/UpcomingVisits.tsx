@@ -20,17 +20,61 @@ interface UpcomingVisitsProps {
 
 type DateFilterType = 'all' | 'week' | 'month';
 
-const formatMonth = (dateString: string) => new Date(dateString + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '');
-const formatDay = (dateString: string) => new Date(dateString + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit' });
-const formatWeekday = (dateString: string) => new Date(dateString + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long' });
-
-const statusStyles: { [key in Visit['status'] | 'completed']: { text: string; cardBorder: string; listBadge: string } } = {
-  pending: { text: 'En attente', cardBorder: 'bg-amber-400', listBadge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300' },
-  confirmed: { text: 'Confirmé', cardBorder: 'bg-green-500', listBadge: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' },
-  cancelled: { text: 'Annulé', cardBorder: 'bg-red-500', listBadge: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' },
-  completed: { text: 'Terminé', cardBorder: 'bg-gray-500', listBadge: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
+const parseDate = (dateString: string): Date | null => {
+    try {
+        const date = new Date(dateString + 'T00:00:00');
+        return isNaN(date.getTime()) ? null : date;
+    } catch (error) {
+        console.error('Erreur lors du parsing de la date:', error);
+        return null;
+    }
 };
 
+const formatMonth = (dateString: string): string => {
+    const date = parseDate(dateString);
+    return date ? date.toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '') : 'N/A';
+};
+
+const formatDay = (dateString: string): string => {
+    const date = parseDate(dateString);
+    return date ? date.toLocaleDateString('fr-FR', { day: '2-digit' }) : '--';
+};
+
+const formatWeekday = (dateString: string): string => {
+    const date = parseDate(dateString);
+    return date ? date.toLocaleDateString('fr-FR', { weekday: 'long' }) : 'Inconnu';
+};
+
+interface StatusStyle {
+    text: string;
+    cardBorder: string;
+    listBadge: string;
+}
+
+type VisitStatus = Visit['status'] | 'completed';
+
+const statusStyles: Record<VisitStatus, StatusStyle> = {
+    pending: { 
+        text: 'En attente', 
+        cardBorder: 'bg-amber-400', 
+        listBadge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300' 
+    },
+    confirmed: { 
+        text: 'Confirmé', 
+        cardBorder: 'bg-green-500', 
+        listBadge: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' 
+    },
+    cancelled: { 
+        text: 'Annulé', 
+        cardBorder: 'bg-red-500', 
+        listBadge: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' 
+    },
+    completed: { 
+        text: 'Terminé', 
+        cardBorder: 'bg-gray-500', 
+        listBadge: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' 
+    },
+};
 
 // --- Sub-components for VisitCard ---
 
@@ -40,7 +84,6 @@ const ChecklistItem: React.FC<{ label: string; done: boolean; icon: React.FC<any
         <span className={`text-sm ${done ? 'font-semibold text-green-600 dark:text-green-400' : 'text-text-muted dark:text-text-muted-dark'}`}>{label}</span>
     </div>
 );
-
 
 const VisitCardDateInfo: React.FC<{ visit: Visit; isZoom: boolean; isStreaming: boolean; isLocalSpeaker: boolean; isRemote: boolean; isSpecialEvent: boolean; }> = ({ visit, isZoom, isStreaming, isLocalSpeaker, isRemote, isSpecialEvent }) => (
     <div className="md:col-span-5 flex items-center space-x-2 sm:space-x-4 border-b md:border-b-0 md:border-r border-border-light dark:border-border-dark pb-4 md:pb-0 md:pr-6">
@@ -88,57 +131,51 @@ const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void
     const completedTasks = checklist.filter(task => task.completed).length;
     const totalTasks = checklist.length;
 
-    const renderContent = () => {
-        if (isSpecialEvent) {
-            return (
-                <div className="flex items-center text-cyan-600 dark:text-cyan-400">
-                    <HomeIcon className="w-5 h-5 mr-2" />
-                    <span className="font-semibold">Événement spécial</span>
-                </div>
-            );
-        }
-        
-        return (
-            <div className="flex flex-col items-center space-y-2 w-full">
-                {isRemote ? (
-                    <div className={`flex items-center ${isZoom ? 'text-indigo-600 dark:text-indigo-400' : 'text-purple-600 dark:text-purple-400'}`}>
-                        <VideoCameraIcon className="w-5 h-5 mr-2" />
-                        <span className="font-semibold">{isZoom ? 'Visite par Zoom' : 'Visite par Streaming'}</span>
-                    </div>
-                ) : isLocalSpeaker ? (
-                    <div className="flex items-center text-blue-600 dark:text-blue-400">
-                        <HomeIcon className="w-5 h-5 mr-2" />
-                        <span className="font-semibold">Orateur local</span>
-                    </div>
-                ) : visit.host === NO_HOST_NEEDED ? (
-                    <div className="flex items-center text-gray-500 dark:text-gray-400">
-                        <HomeIcon className="w-5 h-5 mr-2" />
-                        <span className="font-semibold">Accueil non nécessaire</span>
-                    </div>
-                ) : visit.host === UNASSIGNED_HOST ? (
-                    <div className="space-y-2 w-full">
-                        <div className="flex items-center justify-center text-orange dark:text-orange">
-                            <ExclamationTriangleIcon className="w-5 h-5 mr-2" />
-                            <span className="font-semibold">Accueil à définir</span>
+    const getHostLabel = () => {
+        if (isSpecialEvent) return 'Événement spécial';
+        if (isRemote) return isZoom ? 'Visite par Zoom' : 'Visite par Streaming';
+        if (isLocalSpeaker) return 'Orateur local';
+        if (visit.host === NO_HOST_NEEDED) return 'Accueil non nécessaire';
+        if (visit.host === UNASSIGNED_HOST) return 'À définir';
+        return visit.host;
+    };
+
+    const needsWarning = visit.host === UNASSIGNED_HOST && !isRemote && !isLocalSpeaker && !isSpecialEvent;
+
+    return (
+        <div className="md:col-span-3 flex flex-col items-center justify-center text-center py-4 md:py-0">
+            <div className="flex flex-col items-center space-y-4 w-full">
+                <div className="text-center w-full space-y-3">
+                    <p className="text-sm text-text-muted dark:text-text-muted-dark">Accueil par :</p>
+                    <p className={`font-bold text-lg ${needsWarning ? 'text-orange' : 'text-text-main dark:text-text-main-dark'}`}>
+                        {needsWarning && <ExclamationTriangleIcon className="w-5 h-5 inline mr-2" />}
+                        {getHostLabel()}
+                    </p>
+                    <button 
+                        onClick={() => onEdit(visit)} 
+                        className={`px-6 py-2 font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md ${
+                            needsWarning 
+                                ? 'bg-orange hover:bg-orange/90 text-white' 
+                                : 'bg-gray-700 hover:bg-gray-600 text-white dark:bg-gray-600 dark:hover:bg-gray-500'
+                        }`}
+                    >
+                        {needsWarning ? 'Assigner' : 'Modifier'}
+                    </button>
+                    {needsWarning && (
+                        <div className="flex items-center justify-center text-orange">
+                            <ExclamationTriangleIcon className="w-5 h-5" />
                         </div>
-                        <button onClick={() => onEdit(visit)} className="w-full px-4 py-2 bg-orange hover:bg-orange/80 text-white font-bold rounded-lg transition-transform active:scale-95">
-                            Assigner
-                        </button>
-                    </div>
-                ) : (
-                    <div>
-                        <p className="text-sm text-text-muted dark:text-text-muted-dark">Accueil par :</p>
-                        <p className="font-bold text-lg text-text-main dark:text-text-main-dark truncate" title={visit.host}>{visit.host}</p>
-                        {!hostExists && (
-                            <div title="Cet hôte a été supprimé. Veuillez modifier la visite." className="flex items-center justify-center text-orange dark:text-orange mt-1">
-                                <ExclamationTriangleIcon className="w-5 h-5" />
-                            </div>
-                        )}
-                    </div>
-                )}
-                <div className="mt-4 w-full bg-white/40 dark:bg-black/20 p-3 rounded-lg space-y-2 text-left">
-                    <h4 className="text-sm font-bold text-left text-text-muted dark:text-text-muted-dark uppercase mb-1">Suivi</h4>
-                    <div className="space-y-1.5">
+                    )}
+                    {!hostExists && visit.host !== UNASSIGNED_HOST && visit.host !== NO_HOST_NEEDED && (
+                        <div className="flex items-center justify-center text-orange">
+                            <ExclamationTriangleIcon className="w-5 h-5" />
+                        </div>
+                    )}
+                </div>
+
+                <div className="w-full">
+                    <h4 className="text-sm font-bold text-left text-text-muted dark:text-text-muted-dark uppercase mb-2">SUIVI</h4>
+                    <div className="space-y-1.5 text-left">
                         <ChecklistItem label="Confirmation" done={confirmationDone} icon={CheckIcon} />
                         <ChecklistItem label="Préparation Orateur" done={prepSpeakerDone} icon={EnvelopeIcon} />
                         {visit.host !== UNASSIGNED_HOST && visit.locationType === 'physical' && (
@@ -148,7 +185,7 @@ const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void
                         <ChecklistItem label="Remerciements" done={thanksDone} icon={SparklesIcon} />
                     </div>
                     {totalTasks > 0 && (
-                        <div className="pt-2 mt-2 border-t border-white/30 dark:border-white/10">
+                        <div className="pt-2 mt-2 border-t border-border-light dark:border-border-dark">
                             <ChecklistItem 
                                 label={`Tâches (${completedTasks}/${totalTasks})`} 
                                 done={completedTasks === totalTasks && totalTasks > 0} 
@@ -158,12 +195,6 @@ const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void
                     )}
                 </div>
             </div>
-        );
-    };
-
-    return (
-        <div className="md:col-span-3 flex flex-col items-center justify-center text-center py-4 md:py-0">
-             {renderContent()}
         </div>
     );
 };
@@ -296,7 +327,7 @@ const VisitCard: React.FC<{
                 className={`rounded-xl shadow-soft-lg border border-white/20 dark:border-white/10 backdrop-blur-xl ${isMenuOpen ? 'bg-card-light dark:bg-card-dark' : 'bg-glass dark:bg-glass-dark'}`}
             >
                 <div className={`absolute top-0 left-0 bottom-0 w-2 ${statusStyle.cardBorder} rounded-l-xl`}></div>
-                <div className={`grid grid-cols-1 ${isSpecialEvent ? 'md:grid-cols-1' : 'md:grid-cols-12'} gap-6 p-4 pl-6 w-full items-center`}>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-4 pl-6 w-full items-center">
                     <VisitCardDateInfo 
                         visit={visit} 
                         isZoom={isZoom} 
@@ -305,32 +336,28 @@ const VisitCard: React.FC<{
                         isRemote={isRemote}
                         isSpecialEvent={isSpecialEvent}
                     />
-                    {!isSpecialEvent && (
-                        <>
-                            <VisitCardHostInfo 
-                                visit={visit} 
-                                onEdit={onEdit}
-                                hostExists={hostExists}
-                                isZoom={isZoom} 
-                                isStreaming={isStreaming}
-                                isLocalSpeaker={isLocalSpeaker}
-                                isRemote={isRemote}
-                                isSpecialEvent={isSpecialEvent}
-                            />
-                            <VisitCardActions 
-                                visit={visit} 
-                                onEdit={onEdit}
-                                onDelete={onDelete}
-                                onComplete={onComplete}
-                                onOpenMessageGenerator={onOpenMessageGenerator}
-                                isLocalSpeaker={isLocalSpeaker}
-                                isRemote={isRemote}
-                                isSpecialEvent={isSpecialEvent}
-                                isMenuOpen={isMenuOpen}
-                                setIsMenuOpen={setIsMenuOpen}
-                            />
-                        </>
-                    )}
+                    <VisitCardHostInfo 
+                        visit={visit} 
+                        onEdit={onEdit}
+                        hostExists={hostExists}
+                        isZoom={isZoom} 
+                        isStreaming={isStreaming}
+                        isLocalSpeaker={isLocalSpeaker}
+                        isRemote={isRemote}
+                        isSpecialEvent={isSpecialEvent}
+                    />
+                    <VisitCardActions 
+                        visit={visit} 
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onComplete={onComplete}
+                        onOpenMessageGenerator={onOpenMessageGenerator}
+                        isLocalSpeaker={isLocalSpeaker}
+                        isRemote={isRemote}
+                        isSpecialEvent={isSpecialEvent}
+                        isMenuOpen={isMenuOpen}
+                        setIsMenuOpen={setIsMenuOpen}
+                    />
                 </div>
             </div>
         </div>
@@ -388,7 +415,6 @@ const VisitRow: React.FC<Omit<UpcomingVisitsProps, 'visits' | 'onScheduleFirst' 
     );
 };
 
-
 const FilterButton = <T extends string>({ label, value, active, onClick }: { label: string; value: T; active: boolean; onClick: (v: T) => void; }) => (
     <button
       onClick={() => onClick(value)}
@@ -397,7 +423,7 @@ const FilterButton = <T extends string>({ label, value, active, onClick }: { lab
     >
       {label}
     </button>
-  );
+);
 
 export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits, onEdit, onDelete, onComplete, onOpenMessageGenerator, onScheduleFirst, viewMode }) => {
     const { speakers, hosts, allSpeakerTags, allHostTags, savedViews, saveFilterView, deleteFilterView } = useData();
@@ -432,20 +458,23 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits, onEdit, 
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // FIX: Cast `currentValues` to `any[]` to resolve a TypeScript limitation with using `.includes` on a union of array types.
-    const handleFilterChange = <K extends keyof ActiveFilters>(category: K, value: ActiveFilters[K][number]) => {
-        setActiveFilters(prev => {
-            const currentValues = prev[category];
-            const newValues = (currentValues as any[]).includes(value)
-                ? currentValues.filter(v => v !== value)
-                : [...currentValues, value];
-            return { ...prev, [category]: newValues };
-        });
+    const handleFilterChange = <K extends keyof ActiveFilters>(
+        category: K, 
+        value: ActiveFilters[K][number]
+    ) => {
+        setActiveFilters(prev => ({
+            ...prev,
+            [category]: prev[category].includes(value as never)
+                ? prev[category].filter((v: any) => v !== value)
+                : [...prev[category], value as never]
+        }));
     };
     
     const activeFilterCount = useMemo(() => {
-        // FIX: Explicitly type accumulator and array item to resolve type inference issue with Object.values.
-        return Object.values(activeFilters).reduce((count: number, arr: any[]) => count + arr.length, 0);
+        return Object.values(activeFilters).reduce<number>(
+            (count, arr) => count + arr.length,
+            0
+        );
     }, [activeFilters]);
     
     const handleSaveView = () => {
@@ -517,7 +546,7 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits, onEdit, 
             return true;
         });
 
-    }, [visits, dateFilter, activeFilters, speakers, hosts, activeFilterCount]);
+    }, [visits, dateFilter, activeFilters, speakers, hosts]);
 
     return (
         <div>
