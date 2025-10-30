@@ -792,8 +792,8 @@ export const initialSpeakers: Speaker[] = regularSpeakersWithTalksRaw.map(s => (
     isVehiculed: s.isVehiculed,
 })).sort((a,b) => a.nom.localeCompare(b.nom));
 
-// Generate initialVisits from future talks in the regular speakers raw data
-export const initialVisits: Visit[] = regularSpeakersWithTalksRaw
+// Generate initialVisits from future talks in ALL speakers raw data (including events)
+export const initialVisits: Visit[] = speakersWithTalksRaw
     .flatMap(speaker => 
         (speaker.talkHistory || [])
             // Filter for talks in 2025 or later to create Visit objects
@@ -816,7 +816,7 @@ export const initialVisits: Visit[] = regularSpeakersWithTalksRaw
                     visitId: generateUUID(),
                     visitDate: talk.date,
                     visitTime: '14:30', // Default time, can be edited by user
-                    host: UNASSIGNED_HOST,
+                    host: speaker.congregation === 'Événement spécial' ? NO_HOST_NEEDED : UNASSIGNED_HOST,
                     accommodation: '',
                     meals: '',
                     status: 'pending',
