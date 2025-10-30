@@ -17,7 +17,7 @@ function useLocalStorage<T>(key: string, initialValue: T | (() => T)): [T, Dispa
             window.localStorage.setItem(key, JSON.stringify(initial));
             return initial;
         } catch (error) {
-            console.error(`Error reading localStorage key “${key}”:`, error);
+            console.error('Error reading localStorage key:', { key, error: error?.message || String(error) });
             // Fallback to the initial value if there's an error.
             return initialValue instanceof Function ? initialValue() : initialValue;
         }
@@ -29,7 +29,7 @@ function useLocalStorage<T>(key: string, initialValue: T | (() => T)): [T, Dispa
             // Write the current state to localStorage.
             window.localStorage.setItem(key, JSON.stringify(storedValue));
         } catch (error) {
-            console.error(`Error setting localStorage key “${key}”:`, error);
+            console.error('Error setting localStorage key:', { key, error: error?.message || String(error) });
         }
     }, [key, storedValue]);
 

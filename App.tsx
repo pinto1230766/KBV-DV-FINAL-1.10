@@ -34,9 +34,12 @@ import { DashboardPrintLayout } from './components/DashboardPrintLayout';
 import { ArchiveTab } from './components/ArchiveTab';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PerformanceMonitor } from './components/PerformanceMonitor';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { QuickActions, getQuickActions } from './components/QuickActions';
 import { performanceMonitor } from './utils/performance';
 import { analytics } from './utils/analytics';
 import { logger } from './utils/logger';
+import { useKeyboardShortcuts, getAppShortcuts } from './hooks/useKeyboardShortcuts';
 
 type Tab = 'dashboard' | 'planning' | 'messaging' | 'talks' | 'statistics' | 'settings' | 'archive';
 
@@ -52,6 +55,25 @@ const App: React.FC = () => {
             performanceMonitor.cleanup();
         };
     }, []);
+
+    // Configuration des raccourcis clavier
+    const keyboardShortcuts = useMemo(() => getAppShortcuts({
+        openSearch: () => setIsSearchModalOpen(true),
+        addSpeaker: handleAddSpeaker,
+        addHost: handleAddHost,
+        scheduleVisit: handleScheduleFromShortcut,
+        toggleTheme: toggleTheme
+    }), [handleAddSpeaker, handleAddHost, handleScheduleFromShortcut]);
+
+    useKeyboardShortcuts(keyboardShortcuts);
+
+    // Configuration des actions rapides
+    const quickActions = useMemo(() => getQuickActions({
+        openSearch: () => setIsSearchModalOpen(true),
+        addSpeaker: handleAddSpeaker,
+        addHost: handleAddHost,
+        scheduleVisit: handleScheduleFromShortcut
+    }), [handleAddSpeaker, handleAddHost, handleScheduleFromShortcut]);
     const { 
         congregationProfile,
         upcomingVisits,
@@ -480,6 +502,7 @@ const App: React.FC = () => {
     return (
         <ErrorBoundary>
             <PerformanceMonitor />
+            <OfflineIndicator />
             <div className={`flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-background dark:bg-background-dark`}>
                 {showNotificationBanner && (
                     <NotificationPermissionBanner
@@ -566,7 +589,10 @@ const App: React.FC = () => {
             </div>
 
             {(activeTab === 'dashboard' || activeTab === 'planning') && (
-                <FAB actions={fabActions} />
+                <>
+                    <FAB actions={fabActions} />
+                    <QuickActions actions={quickActions} />
+                </>
             )}
             
             {/* Modals are rendered here, outside of the main layout div to ensure they are on top of everything */}

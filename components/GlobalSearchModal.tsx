@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Visit, Speaker, Host } from '../types';
-import { SearchIcon, XIcon, CalendarIcon } from './Icons';
+import { SearchIcon, XIcon, CalendarIcon, BookOpenIcon } from './Icons';
 import { useData } from '../contexts/DataContext';
 import { Avatar } from './Avatar';
+import { searchEngine, SearchResult } from '../utils/search';
+import { performanceMonitor } from '../utils/performance';
 
 interface GlobalSearchModalProps {
     isOpen: boolean;
@@ -19,10 +21,11 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
     onEditSpeaker,
     onEditHost,
 }) => {
-    const { speakers, visits, hosts } = useData();
+    const { speakers, visits, hosts, publicTalks } = useData();
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -34,56 +37,80 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         }
     }, [isOpen]);
 
-    const searchResults = useMemo(() => {
-        const lowerCaseTerm = searchTerm.toLowerCase().trim();
-        const hasTextTerm = lowerCaseTerm.length > 0;
-        const hasDateTerm = startDate || endDate;
+    // Recherche avec le moteur de recherche avancé
+    useEffect(() => {
+        const performSearch = () => {
+            if (!searchTerm.trim() && !startDate && !endDate) {
+                setSearchResults([]);
+                return;
+            }
 
-        if (!hasTextTerm && !hasDateTerm) {
-            return { speakers: [], visits: [], hosts: [] };
-        }
+            const results = performanceMonitor.measureSync('search_operation', () => {
+                let filteredVisits = visits;
+                
+                // Filtrage par date si spécifié
+                if (startDate || endDate) {
+                    const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
+                    const end = endDate ? new Date(`${endDate}T23:59:59`) : null;
 
-        const filteredSpeakers = hasTextTerm
-            ? speakers.filter(s =>
-                s.nom.toLowerCase().includes(lowerCaseTerm) ||
-                s.congregation.toLowerCase().includes(lowerCaseTerm)
-            )
-            : [];
-            
-        const filteredHosts = hasTextTerm
-            ? hosts.filter(h =>
-                h.nom.toLowerCase().includes(lowerCaseTerm) ||
-                (h.telephone && h.telephone.includes(lowerCaseTerm))
-            )
-            : [];
-            
-        let filteredVisits = visits;
+                    filteredVisits = visits.filter(v => {
+                        const visitDate = new Date(`${v.visitDate}T00:00:00`);
+                        if (start && visitDate < start) return false;
+                        if (end && visitDate > end) return false;
+                        return true;
+                    });
+                }
 
-        if (hasTextTerm) {
-            filteredVisits = filteredVisits.filter(v =>
-                v.nom.toLowerCase().includes(lowerCaseTerm) ||
-                v.host.toLowerCase().includes(lowerCaseTerm) ||
-                (v.talkTheme && v.talkTheme.toLowerCase().includes(lowerCaseTerm))
-            );
-        }
-        
-        if (hasDateTerm) {
-            const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
-            const end = endDate ? new Date(`${endDate}T23:59:59`) : null;
-
-            filteredVisits = filteredVisits.filter(v => {
-                const visitDate = new Date(`${v.visitDate}T00:00:00`);
-                if (start && visitDate < start) return false;
-                if (end && visitDate > end) return false;
-                return true;
+                return searchEngine.search(searchTerm, {
+                    speakers,
+                    visits: filteredVisits,
+                    hosts,
+                    talks: publicTalks
+                }, { limit: 20 });
             });
-        }
 
-        return { speakers: filteredSpeakers, visits: filteredVisits, hosts: filteredHosts };
-    }, [searchTerm, startDate, endDate, speakers, visits, hosts]);
+            setSearchResults(results);
+        };
+
+        const debounceTimer = setTimeout(performSearch, 300);
+        return () => clearTimeout(debounceTimer);
+    }, [searchTerm, startDate, endDate, speakers, visits, hosts, publicTalks]);
     
-    const hasResults = searchResults.speakers.length > 0 || searchResults.visits.length > 0 || searchResults.hosts.length > 0;
+    const hasResults = searchResults.length > 0;
     const hasActiveFilter = searchTerm.trim() || startDate || endDate;
+
+    const groupedResults = useMemo(() => {
+        const groups = {
+            speakers: [] as SearchResult[],
+            visits: [] as SearchResult[],
+            hosts: [] as SearchResult[],
+            talks: [] as SearchResult[]
+        };
+
+        searchResults.forEach(result => {
+            groups[result.type].push(result);
+        });
+
+        return groups;
+    }, [searchResults]);
+
+    const handleResultClick = (result: SearchResult) => {
+        switch (result.type) {
+            case 'speaker':
+                onEditSpeaker(result.item as Speaker);
+                break;
+            case 'visit':
+                onEditVisit(result.item as Visit);
+                break;
+            case 'host':
+                onEditHost(result.item as Host);
+                break;
+            case 'talk':
+                // Optionnel: ouvrir la gestion des discours
+                break;
+        }
+        onClose();
+    };
 
     if (!isOpen) return null;
 
@@ -126,62 +153,134 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     )}
                     {hasActiveFilter && !hasResults && (
                          <div className="text-center py-12">
-                            <p className="text-lg text-text-muted dark:text-text-muted-dark">Aucun résultat trouvé pour votre recherche.</p>
+                            <div className="text-center">
+                                <p className="text-lg text-text-muted dark:text-text-muted-dark mb-2">Aucun résultat trouvé</p>
+                                <p className="text-sm text-text-muted dark:text-text-muted-dark">Essayez avec d'autres mots-clés ou vérifiez l'orthographe</p>
+                            </div>
                         </div>
                     )}
                     
-                    {searchResults.speakers.length > 0 && (
+                    {groupedResults.speakers.length > 0 && (
                         <div className="mb-6">
                             <h3 className="font-bold text-sm uppercase text-text-muted dark:text-text-muted-dark px-2 mb-2">Orateurs</h3>
                             <ul className="space-y-1">
-                                {searchResults.speakers.map(speaker => (
-                                    <li key={speaker.id} onClick={() => onEditSpeaker(speaker)} className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-                                        <Avatar item={speaker} />
-                                        <div className="ml-3">
-                                            <p className="font-semibold text-text-main dark:text-text-main-dark">{speaker.nom}</p>
-                                            <p className="text-sm text-text-muted dark:text-text-muted-dark">{speaker.congregation}</p>
-                                        </div>
-                                    </li>
-                                ))}
+                                {groupedResults.speakers.map(result => {
+                                    const speaker = result.item as Speaker;
+                                    return (
+                                        <li key={speaker.id} onClick={() => handleResultClick(result)} className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                                            <Avatar item={speaker} />
+                                            <div className="ml-3 flex-1">
+                                                <p className="font-semibold text-text-main dark:text-text-main-dark">{speaker.nom}</p>
+                                                <p className="text-sm text-text-muted dark:text-text-muted-dark">{speaker.congregation}</p>
+                                                <div className="flex gap-1 mt-1">
+                                                    {result.matches.map(match => (
+                                                        <span key={match} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                                            {match}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="text-xs text-text-muted dark:text-text-muted-dark">
+                                                {Math.round(result.score)}%
+                                            </div>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     )}
 
-                     {searchResults.visits.length > 0 && (
+                    {groupedResults.visits.length > 0 && (
                         <div className="mb-6">
                             <h3 className="font-bold text-sm uppercase text-text-muted dark:text-text-muted-dark px-2 mb-2">Visites programmées</h3>
                             <ul className="space-y-1">
-                                {searchResults.visits.map(visit => (
-                                    <li key={visit.visitId} onClick={() => onEditVisit(visit)} className="flex items-start p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-                                        <CalendarIcon className="w-10 h-10 text-primary bg-primary/10 p-2 rounded-full flex-shrink-0 mt-1" />
-                                        <div className="ml-3 min-w-0">
-                                            <p className="font-semibold text-text-main dark:text-text-main-dark">{visit.nom}</p>
-                                            <p className="text-sm text-text-muted dark:text-text-muted-dark">Le {new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR')} - Accueil: {visit.host}</p>
-                                            {visit.talkTheme && (
-                                                <p className="text-xs text-text-muted dark:text-text-muted-dark truncate italic mt-1">
-                                                    « {visit.talkTheme} »
-                                                </p>
-                                            )}
-                                        </div>
-                                    </li>
-                                ))}
+                                {groupedResults.visits.map(result => {
+                                    const visit = result.item as Visit;
+                                    return (
+                                        <li key={visit.visitId} onClick={() => handleResultClick(result)} className="flex items-start p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                                            <CalendarIcon className="w-10 h-10 text-primary bg-primary/10 p-2 rounded-full flex-shrink-0 mt-1" />
+                                            <div className="ml-3 min-w-0 flex-1">
+                                                <p className="font-semibold text-text-main dark:text-text-main-dark">{visit.nom}</p>
+                                                <p className="text-sm text-text-muted dark:text-text-muted-dark">Le {new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR')} - Accueil: {visit.host}</p>
+                                                {visit.talkTheme && (
+                                                    <p className="text-xs text-text-muted dark:text-text-muted-dark truncate italic mt-1">
+                                                        « {visit.talkTheme} »
+                                                    </p>
+                                                )}
+                                                <div className="flex gap-1 mt-1">
+                                                    {result.matches.map(match => (
+                                                        <span key={match} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                                            {match}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="text-xs text-text-muted dark:text-text-muted-dark">
+                                                {Math.round(result.score)}%
+                                            </div>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     )}
                     
-                    {searchResults.hosts.length > 0 && (
-                        <div>
+                    {groupedResults.hosts.length > 0 && (
+                        <div className="mb-6">
                             <h3 className="font-bold text-sm uppercase text-text-muted dark:text-text-muted-dark px-2 mb-2">Frères pour l'accueil</h3>
                             <ul className="space-y-1">
-                                {searchResults.hosts.map(host => (
-                                    <li key={host.nom} onClick={() => onEditHost(host)} className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-                                        <Avatar item={host} />
-                                        <div className="ml-3">
-                                            <p className="font-semibold text-text-main dark:text-text-main-dark">{host.nom}</p>
-                                            <p className="text-sm text-text-muted dark:text-text-muted-dark">{host.telephone || 'N/A'}</p>
-                                        </div>
-                                    </li>
-                                ))}
+                                {groupedResults.hosts.map(result => {
+                                    const host = result.item as Host;
+                                    return (
+                                        <li key={host.nom} onClick={() => handleResultClick(result)} className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                                            <Avatar item={host} />
+                                            <div className="ml-3 flex-1">
+                                                <p className="font-semibold text-text-main dark:text-text-main-dark">{host.nom}</p>
+                                                <p className="text-sm text-text-muted dark:text-text-muted-dark">{host.telephone || 'N/A'}</p>
+                                                <div className="flex gap-1 mt-1">
+                                                    {result.matches.map(match => (
+                                                        <span key={match} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                                            {match}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="text-xs text-text-muted dark:text-text-muted-dark">
+                                                {Math.round(result.score)}%
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    )}
+
+                    {groupedResults.talks.length > 0 && (
+                        <div>
+                            <h3 className="font-bold text-sm uppercase text-text-muted dark:text-text-muted-dark px-2 mb-2">Discours publics</h3>
+                            <ul className="space-y-1">
+                                {groupedResults.talks.map(result => {
+                                    const talk = result.item as any;
+                                    return (
+                                        <li key={talk.number} className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                                            <BookOpenIcon className="w-10 h-10 text-secondary bg-secondary/10 p-2 rounded-full flex-shrink-0" />
+                                            <div className="ml-3 flex-1">
+                                                <p className="font-semibold text-text-main dark:text-text-main-dark">N° {talk.number}</p>
+                                                <p className="text-sm text-text-muted dark:text-text-muted-dark">{talk.theme}</p>
+                                                <div className="flex gap-1 mt-1">
+                                                    {result.matches.map(match => (
+                                                        <span key={match} className="text-xs bg-secondary/10 text-secondary px-2 py-0.5 rounded">
+                                                            {match}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="text-xs text-text-muted dark:text-text-muted-dark">
+                                                {Math.round(result.score)}%
+                                            </div>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     )}
