@@ -31,8 +31,9 @@ import { FAB } from './components/FAB';
 import { Statistics } from './components/Statistics';
 import { PrintPreviewModal } from './components/PrintPreviewModal';
 import { DashboardPrintLayout } from './components/DashboardPrintLayout';
+import { ArchiveTab } from './components/ArchiveTab';
 
-type Tab = 'dashboard' | 'planning' | 'messaging' | 'talks' | 'statistics' | 'settings';
+type Tab = 'dashboard' | 'planning' | 'messaging' | 'talks' | 'statistics' | 'settings' | 'archive';
 
 const App: React.FC = () => {
     const { 
@@ -350,6 +351,10 @@ const App: React.FC = () => {
         }, 150); // A small delay is safer
     }, []);
 
+    const handleGoToArchive = useCallback(() => {
+        setActiveTab('archive');
+    }, []);
+
     // Effect to handle PWA shortcut actions
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -419,6 +424,7 @@ const App: React.FC = () => {
                     onGoToHosts={handleGoToHosts}
                     onGoToPlanning={handleGoToPlanning}
                     onGoToSettings={handleGoToSettings}
+                    onGoToArchive={handleGoToArchive}
                     onLeaveFeedback={handleOpenFeedbackModal}
                 />;
             case 'planning':
@@ -459,6 +465,8 @@ const App: React.FC = () => {
                 return <TalksManager />;
             case 'statistics':
                 return <Statistics />;
+            case 'archive':
+                return <ArchiveTab onLeaveFeedback={handleOpenFeedbackModal} />;
             case 'settings':
                 return <Settings
                     onImport={handleImportData}
@@ -513,6 +521,7 @@ const App: React.FC = () => {
                         <TabButton icon={EnvelopeIcon} label="Messagerie" isActive={activeTab === 'messaging'} onClick={() => setActiveTab('messaging')} />
                         <TabButton icon={BookOpenIcon} label="Discours" isActive={activeTab === 'talks'} onClick={() => setActiveTab('talks')} />
                         <TabButton icon={ChartBarIcon} label="Statistiques" isActive={activeTab === 'statistics'} onClick={() => setActiveTab('statistics')} />
+                        <TabButton icon={CalendarDaysIcon} label="Archive" isActive={activeTab === 'archive'} onClick={() => setActiveTab('archive')} />
                         <TabButton icon={CogIcon} label="Paramètres" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                     </nav>
                     <nav className="md:hidden bg-card-light/95 dark:bg-card-dark/95 backdrop-blur-lg flex items-center border-b border-border-light dark:border-border-dark shadow-sm no-print overflow-x-auto hide-scrollbar">
@@ -521,6 +530,7 @@ const App: React.FC = () => {
                         <TabButton icon={EnvelopeIcon} label="Messages" isActive={activeTab === 'messaging'} onClick={() => setActiveTab('messaging')} />
                         <TabButton icon={BookOpenIcon} label="Discours" isActive={activeTab === 'talks'} onClick={() => setActiveTab('talks')} />
                         <TabButton icon={ChartBarIcon} label="Stats" isActive={activeTab === 'statistics'} onClick={() => setActiveTab('statistics')} />
+                        <TabButton icon={CalendarDaysIcon} label="Archive" isActive={activeTab === 'archive'} onClick={() => setActiveTab('archive')} />
                         <TabButton icon={CogIcon} label="Paramètres" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                     </nav>
                 </div>

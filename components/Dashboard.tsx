@@ -20,11 +20,12 @@ interface DashboardProps {
     onEditVisitClick: (visit: Visit) => void;
     onOpenMessageGenerator: (visit: Visit, role: MessageRole, messageType?: MessageType) => void;
     onOpenHostRequestModal: (visits: Visit[]) => void;
-    setActiveTab: (tab: 'planning' | 'messaging' | 'talks' | 'settings') => void;
+    setActiveTab: (tab: 'planning' | 'messaging' | 'talks' | 'settings' | 'archive') => void;
     onGoToSpeakers: () => void;
     onGoToHosts: () => void;
     onGoToPlanning: () => void;
     onGoToSettings: () => void;
+    onGoToArchive: () => void;
     onLeaveFeedback: (visit: Visit) => void;
 }
 
@@ -69,6 +70,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     onGoToHosts,
     onGoToPlanning,
     onGoToSettings,
+    onGoToArchive,
     onLeaveFeedback
 }) => {
     const { hosts, speakers, archivedVisits, upcomingVisits } = useData();
@@ -77,7 +79,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         { title: "Orateurs", value: speakers.length, icon: UserIcon, color: "bg-accent", onClick: onGoToSpeakers },
         { title: "Contacts d'accueil", value: hosts.length, icon: HomeIcon, color: "bg-secondary", onClick: onGoToHosts },
         { title: "Visites à venir", value: upcomingVisits.length, icon: CalendarDaysIcon, color: "bg-highlight", onClick: onGoToPlanning },
-        { title: "Visites archivées", value: archivedVisits.length, icon: CheckCircleIcon, color: "bg-primary", onClick: onGoToSettings },
+        { title: "Visites archivées", value: archivedVisits.length, icon: CheckCircleIcon, color: "bg-primary", onClick: onGoToArchive },
     ];
 
     const visitTypeData = useMemo(() => {
