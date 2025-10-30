@@ -401,42 +401,84 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const updateSpeaker = (speakerData: Speaker) => {
+        // Validation des données
+        const validation = validateData(SpeakerSchema, speakerData);
+        if (!validation.success) {
+            logger.error('Données orateur invalides lors de la mise à jour', undefined, { errors: validation.errors });
+            addToast('Données invalides: ' + validation.errors.join(', '), 'error');
+            return;
+        }
+
         updateAppData(prev => ({
             ...prev,
-            speakers: prev.speakers.map(s => s.id === speakerData.id ? speakerData : s).sort((a, b) => a.nom.localeCompare(b.nom)),
-            visits: prev.visits.map(v => v.id === speakerData.id ? { ...v, nom: speakerData.nom, congregation: speakerData.congregation, telephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v)
+            speakers: prev.speakers.map(s => s.id === speakerData.id ? validation.data : s).sort((a, b) => a.nom.localeCompare(b.nom)),
+            visits: prev.visits.map(v => v.id === speakerData.id ? { ...v, nom: validation.data.nom, congregation: validation.data.congregation, telephone: validation.data.telephone, photoUrl: validation.data.photoUrl } : v)
         }));
-        addToast("Orateur mis à jour.", 'success');
+        
+        analytics.track('speaker_updated', { congregation: speakerData.congregation });
+        addToast("Orateur mis à jour.", 'success');ephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v)
+        }));
     };
 
     const deleteSpeaker = (speakerId: string) => {
         const speakerToDelete = appData?.speakers.find(s => s.id === speakerId);
         if (!speakerToDelete) return;
+        
         updateAppData(prev => ({
             ...prev,
             speakers: prev.speakers.filter(s => s.id !== speakerId),
             visits: prev.visits.filter(v => v.id !== speakerId)
         }));
+        
+        analytics.track('speaker_deleted', { congregation: speakerToDelete.congregation });
+        logger.info('Orateur supprimé', { speakerId, speakerName: speakerToDelete.nom });
         addToast(`"${speakerToDelete.nom}" et ses visites associées ont été supprimés.`, 'success');
     };
 
     const addVisit = (visitData: Visit) => {
-        const visitWithStatus = { ...visitData, communicationStatus: {} };
+        // Validation des données
+        const validation = validateData(VisitSchema, visitData);
+        if (!validation.success) {
+            logger.error('Données visite invalides', undefined, { errors: validation.errors });
+            addToast('Données invalides: ' + validation.errors.join(', '), 'error');
+            return;
+        }
+
+        const visitWithStatus = { ...validation.data, communicationStatus: {} };
         updateAppData(prev => ({ ...prev, visits: [...prev.visits, visitWithStatus] }));
         scheduleVisitNotifications(visitWithStatus);
+        
+        trackVisitCreated(visitWithStatus);
         addToast("Visite programmée avec succès.", 'success');
     };
     
     const updateVisit = (visitData: Visit) => {
-        updateAppData(prev => ({ ...prev, visits: prev.visits.map(v => v.visitId === visitData.visitId ? visitData : v) }));
-        cancelVisitNotifications(visitData.visitId);
-        scheduleVisitNotifications(visitData);
+        // Validation des données
+        const validation = validateData(VisitSchema, visitData);
+        if (!validation.success) {
+            logger.error('Données visite invalides lors de la mise à jour', undefined, { errors: validation.errors });
+            addToast('Données invalides: ' + validation.errors.join(', '), 'error');
+            return;
+        }
+
+        updateAppData(prev => ({ ...prev, visits: prev.visits.map(v => v.visitId === validation.data.visitId ? validation.data : v) }));
+        cancelVisitNotifications(validation.data.visitId);
+        scheduleVisitNotifications(validation.data);
+        
+        analytics.track('visit_updated', { locationType: validation.data.locationType });
         addToast("Visite mise à jour avec succès.", 'success');
     };
     
     const deleteVisit = (visitId: string) => {
+        const visitToDelete = appData?.visits.find(v => v.visitId === visitId);
+        
         updateAppData(prev => ({ ...prev, visits: prev.visits.filter(v => v.visitId !== visitId) }));
         cancelVisitNotifications(visitId);
+        
+        if (visitToDelete) {
+            analytics.track('visit_deleted', { locationType: visitToDelete.locationType });
+            logger.info('Visite supprimée', { visitId, speakerName: visitToDelete.nom });
+        }
         addToast("Visite supprimée.", 'success');
     };
 
@@ -461,6 +503,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
                 return s;
             });
+            
+            analytics.track('visit_completed', { 
+                locationType: visit.locationType,
+                hasFeedback: !!visit.feedback 
+            });
+            logger.info('Visite terminée', { visitId: visit.visitId, speakerName: visit.nom });
+            
             return {
                 ...prev,
                 speakers: newSpeakers,
@@ -515,8 +564,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addHost = (newHost: Host): boolean => {
-        if (newHost.nom && !appData?.hosts.some(h => h.nom.toLowerCase() === newHost.nom.toLowerCase())) {
-            updateAppData(prev => ({ ...prev, hosts: [...prev.hosts, newHost].sort((a, b) => a.nom.localeCompare(b.nom)) }));
+        // Validation des données
+        const validation = validateData(HostSchema, newHost);
+        if (!validation.success) {
+            logger.error('Données hôte invalides', undefined, { errors: validation.errors });
+            addToast('Données invalides: ' + validation.errors.join(', '), 'error');
+            return false;
+        }
+
+        if (validation.data.nom && !appData?.hosts.some(h => h.nom.toLowerCase() === validation.data.nom.toLowerCase())) {
+            updateAppData(prev => ({ ...prev, hosts: [...prev.hosts, validation.data].sort((a, b) => a.nom.localeCompare(b.nom)) }));
+            
+            analytics.track('host_added', { hasAddress: !!validation.data.adresse });
+            addToast("Contact d'accueil ajouté.", 'success');
             return true;
         }
         return false;
@@ -563,6 +623,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     updatedStatus[messageType]![role] = now;
                     const newStatus = (messageType === 'preparation' && role === 'host' && v.status === 'pending') ? 'confirmed' : v.status;
                     if (newStatus === 'confirmed' && v.status === 'pending') confirmedToast = true;
+                    
+                    analytics.track('communication_logged', { messageType, role, visitId });
+                    logger.info('Communication enregistrée', { visitId, messageType, role, speakerName: v.nom });
+                    
                     return { ...v, communicationStatus: updatedStatus, status: newStatus };
                 }
                 return v;
@@ -578,6 +642,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (!newTemplates[language]) newTemplates[language] = {};
             if (!newTemplates[language]![messageType]) newTemplates[language]![messageType] = {};
             newTemplates[language]![messageType]![role] = text;
+            
+            analytics.track('template_saved', { language, messageType, role });
+            trackFeatureUsed('custom_templates');
+            
             return { ...prev, customTemplates: newTemplates };
         });
         addToast("Modèle de message sauvegardé !", 'success');
@@ -743,6 +811,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
         }
         
+        analytics.track('data_exported', { 
+            speakersCount: appData.speakers.length,
+            visitsCount: appData.visits.length,
+            hostsCount: appData.hosts.length
+        });
+        trackFeatureUsed('data_export');
+        
         const dataString = JSON.stringify(appData, null, 2);
         const date = new Date().toISOString().slice(0, 10);
         const fileName = `gestion_visiteurs_tj_backup_${date}.json`;
@@ -884,6 +959,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
         }
     
+        analytics.track('data_imported', { 
+            importedSpeakers: data.speakers?.length || 0,
+            importedVisits: data.visits?.length || 0,
+            importedHosts: data.hosts?.length || 0
+        });
+        trackFeatureUsed('data_import');
+        
         addToast("Fusion des données en cours...", "info");
     
         const unifyByName = <T extends { nom: string }>(current: T[], imported: T[]): T[] => {
@@ -1006,11 +1088,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
     
         setAppData(newAppData);
+        logger.info('Données importées avec succès', { 
+            finalSpeakers: finalSpeakers.length,
+            finalVisits: finalVisits.length,
+            finalHosts: finalHosts.length
+        });
         addToast("Les données ont été fusionnées intelligemment pour éviter les doublons !", 'success');
     };
 
     const resetData = () => {
         updateAppData(prev => ({...prev, ...initialData}));
+        
+        analytics.track('data_reset');
+        logger.warn('Données réinitialisées par l\'utilisateur');
         addToast("Toutes les données ont été réinitialisées.", 'success');
     };
 
@@ -1315,10 +1405,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 )]
             }));
             
+            analytics.track('google_sheets_sync', { 
+                totalProcessed,
+                sheetsCount: sheetsToSync.length
+            });
+            trackFeatureUsed('google_sheets_sync');
+            
             addToast(`Synchronisation réussie : ${totalProcessed} visites chargées.`, 'success');
             
         } catch (error) {
             console.error('Erreur lors de la synchronisation avec Google Sheets:', error);
+            logger.error('Erreur synchronisation Google Sheets', error as Error);
             addToast(
                 `Erreur lors de la synchronisation: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
                 'error'
@@ -1350,6 +1447,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
             const newSpeakers = prev.speakers.filter(s => !duplicateIds.includes(s.id));
     
+            analytics.track('speakers_merged', { 
+                primarySpeakerId,
+                mergedCount: duplicateIds.length
+            });
+            logger.info('Orateurs fusionnés', { primarySpeakerId, duplicateIds });
+    
             return {
                 ...prev,
                 speakers: newSpeakers,
@@ -1378,6 +1481,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
             const newHosts = prev.hosts.filter(h => !duplicateNames.includes(h.nom));
     
+            analytics.track('hosts_merged', { 
+                primaryHostName,
+                mergedCount: duplicateNames.length
+            });
+            logger.info('Contacts d\'accueil fusionnés', { primaryHostName, duplicateNames });
+    
             return {
                 ...prev,
                 hosts: newHosts,
@@ -1393,6 +1502,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...prev,
             specialDates: [...(prev.specialDates || []), dateData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         }));
+        
+        analytics.track('special_date_added', { type: dateData.type });
         addToast("Date spéciale ajoutée.", 'success');
     };
 
@@ -1401,14 +1512,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...prev,
             specialDates: (prev.specialDates || []).map(d => d.id === dateData.id ? dateData : d).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         }));
+        
+        analytics.track('special_date_updated', { type: dateData.type });
         addToast("Date spéciale mise à jour.", 'success');
     };
 
     const deleteSpecialDate = (dateId: string) => {
+        const dateToDelete = appData?.specialDates?.find(d => d.id === dateId);
+        
         updateAppData(prev => ({
             ...prev,
             specialDates: (prev.specialDates || []).filter(d => d.id !== dateId)
         }));
+        
+        if (dateToDelete) {
+            analytics.track('special_date_deleted', { type: dateToDelete.type });
+        }
         addToast("Date spéciale supprimée.", 'success');
     };
     

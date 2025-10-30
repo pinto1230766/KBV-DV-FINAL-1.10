@@ -32,10 +32,26 @@ import { Statistics } from './components/Statistics';
 import { PrintPreviewModal } from './components/PrintPreviewModal';
 import { DashboardPrintLayout } from './components/DashboardPrintLayout';
 import { ArchiveTab } from './components/ArchiveTab';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { PerformanceMonitor } from './components/PerformanceMonitor';
+import { performanceMonitor } from './utils/performance';
+import { analytics } from './utils/analytics';
+import { logger } from './utils/logger';
 
 type Tab = 'dashboard' | 'planning' | 'messaging' | 'talks' | 'statistics' | 'settings' | 'archive';
 
 const App: React.FC = () => {
+    // Initialiser le monitoring des performances
+    useEffect(() => {
+        performanceMonitor.startTiming('app_initialization');
+        analytics.track('app_started');
+        logger.info('Application démarrée');
+        
+        return () => {
+            performanceMonitor.endTiming('app_initialization');
+            performanceMonitor.cleanup();
+        };
+    }, []);
     const { 
         congregationProfile,
         upcomingVisits,
@@ -462,7 +478,8 @@ const App: React.FC = () => {
     };
 
     return (
-        <>
+        <ErrorBoundary>
+            <PerformanceMonitor />
             <div className={`flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-background dark:bg-background-dark`}>
                 {showNotificationBanner && (
                     <NotificationPermissionBanner
@@ -621,7 +638,8 @@ const App: React.FC = () => {
                     />
                 </PrintPreviewModal>
             )}
-        </>
+            </div>
+        </ErrorBoundary>
     );
 };
 
