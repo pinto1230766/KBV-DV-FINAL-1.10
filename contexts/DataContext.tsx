@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useMemo, useCallback, ReactNode, useState, useEffect } from 'react';
+import { DataOptimizations } from '../utils/performance-optimizations';
 import { generateUUID } from '../utils/uuid';
 import { Speaker, Visit, Host, CustomMessageTemplates, CustomHostRequestTemplates, Language, MessageType, MessageRole, TalkHistory, CongregationProfile, PublicTalk, Feedback, SavedView, ActiveFilters, SpecialDate } from '../types';
 import { initialSpeakers, initialHosts, UNASSIGNED_HOST, NO_HOST_NEEDED, initialVisits, initialPublicTalks, initialSpecialDates } from '../constants';
@@ -368,12 +369,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
     // Derived state, memoized for performance.
     const upcomingVisits = useMemo(() => {
         if (!appData) return [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return [...appData.visits]
-            .filter(v => new Date(v.visitDate + 'T00:00:00') >= today)
-            .sort((a, b) => new Date(a.visitDate + 'T00:00:00').getTime() - new Date(b.visitDate + 'T00:00:00').getTime());
-    }, [appData]);
+        return DataOptimizations.getUpcomingVisits(appData.visits);
+    }, [appData?.visits]);
     
     const pastUnarchivedVisits = useMemo(() => {
         if (!appData) return [];
@@ -393,17 +390,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }): R
     
     const allSpeakerTags = useMemo(() => {
         if (!appData) return [];
-        const tags = new Set<string>();
-        appData.speakers.forEach(s => s.tags?.forEach(t => tags.add(t)));
-        return Array.from(tags).sort();
-    }, [appData]);
+        return DataOptimizations.getAllTags(appData.speakers);
+    }, [appData?.speakers]);
 
     const allHostTags = useMemo(() => {
         if (!appData) return [];
-        const tags = new Set<string>();
-        appData.hosts.forEach(h => h.tags?.forEach(t => tags.add(t)));
-        return Array.from(tags).sort();
-    }, [appData]);
+        return DataOptimizations.getAllTags(appData.hosts);
+    }, [appData?.hosts]);
 
     // --- Actions (refactored for single appData state) ---
     const updateAppData = (updater: (prev: AppData) => AppData) => {

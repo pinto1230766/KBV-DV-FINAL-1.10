@@ -40,6 +40,7 @@ import { performanceMonitor } from './utils/performance';
 import { analytics } from './utils/analytics';
 import { logger } from './utils/logger';
 import { useKeyboardShortcuts, getAppShortcuts } from './hooks/useKeyboardShortcuts';
+import { initializePerformanceOptimizations } from './utils/performance-optimizations';
 
 type Tab = 'dashboard' | 'planning' | 'messaging' | 'talks' | 'statistics' | 'settings' | 'archive';
 
@@ -49,6 +50,9 @@ const App: React.FC = () => {
         performanceMonitor.startTiming('app_initialization');
         analytics.track('app_started');
         logger.info('Application démarrée');
+        
+        // Initialiser les optimisations de performance
+        initializePerformanceOptimizations();
         
         return () => {
             performanceMonitor.endTiming('app_initialization');
