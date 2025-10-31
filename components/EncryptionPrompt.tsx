@@ -44,18 +44,18 @@ export const EncryptionPrompt: React.FC<EncryptionPromptProps> = ({
         setIsProcessing(true);
         let success = false;
         try {
-            switch (mode) {
-                case 'unlock':
-                    if (onUnlock) success = await onUnlock(password);
-                    if (!success) setError('Mot de passe incorrect.');
-                    break;
-                case 'setup':
-                    if (onSetPassword) success = await onSetPassword(password);
-                    break;
-                case 'disable':
-                    if (onDisable) success = await onDisable(password);
-                     if (!success) setError('Mot de passe incorrect.');
-                    break;
+            const actions = {
+                unlock: { handler: onUnlock, requireSuccess: true },
+                setup: { handler: onSetPassword, requireSuccess: false },
+                disable: { handler: onDisable, requireSuccess: true }
+            };
+
+            const action = actions[mode];
+            if (action?.handler) {
+                success = await action.handler(password);
+                if (action.requireSuccess && !success) {
+                    setError('Mot de passe incorrect.');
+                }
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Une erreur est survenue.');
