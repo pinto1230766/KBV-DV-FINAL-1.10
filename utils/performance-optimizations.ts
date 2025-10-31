@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useRef, useEffect } from 'react';
+import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { cache, computationCache } from './cache';
 import { performanceMonitor } from './performance';
 import { Visit, Speaker, Host } from '../types';
@@ -159,11 +159,14 @@ export class ComponentOptimizations {
   ) {
     const LazyComponent = React.lazy(importFn);
     
-    return React.forwardRef<any, React.ComponentProps<T>>((props, ref) => (
-      <React.Suspense fallback={fallback ? <fallback /> : <div>Chargement...</div>}>
-        <LazyComponent {...props} ref={ref} />
-      </React.Suspense>
-    ));
+    return React.forwardRef<any, React.ComponentProps<T>>((props, ref) => {
+      const FallbackComponent = fallback;
+      return React.createElement(
+        React.Suspense,
+        { fallback: FallbackComponent ? React.createElement(FallbackComponent) : React.createElement('div', null, 'Chargement...') },
+        React.createElement(LazyComponent, { ...props, ref })
+      );
+    });
   }
 
   // Mémoisation intelligente
@@ -282,4 +285,4 @@ export function initializePerformanceOptimizations() {
 }
 
 // Import React pour les hooks
-import React, { useState } from 'react';
+import React from 'react';
