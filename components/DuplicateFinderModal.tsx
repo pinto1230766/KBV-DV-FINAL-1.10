@@ -1,43 +1,53 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Speaker, Host } from '../types';
-import { XIcon, SpinnerIcon, CheckCircleIcon, UserIcon, HomeIcon } from './Icons';
+import { XIcon, SpinnerIcon, CheckCircleIcon, UserIcon, HomeIcon, ExclamationTriangleIcon } from './Icons';
 import { useData } from '../contexts/DataContext';
 import { Avatar } from './Avatar';
 import { useToast } from '../contexts/ToastContext';
+import { DuplicateDetector, DuplicateGroup } from '../utils/duplicate-detection';
 
 interface DuplicateFinderModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-const DuplicateSpeakerGroup: React.FC<{ group: Speaker[], onMerge: () => void }> = ({ group, onMerge }) => {
-    const [primaryId, setPrimaryId] = useState<string>(group[0].id);
+const DuplicateSpeakerGroup: React.FC<{ group: DuplicateGroup<Speaker>, onMerge: () => void }> = ({ group, onMerge }) => {
+    const [primaryId, setPrimaryId] = useState<string>(group.items[0].id);
     const { visits, archivedVisits, mergeSpeakers } = useData();
 
     const getVisitCount = useCallback((speakerId: string) => {
-        const upcoming = visits.filter(v => v.speakerId === speakerId).length;
-        const past = archivedVisits.filter(v => v.speakerId === speakerId).length;
+        const upcoming = visits.filter(v => v.id === speakerId).length;
+        const past = archivedVisits.filter(v => v.id === speakerId).length;
         return { upcoming, past };
     }, [visits, archivedVisits]);
 
     const handleMerge = () => {
-        const duplicateIds = group.map(s => s.id).filter(id => id !== primaryId);
+        const duplicateIds = group.items.map(s => s.id).filter(id => id !== primaryId);
         mergeSpeakers(primaryId, duplicateIds);
         onMerge();
     };
 
     return (
         <div className="bg-gray-100 dark:bg-primary-light/10 p-4 rounded-lg">
-            <h4 className="font-bold text-lg text-text-main dark:text-text-main-dark mb-2">"{group[0].nom}"</h4>
+            <div className="mb-3">
+                <h4 className="font-bold text-lg text-text-main dark:text-text-main-dark">"{group.items[0].nom}"</h4>
+                <div className="flex items-center gap-2 mt-1">
+                    <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />
+                    <span className="text-sm text-amber-600 dark:text-amber-400">{group.reason}</span>
+                    <span className="text-xs bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 px-2 py-1 rounded">
+                        {Math.round(group.similarity)}% similaire
+                    </span>
+                </div>
+            </div>
             <div className="space-y-2">
-                {group.map(speaker => {
+                {group.items.map(speaker => {
                     const { upcoming, past } = getVisitCount(speaker.id);
                     return (
                         <div key={speaker.id} className="p-2 border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark rounded-md">
                              <label className="flex items-center gap-3 cursor-pointer">
                                 <input
                                     type="radio"
-                                    name={`speaker-group-${group[0].nom}`}
+                                    name={`speaker-group-${group.items[0].nom}`}
                                     checked={primaryId === speaker.id}
                                     onChange={() => setPrimaryId(speaker.id)}
                                     className="h-5 w-5 text-primary focus:ring-primary"
@@ -58,15 +68,15 @@ const DuplicateSpeakerGroup: React.FC<{ group: Speaker[], onMerge: () => void }>
             </div>
             <div className="text-right mt-3">
                 <button onClick={handleMerge} className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark transition-transform active:scale-95">
-                    Fusionner les {group.length} entrées
+                    Fusionner les {group.items.length} entrées
                 </button>
             </div>
         </div>
     );
 };
 
-const DuplicateHostGroup: React.FC<{ group: Host[], onMerge: () => void }> = ({ group, onMerge }) => {
-    const [primaryName, setPrimaryName] = useState<string>(group[0].nom);
+const DuplicateHostGroup: React.FC<{ group: DuplicateGroup<Host>, onMerge: () => void }> = ({ group, onMerge }) => {
+    const [primaryName, setPrimaryName] = useState<string>(group.items[0].nom);
     const { visits, archivedVisits, mergeHosts } = useData();
 
     const getVisitCount = useCallback((hostName: string) => {
@@ -76,23 +86,32 @@ const DuplicateHostGroup: React.FC<{ group: Host[], onMerge: () => void }> = ({ 
     }, [visits, archivedVisits]);
 
     const handleMerge = () => {
-        const duplicateNames = group.map(h => h.nom).filter(name => name !== primaryName);
+        const duplicateNames = group.items.map(h => h.nom).filter(name => name !== primaryName);
         mergeHosts(primaryName, duplicateNames);
         onMerge();
     };
 
     return (
         <div className="bg-gray-100 dark:bg-primary-light/10 p-4 rounded-lg">
-            <h4 className="font-bold text-lg text-text-main dark:text-text-main-dark mb-2">"{group[0].nom}"</h4>
+            <div className="mb-3">
+                <h4 className="font-bold text-lg text-text-main dark:text-text-main-dark">"{group.items[0].nom}"</h4>
+                <div className="flex items-center gap-2 mt-1">
+                    <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />
+                    <span className="text-sm text-amber-600 dark:text-amber-400">{group.reason}</span>
+                    <span className="text-xs bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 px-2 py-1 rounded">
+                        {Math.round(group.similarity)}% similaire
+                    </span>
+                </div>
+            </div>
             <div className="space-y-2">
-                {group.map(host => {
+                {group.items.map(host => {
                     const { upcoming, past } = getVisitCount(host.nom);
                     return (
                         <div key={host.nom} className="p-2 border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark rounded-md">
                              <label className="flex items-center gap-3 cursor-pointer">
                                 <input
                                     type="radio"
-                                    name={`host-group-${group[0].nom}`}
+                                    name={`host-group-${group.items[0].nom}`}
                                     checked={primaryName === host.nom}
                                     onChange={() => setPrimaryName(host.nom)}
                                     className="h-5 w-5 text-primary focus:ring-primary"
@@ -113,7 +132,7 @@ const DuplicateHostGroup: React.FC<{ group: Host[], onMerge: () => void }> = ({ 
             </div>
             <div className="text-right mt-3">
                 <button onClick={handleMerge} className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark transition-transform active:scale-95">
-                    Fusionner les {group.length} entrées
+                    Fusionner les {group.items.length} entrées
                 </button>
             </div>
         </div>
@@ -121,41 +140,26 @@ const DuplicateHostGroup: React.FC<{ group: Host[], onMerge: () => void }> = ({ 
 };
 
 export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOpen, onClose }) => {
-    const { speakers, hosts } = useData();
+    const { speakers, hosts, visits, archivedVisits } = useData();
     const { addToast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'speakers' | 'hosts'>('speakers');
-    const [speakerGroups, setSpeakerGroups] = useState<Speaker[][]>([]);
-    const [hostGroups, setHostGroups] = useState<Host[][]>([]);
+    const [speakerGroups, setSpeakerGroups] = useState<DuplicateGroup<Speaker>[]>([]);
+    const [hostGroups, setHostGroups] = useState<DuplicateGroup<Host>[]>([]);
+    const [analysisResults, setAnalysisResults] = useState<any>(null);
 
     const findDuplicates = useCallback(() => {
         setIsLoading(true);
-        // Find duplicate speakers
-        const speakerMap = new Map<string, Speaker[]>();
-        speakers.forEach(speaker => {
-            const key = speaker.nom.toLowerCase().trim();
-            if (!speakerMap.has(key)) {
-                speakerMap.set(key, []);
-            }
-            speakerMap.get(key)!.push(speaker);
-        });
-        const speakerDups = Array.from(speakerMap.values()).filter(group => group.length > 1);
-        setSpeakerGroups(speakerDups);
-
-        // Find duplicate hosts
-        const hostMap = new Map<string, Host[]>();
-        hosts.forEach(host => {
-            const key = host.nom.toLowerCase().trim();
-            if (!hostMap.has(key)) {
-                hostMap.set(key, []);
-            }
-            hostMap.get(key)!.push(host);
-        });
-        const hostDups = Array.from(hostMap.values()).filter(group => group.length > 1);
-        setHostGroups(hostDups);
-
+        
+        // Utiliser le nouveau système de détection avancé
+        const analysis = DuplicateDetector.analyzeAllDuplicates(speakers, hosts, visits, archivedVisits);
+        
+        setSpeakerGroups(analysis.speakers);
+        setHostGroups(analysis.hosts);
+        setAnalysisResults(analysis);
+        
         setIsLoading(false);
-    }, [speakers, hosts]);
+    }, [speakers, hosts, visits, archivedVisits]);
 
     useEffect(() => {
         if (isOpen) {
@@ -217,7 +221,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         <div className="space-y-4">
                             {activeTab === 'speakers' && (
                                 speakerGroups.length > 0 ? (
-                                    speakerGroups.map(group => <DuplicateSpeakerGroup key={group[0].id} group={group} onMerge={handleMergeCompletion} />)
+                                    speakerGroups.map((group, index) => <DuplicateSpeakerGroup key={`${group.items[0].id}-${index}`} group={group} onMerge={handleMergeCompletion} />)
                                 ) : (
                                     <div className="text-center py-8">
                                         <UserIcon className="w-12 h-12 mx-auto text-gray-400"/>
@@ -227,7 +231,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                             )}
                             {activeTab === 'hosts' && (
                                 hostGroups.length > 0 ? (
-                                    hostGroups.map(group => <DuplicateHostGroup key={group[0].nom} group={group} onMerge={handleMergeCompletion} />)
+                                    hostGroups.map((group, index) => <DuplicateHostGroup key={`${group.items[0].nom}-${index}`} group={group} onMerge={handleMergeCompletion} />)
                                 ) : (
                                     <div className="text-center py-8">
                                         <HomeIcon className="w-12 h-12 mx-auto text-gray-400"/>
