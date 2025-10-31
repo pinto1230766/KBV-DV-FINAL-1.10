@@ -150,32 +150,30 @@ self.addEventListener('fetch', event => {
   // Use network-first for app's own resources to ensure freshness
   if (url.origin === self.location.origin && APP_SHELL_URLS.includes(url.pathname)) {
     event.respondWith(
-      // Validation finale avant fetch
-      isUrlAllowed(event.request.url) ? 
-        fetch(event.request).then(networkResponse => {
-          if (networkResponse.ok) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          // Network failed, fall back to cache
-          return caches.match(event.request)
-            .then(cachedResponse => {
-              if (cachedResponse) {
-                return cachedResponse;
-              }
-              // This should not happen for pre-cached resources, but as a fallback
-              return new Response("You are offline and this resource isn't cached.", {
-                status: 404,
-                statusText: "Offline and not in cache"
-              });
+      fetch(event.request).then(networkResponse => {
+        if (networkResponse.ok) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME)
+            .then(cache => {
+              cache.put(event.request, responseToCache);
             });
-        })
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        // Network failed, fall back to cache
+        return caches.match(event.request)
+          .then(cachedResponse => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // This should not happen for pre-cached resources, but as a fallback
+            return new Response("You are offline and this resource isn't cached.", {
+              status: 404,
+              statusText: "Offline and not in cache"
+            });
+          });
+      })
     );
   } else {
     // Use cache-first for external resources for performance

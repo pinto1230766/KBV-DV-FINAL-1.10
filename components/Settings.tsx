@@ -58,18 +58,32 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ title, description, i
 };
 
 
+const defaultProfile: CongregationProfile = {
+    name: "",
+    subtitle: "",
+    defaultTime: "14:30",
+    hospitalityOverseer: "",
+    hospitalityOverseerPhone: "",
+    backupPhoneNumber: "",
+    latitude: null,
+    longitude: null
+};
+
 const CongregationProfileContent: React.FC = () => {
-    const { congregationProfile, updateCongregationProfile } = useData();
+    const { appData, updateCongregationProfile } = useData();
     const { addToast } = useToast();
-    const [profile, setProfile] = useState<CongregationProfile>(congregationProfile);
+    
+    const [profile, setProfile] = useState<CongregationProfile>(defaultProfile);
     const [isDirty, setIsDirty] = useState(false);
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [locationError, setLocationError] = useState('');
 
     useEffect(() => {
-        setProfile(congregationProfile);
-        setIsDirty(false);
-    }, [congregationProfile]);
+        if (appData?.congregationProfile) {
+            setProfile({ ...defaultProfile, ...appData.congregationProfile });
+            setIsDirty(false);
+        }
+    }, [appData?.congregationProfile, defaultProfile]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -765,6 +779,15 @@ const MaintenanceContent: React.FC = () => {
 
 export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImporting }) => {
     const { syncWithGoogleSheet } = useData();
+    
+    const handleSync = async () => {
+        try {
+            await syncWithGoogleSheet();
+        } catch (error) {
+            console.error('Sync error:', error);
+        }
+    };
+    
     return (
         <div className="space-y-6">
             <SettingsSection title="Profil de la Congrégation" description="Personnalisez les informations de l'application." icon={PodiumIcon}>
@@ -784,7 +807,7 @@ export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImp
             </SettingsSection>
 
             <SettingsSection title="Synchronisation Google Sheets" description="Importez et mettez à jour les visites depuis un Google Sheet." icon={CloudArrowDownIcon}>
-                <GoogleSheetsContent onSync={syncWithGoogleSheet} />
+                <GoogleSheetsContent onSync={handleSync} />
             </SettingsSection>
 
             <SettingsSection title="Sécurité et Confidentialité" description="Protégez vos données avec un mot de passe." icon={ShieldCheckIcon}>

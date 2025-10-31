@@ -79,7 +79,9 @@ const AISuggestionCriteriaModal: React.FC<{
 };
 
 export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeaker, onEditSpeaker, onSendMessage, isExpanded, onToggleExpand }) => {
-    const { speakers, archivedVisits, apiKey, isOnline } = useData();
+    const { appData, apiKey, isOnline } = useData();
+    const speakers = appData?.speakers || [];
+    const archivedVisits = appData?.archivedVisits || [];
     const { addToast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCongregation, setSelectedCongregation] = useState('');
@@ -91,7 +93,7 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
     const [isCriteriaModalOpen, setIsCriteriaModalOpen] = useState(false);
 
     const congregations = useMemo(() => {
-        const allCongs = speakers.map(s => s.congregation);
+        const allCongs = (speakers || []).map(s => s.congregation);
         return [...new Set(allCongs)].sort();
     }, [speakers]);
     
@@ -112,7 +114,7 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
     };
 
     const filteredSpeakers = useMemo(() => {
-        let speakersToSort = speakers.filter(speaker => {
+        let speakersToSort = (speakers || []).filter(speaker => {
             const searchTermMatch = searchTerm === '' ||
                 speaker.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 speaker.congregation.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -159,7 +161,7 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
         setSuggestions([]);
 
         try {
-            const speakersWithLastVisit = speakers.map(speaker => {
+            const speakersWithLastVisit = (speakers || []).map(speaker => {
                 const lastVisit = getMostRecentVisitDate(speaker);
                 return {
                     name: speaker.nom,
@@ -201,7 +203,7 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
             const aiSuggestions: { speakerName: string, reason: string }[] = JSON.parse(jsonStr);
 
             const matchedSuggestions = aiSuggestions.map(suggestion => {
-                const speaker = speakers.find(s => s.nom === suggestion.speakerName);
+                const speaker = (speakers || []).find(s => s.nom === suggestion.speakerName);
                 return speaker ? { speaker, reason: suggestion.reason } : null;
             }).filter((s): s is { speaker: Speaker, reason: string } => s !== null);
 
@@ -224,7 +226,7 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
                 <div className="flex items-center gap-4">
                     <h2 className="text-2xl font-bold font-display text-primary dark:text-white">Liste des orateurs</h2>
                     <span className="bg-gray-200 dark:bg-primary-light/20 text-text-muted dark:text-text-muted-dark text-sm font-semibold px-3 py-1 rounded-full">
-                        {speakers.length}
+                        {(speakers || []).length}
                     </span>
                 </div>
                 <ChevronDownIcon className={`w-6 h-6 text-text-muted dark:text-text-muted-dark transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />

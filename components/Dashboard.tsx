@@ -73,7 +73,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
     onGoToArchive,
     onLeaveFeedback
 }) => {
-    const { hosts, speakers, archivedVisits, upcomingVisits } = useData();
+    const { appData, upcomingVisits } = useData();
+    
+    const speakers = appData?.speakers || [];
+    const hosts = appData?.hosts || [];
+    const archivedVisits = appData?.archivedVisits || [];
     
     const stats = [
         { title: "Orateurs", value: speakers.length, icon: UserIcon, color: "bg-accent", onClick: onGoToSpeakers },

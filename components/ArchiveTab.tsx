@@ -9,18 +9,23 @@ interface ArchiveTabProps {
 }
 
 export const ArchiveTab: React.FC<ArchiveTabProps> = ({ onLeaveFeedback }) => {
-    const { archivedVisits, deleteArchivedVisit, speakers, hosts } = useData();
+    const { appData, deleteArchivedVisit } = useData();
+    const archivedVisits = appData?.archivedVisits || [];
+    const speakers = appData?.speakers || [];
+    const hosts = appData?.hosts || [];
     const confirm = useConfirm();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterYear, setFilterYear] = useState<string>('all');
     const [filterHost, setFilterHost] = useState<string>('all');
 
     const years = useMemo(() => {
+        if (!Array.isArray(archivedVisits)) return [];
         const yearsSet = new Set(archivedVisits.map(v => new Date(v.visitDate).getFullYear()));
         return Array.from(yearsSet).sort((a, b) => b - a);
     }, [archivedVisits]);
 
     const hostStats = useMemo(() => {
+        if (!Array.isArray(archivedVisits)) return [];
         const stats = new Map<string, number>();
         archivedVisits.forEach(v => {
             stats.set(v.host, (stats.get(v.host) || 0) + 1);
@@ -31,6 +36,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ onLeaveFeedback }) => {
     }, [archivedVisits]);
 
     const speakerStats = useMemo(() => {
+        if (!Array.isArray(archivedVisits)) return [];
         const stats = new Map<string, number>();
         archivedVisits.forEach(v => {
             stats.set(v.nom, (stats.get(v.nom) || 0) + 1);
@@ -41,6 +47,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ onLeaveFeedback }) => {
     }, [archivedVisits]);
 
     const filteredVisits = useMemo(() => {
+        if (!Array.isArray(archivedVisits)) return [];
         const lowerCaseTerm = searchTerm.toLowerCase();
         return archivedVisits
             .filter(v => {

@@ -13,7 +13,9 @@ interface DuplicateFinderModalProps {
 
 const DuplicateSpeakerGroup: React.FC<{ group: DuplicateGroup<Speaker>, onMerge: () => void }> = ({ group, onMerge }) => {
     const [primaryId, setPrimaryId] = useState<string>(group.items[0].id);
-    const { visits, archivedVisits, mergeSpeakers } = useData();
+    const { appData, mergeSpeakers } = useData();
+    const visits = appData?.visits || [];
+    const archivedVisits = appData?.archivedVisits || [];
 
     const getVisitCount = useCallback((speakerId: string) => {
         const upcoming = visits.filter(v => v.id === speakerId).length;
@@ -77,7 +79,9 @@ const DuplicateSpeakerGroup: React.FC<{ group: DuplicateGroup<Speaker>, onMerge:
 
 const DuplicateHostGroup: React.FC<{ group: DuplicateGroup<Host>, onMerge: () => void }> = ({ group, onMerge }) => {
     const [primaryName, setPrimaryName] = useState<string>(group.items[0].nom);
-    const { visits, archivedVisits, mergeHosts } = useData();
+    const { appData, mergeHosts } = useData();
+    const visits = appData?.visits || [];
+    const archivedVisits = appData?.archivedVisits || [];
 
     const getVisitCount = useCallback((hostName: string) => {
         const upcoming = visits.filter(v => v.host === hostName).length;
@@ -140,7 +144,11 @@ const DuplicateHostGroup: React.FC<{ group: DuplicateGroup<Host>, onMerge: () =>
 };
 
 export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOpen, onClose }) => {
-    const { speakers, hosts, visits, archivedVisits } = useData();
+    const { appData } = useData();
+    const speakers = appData?.speakers || [];
+    const hosts = appData?.hosts || [];
+    const visits = appData?.visits || [];
+    const archivedVisits = appData?.archivedVisits || [];
     const { addToast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'speakers' | 'hosts'>('speakers');

@@ -23,7 +23,9 @@ interface TalkCardProps {
 
 const TalkCard: React.FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    const { visits, archivedVisits } = useData();
+    const { appData } = useData();
+    const visits = appData?.visits || [];
+    const archivedVisits = appData?.archivedVisits || [];
 
     const fullHistory = useMemo(() => {
         return [...visits, ...archivedVisits]
@@ -98,7 +100,10 @@ const TalkCard: React.FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
 };
 
 export const TalksManager: React.FC = () => {
-    const { visits, archivedVisits, publicTalks } = useData();
+    const { appData } = useData();
+    const visits = appData?.visits || [];
+    const archivedVisits = appData?.archivedVisits || [];
+    const publicTalks = appData?.publicTalks || [];
     const [searchTerm, setSearchTerm] = useState('');
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -111,7 +116,7 @@ export const TalksManager: React.FC = () => {
     const talkHistoryMap = useMemo(() => {
         const history = new Map<string, { date: Date; speaker: string }>();
         // Only archived visits count for "last presented"
-        archivedVisits.forEach(visit => {
+        (archivedVisits || []).forEach(visit => {
             if (visit.talkTheme) {
                 const theme = visit.talkTheme.trim();
                 const visitDate = new Date(visit.visitDate + 'T00:00:00');
@@ -123,12 +128,12 @@ export const TalksManager: React.FC = () => {
         return history;
     }, [archivedVisits]);
     
-    const allVisits = useMemo(() => [...visits, ...archivedVisits], [visits, archivedVisits]);
+    const allVisits = useMemo(() => [...(visits || []), ...(archivedVisits || [])], [visits, archivedVisits]);
 
     const talksWithInfo = useMemo(() => {
-        let filtered = publicTalks.map(talk => {
+        let filtered = (publicTalks || []).map(talk => {
             const lastPresentedHistory = talkHistoryMap.get(talk.theme.trim());
-            const nextVisit = visits.find(v => v.talkTheme?.trim() === talk.theme.trim());
+            const nextVisit = (visits || []).find(v => v.talkTheme?.trim() === talk.theme.trim());
             
             let status: TalkStatus = 'New';
             if (nextVisit) {

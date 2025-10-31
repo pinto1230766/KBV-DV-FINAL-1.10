@@ -59,7 +59,10 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
   messageType: initialMessageType,
   initialText,
 }) => {
-  const { speakers, hosts, customTemplates, saveCustomTemplate, deleteCustomTemplate, logCommunication, apiKey, congregationProfile } = useData();
+  const { appData, customTemplates, saveCustomTemplate, deleteCustomTemplate, logCommunication, apiKey } = useData();
+  const speakers = appData?.speakers || [];
+  const hosts = appData?.hosts || [];
+  const congregationProfile = appData?.congregationProfile || {};
   const { addToast } = useToast();
 
   const isFreeForm = !visit;
@@ -141,8 +144,8 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
     generated = generated.replace(/{speakerPhone}/g, formatPhoneNumber(speaker?.telephone));
     generated = generated.replace(/{hostPhone}/g, formatPhoneNumber(host?.telephone));
     generated = generated.replace(/{hostAddress}/g, host?.address || '(non renseignée)');
-    generated = generated.replace(/{hospitalityOverseer}/g, congregationProfile.hospitalityOverseer || '');
-    generated = generated.replace(/{hospitalityOverseerPhone}/g, congregationProfile.hospitalityOverseerPhone || '');
+    generated = generated.replace(/{hospitalityOverseer}/g, (congregationProfile as any)?.hospitalityOverseer || '');
+    generated = generated.replace(/{hospitalityOverseerPhone}/g, (congregationProfile as any)?.hospitalityOverseerPhone || '');
     
     return generated;
   }, [visit, speaker, host, messageType, role, language, congregationProfile]);

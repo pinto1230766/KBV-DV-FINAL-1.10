@@ -14,12 +14,14 @@ interface HostListProps {
 }
 
 export const HostList: React.FC<HostListProps> = ({ onAddHost, onEditHost, onSendMessage, isExpanded, onToggleExpand }) => {
-    const { hosts, visits, deleteHost } = useData();
+    const { appData, deleteHost } = useData();
+    const hosts = appData?.hosts || [];
+    const visits = appData?.visits || [];
     const confirm = useConfirm();
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredHosts = useMemo(() => {
-        return hosts.filter(h => 
+        return (hosts || []).filter(h => 
             h.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (h.tags || []).join(' ').toLowerCase().includes(searchTerm.toLowerCase())
         );
@@ -27,7 +29,7 @@ export const HostList: React.FC<HostListProps> = ({ onAddHost, onEditHost, onSen
 
 
     const handleDelete = async (hostName: string) => {
-        const assignedVisitsCount = visits.filter(v => v.host === hostName && v.status !== 'cancelled').length;
+        const assignedVisitsCount = (visits || []).filter(v => v.host === hostName && v.status !== 'cancelled').length;
         let confirmMessage = `Êtes-vous sûr de vouloir supprimer "${hostName}" de la liste d'accueil ?`;
 
         if (assignedVisitsCount > 0) {
@@ -46,7 +48,7 @@ export const HostList: React.FC<HostListProps> = ({ onAddHost, onEditHost, onSen
                 <div className="flex items-center gap-4">
                     <h2 className="text-2xl font-bold font-display text-primary dark:text-white">Liste des contacts d'accueil</h2>
                      <span className="bg-gray-200 dark:bg-primary-light/20 text-text-muted dark:text-text-muted-dark text-sm font-semibold px-3 py-1 rounded-full">
-                        {hosts.length}
+                        {(hosts || []).length}
                     </span>
                 </div>
                 <ChevronDownIcon className={`w-6 h-6 text-text-muted dark:text-text-muted-dark transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />

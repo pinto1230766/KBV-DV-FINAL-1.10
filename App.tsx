@@ -101,20 +101,33 @@ const App: React.FC = () => {
         addHost: handleAddHost,
         scheduleVisit: handleScheduleFromShortcut
     }), [handleAddSpeaker, handleAddHost, handleScheduleFromShortcut]);
+    const dataContext = useData();
     const { 
-        congregationProfile,
+        appData,
         upcomingVisits,
         pastUnarchivedVisits,
         deleteVisit,
         completeVisit,
         importData,
         resetData,
-        speakers, 
-        archivedVisits,
-        hosts,
-        visits,
         logoUrl
-    } = useData();
+    } = dataContext;
+    
+    const congregationProfile = appData?.congregationProfile || {
+        name: "KBV DV LYON",
+        subtitle: "",
+        defaultTime: "14:30",
+        hospitalityOverseer: "",
+        hospitalityOverseerPhone: "",
+        backupPhoneNumber: "",
+        latitude: null,
+        longitude: null
+    };
+    
+    const speakers = appData?.speakers || [];
+    const hosts = appData?.hosts || [];
+    const visits = appData?.visits || [];
+    const archivedVisits = appData?.archivedVisits || [];
     
     // Modals State
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);

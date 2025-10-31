@@ -245,17 +245,17 @@ const VisitForm: React.FC<{
     apiKey: string;
     isOnline: boolean;
     isEditing: boolean;
-}> = ({ 
-    formData, onFormChange, speakerForVisit, hosts, isLocalSpeaker, onAddNewHost, 
-    isGeneratingNotes, onGenerateNotes, 
+    publicTalks: any[];
+}> = ({
+    formData, onFormChange, speakerForVisit, hosts, isLocalSpeaker, onAddNewHost,
+    isGeneratingNotes, onGenerateNotes,
     isSuggestingHosts, onSuggestHosts,
     isGeneratingChecklist, onGenerateChecklist,
     repetitionWarning,
     specialDateWarning,
-    apiKey, isOnline, isEditing
+    apiKey, isOnline, isEditing, publicTalks
 }) => {
     const { addToast } = useToast();
-    const { publicTalks } = useData();
     const [conflictWarnings, setConflictWarnings] = useState<string[]>([]);
 
     useEffect(() => {
@@ -530,7 +530,14 @@ interface ScheduleVisitModalProps {
 }
 
 export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, onClose, visit, speaker, onComplete }) => {
-    const { hosts, visits, addHost, addVisit, updateVisit, apiKey, speakers: allSpeakers, archivedVisits, congregationProfile, publicTalks, isOnline, specialDates } = useData();
+    const { appData, addHost, addVisit, updateVisit, apiKey, isOnline } = useData();
+    const hosts = appData?.hosts || [];
+    const visits = appData?.visits || [];
+    const allSpeakers = appData?.speakers || [];
+    const archivedVisits = appData?.archivedVisits || [];
+    const congregationProfile = appData?.congregationProfile;
+    const publicTalks = appData?.publicTalks || [];
+    const specialDates = appData?.specialDates || [];
     const [formData, setFormData] = useState<VisitFormData>({
         visitDate: '', arrivalDate: '', departureDate: '', visitTime: '14:30', host: '', accommodation: '',
         meals: '', notes: '', status: 'pending', attachments: [], expenses: [], talkNoOrType: '', talkTheme: '',
@@ -554,7 +561,7 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
     
     const speakerForVisit = useMemo(() => {
         if (speaker) return speaker;
-        if (visit) return allSpeakers.find(s => s.id === visit.id);
+        if (visit && allSpeakers) return allSpeakers.find(s => s.id === visit.id);
         return null;
     }, [speaker, visit, allSpeakers]);
 
@@ -880,7 +887,7 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
                 <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
                     {dateConflict && <div className="p-3 mx-6 mt-4 rounded-md bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200 text-sm flex items-start space-x-3"><ExclamationTriangleIcon className="w-5 h-5 flex-shrink-0 mt-0.5"/><p><strong>Attention :</strong> Une autre visite est déjà programmée ce jour-là pour <strong>{dateConflict.nom}</strong>. Vous ne pouvez pas enregistrer.</p></div>}
                     {hostSuggestions && <div className="p-4 mx-6 mt-4 rounded-md bg-primary/10 dark:bg-primary/20 text-sm"><div className="flex justify-between items-center mb-2"><h3 className="font-bold text-primary dark:text-primary-light">Suggestions d'accueil (IA)</h3><button type="button" onClick={() => setHostSuggestions(null)}><XIcon className="w-5 h-5"/></button></div><div className="space-y-2">{hostSuggestions.map(({ host, reason }) => (<div key={host.nom} className="p-2 bg-white/50 dark:bg-card-dark/50 rounded-md"><div className="flex justify-between items-center"><p className="font-semibold">{host.nom}</p><button type="button" onClick={() => { handleFormChange('host', host.nom); addToast(`${host.nom} sélectionné.`, 'success'); }} className="px-3 py-1 bg-primary text-white rounded text-xs font-semibold">Choisir</button></div><p className="text-xs italic text-text-muted dark:text-text-muted-dark mt-1">"{reason}"</p></div>))}</div></div>}
-                    <VisitForm formData={formData} onFormChange={handleFormChange} speakerForVisit={speakerForVisit} hosts={hosts} isLocalSpeaker={isLocalSpeaker} onAddNewHost={handleAddNewHost} isGeneratingNotes={isGeneratingNotes} onGenerateNotes={handleGenerateNotes} isSuggestingHosts={isSuggestingHosts} onSuggestHosts={handleSuggestHosts} isGeneratingChecklist={isGeneratingChecklist} onGenerateChecklist={handleGenerateChecklist} repetitionWarning={repetitionWarning} specialDateWarning={specialDateWarning} apiKey={apiKey} isOnline={isOnline} isEditing={isEditing} />
+                    <VisitForm formData={formData} onFormChange={handleFormChange} speakerForVisit={speakerForVisit} hosts={hosts} isLocalSpeaker={isLocalSpeaker} onAddNewHost={handleAddNewHost} isGeneratingNotes={isGeneratingNotes} onGenerateNotes={handleGenerateNotes} isSuggestingHosts={isSuggestingHosts} onSuggestHosts={handleSuggestHosts} isGeneratingChecklist={isGeneratingChecklist} onGenerateChecklist={handleGenerateChecklist} repetitionWarning={repetitionWarning} specialDateWarning={specialDateWarning} apiKey={apiKey} isOnline={isOnline} isEditing={isEditing} publicTalks={publicTalks} />
                     
                     {isEditing && formData.status === 'cancelled' && (
                         <div className="px-6 pb-4">

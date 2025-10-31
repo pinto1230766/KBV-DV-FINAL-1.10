@@ -59,12 +59,15 @@ export class DuplicateDetector {
     const duplicateGroups: DuplicateGroup<Speaker>[] = [];
     const processed = new Set<string>();
 
+    if (!speakers || !Array.isArray(speakers)) return duplicateGroups;
+
     for (let i = 0; i < speakers.length; i++) {
       if (processed.has(speakers[i].id)) continue;
 
       const currentSpeaker = speakers[i];
       const group: Speaker[] = [currentSpeaker];
       processed.add(currentSpeaker.id);
+      let groupMaxSimilarity = 0;
 
       for (let j = i + 1; j < speakers.length; j++) {
         if (processed.has(speakers[j].id)) continue;
@@ -78,28 +81,28 @@ export class DuplicateDetector {
           normalizeName(currentSpeaker.nom),
           normalizeName(otherSpeaker.nom)
         );
-        
+
         if (nameSimilarity >= threshold) {
           reasons.push(`Nom similaire (${Math.round(nameSimilarity)}%)`);
           maxSimilarity = Math.max(maxSimilarity, nameSimilarity);
         }
 
         // Vérifier nom exact mais congrégation différente
-        if (normalizeName(currentSpeaker.nom) === normalizeName(otherSpeaker.nom) && 
+        if (normalizeName(currentSpeaker.nom) === normalizeName(otherSpeaker.nom) &&
             currentSpeaker.congregation !== otherSpeaker.congregation) {
           reasons.push('Même nom, congrégation différente');
           maxSimilarity = 100;
         }
 
         // Vérifier même téléphone
-        if (currentSpeaker.telephone && otherSpeaker.telephone && 
+        if (currentSpeaker.telephone && otherSpeaker.telephone &&
             currentSpeaker.telephone === otherSpeaker.telephone) {
           reasons.push('Même numéro de téléphone');
           maxSimilarity = 100;
         }
 
         // Vérifier même photo
-        if (currentSpeaker.photoUrl && otherSpeaker.photoUrl && 
+        if (currentSpeaker.photoUrl && otherSpeaker.photoUrl &&
             currentSpeaker.photoUrl === otherSpeaker.photoUrl) {
           reasons.push('Même photo');
           maxSimilarity = 100;
@@ -108,13 +111,14 @@ export class DuplicateDetector {
         if (reasons.length > 0) {
           group.push(otherSpeaker);
           processed.add(otherSpeaker.id);
+          groupMaxSimilarity = Math.max(groupMaxSimilarity, maxSimilarity);
         }
       }
 
       if (group.length > 1) {
         duplicateGroups.push({
           items: group,
-          similarity: maxSimilarity,
+          similarity: groupMaxSimilarity,
           reason: `${group.length} orateurs similaires`
         });
       }
@@ -128,6 +132,8 @@ export class DuplicateDetector {
     const duplicateGroups: DuplicateGroup<Host>[] = [];
     const processed = new Set<string>();
 
+    if (!hosts || !Array.isArray(hosts)) return duplicateGroups;
+
     for (let i = 0; i < hosts.length; i++) {
       const hostKey = `${hosts[i].nom}_${hosts[i].telephone}`;
       if (processed.has(hostKey)) continue;
@@ -135,6 +141,7 @@ export class DuplicateDetector {
       const currentHost = hosts[i];
       const group: Host[] = [currentHost];
       processed.add(hostKey);
+      let groupMaxSimilarity = 0;
 
       for (let j = i + 1; j < hosts.length; j++) {
         const otherHostKey = `${hosts[j].nom}_${hosts[j].telephone}`;
@@ -149,28 +156,28 @@ export class DuplicateDetector {
           normalizeName(currentHost.nom),
           normalizeName(otherHost.nom)
         );
-        
+
         if (nameSimilarity >= threshold) {
           reasons.push(`Nom similaire (${Math.round(nameSimilarity)}%)`);
           maxSimilarity = Math.max(maxSimilarity, nameSimilarity);
         }
 
         // Vérifier même téléphone
-        if (currentHost.telephone && otherHost.telephone && 
+        if (currentHost.telephone && otherHost.telephone &&
             currentHost.telephone === otherHost.telephone) {
           reasons.push('Même numéro de téléphone');
           maxSimilarity = 100;
         }
 
         // Vérifier même adresse
-        if (currentHost.address && otherHost.address && 
+        if (currentHost.address && otherHost.address &&
             normalizeName(currentHost.address) === normalizeName(otherHost.address)) {
           reasons.push('Même adresse');
           maxSimilarity = Math.max(maxSimilarity, 90);
         }
 
         // Vérifier même photo
-        if (currentHost.photoUrl && otherHost.photoUrl && 
+        if (currentHost.photoUrl && otherHost.photoUrl &&
             currentHost.photoUrl === otherHost.photoUrl) {
           reasons.push('Même photo');
           maxSimilarity = 100;
@@ -179,13 +186,14 @@ export class DuplicateDetector {
         if (reasons.length > 0) {
           group.push(otherHost);
           processed.add(otherHostKey);
+          groupMaxSimilarity = Math.max(groupMaxSimilarity, maxSimilarity);
         }
       }
 
       if (group.length > 1) {
         duplicateGroups.push({
           items: group,
-          similarity: maxSimilarity,
+          similarity: groupMaxSimilarity,
           reason: `${group.length} contacts similaires`
         });
       }
@@ -198,6 +206,8 @@ export class DuplicateDetector {
   static findVisitDuplicates(visits: Visit[]): DuplicateGroup<Visit>[] {
     const duplicateGroups: DuplicateGroup<Visit>[] = [];
     const visitMap = new Map<string, Visit[]>();
+
+    if (!visits || !Array.isArray(visits)) return duplicateGroups;
 
     // Grouper par orateur + date
     visits.forEach(visit => {
@@ -224,7 +234,7 @@ export class DuplicateDetector {
 
   // Analyse complète des doublons
   static analyzeAllDuplicates(speakers: Speaker[], hosts: Host[], visits: Visit[], archivedVisits: Visit[]) {
-    const allVisits = [...visits, ...archivedVisits];
+    const allVisits = [...(visits || []), ...(archivedVisits || [])];
     
     return {
       speakers: this.findSpeakerDuplicates(speakers),

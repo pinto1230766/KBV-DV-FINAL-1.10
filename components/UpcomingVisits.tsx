@@ -120,7 +120,8 @@ const VisitCardDateInfo: React.FC<{ visit: Visit; isZoom: boolean; isStreaming: 
 );
 
 const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void; hostExists: boolean; isZoom: boolean; isStreaming: boolean; isLocalSpeaker: boolean; isRemote: boolean; isSpecialEvent: boolean; }> = ({ visit, onEdit, hostExists, isZoom, isStreaming, isLocalSpeaker, isRemote, isSpecialEvent }) => {
-    const { congregationProfile } = useData();
+    const { appData } = useData();
+    const congregationProfile = appData?.congregationProfile || { name: "KBV DV LYON" };
     
     // Vérifier si c'est un orateur local (de la congrégation KBV DV LYON)
     const isActualLocalSpeaker = visit.congregation && 
@@ -304,7 +305,9 @@ const VisitCard: React.FC<{
     setContextMenu: (menu: { x: number, y: number, visit: Visit } | null) => void;
 }> = ({ visit, onEdit, onDelete, onComplete, onOpenMessageGenerator, index, setContextMenu }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { hosts, archivedVisits } = useData();
+    const { appData } = useData();
+    const hosts = appData?.hosts || [];
+    const archivedVisits = appData?.archivedVisits || [];
     const isArchived = useMemo(() => archivedVisits.some(v => v.visitId === visit.visitId), [archivedVisits, visit.visitId]);
     const hostExists = useMemo(() => visit.host === UNASSIGNED_HOST || visit.host === NO_HOST_NEEDED || hosts.some(h => h.nom === visit.host), [hosts, visit.host]);
     const isLocalSpeaker = visit.congregation && 
@@ -397,7 +400,8 @@ const VisitCard: React.FC<{
 
 const VisitRow: React.FC<Omit<UpcomingVisitsProps, 'visits' | 'onScheduleFirst' | 'viewMode'> & { visit: Visit; index: number }> = (props) => {
     const { visit, onEdit, onOpenMessageGenerator, index } = props;
-    const { archivedVisits } = useData();
+    const { appData } = useData();
+    const archivedVisits = appData?.archivedVisits || [];
     const isArchived = useMemo(() => archivedVisits.some(v => v.visitId === visit.visitId), [archivedVisits, visit.visitId]);
     const isSpecialEvent = visit.congregation === 'Événement spécial';
     const isUrgent = visit.host === UNASSIGNED_HOST && visit.locationType === 'physical';
@@ -457,7 +461,9 @@ const FilterButton = <T extends string>({ label, value, active, onClick }: { lab
 );
 
 export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits, onEdit, onDelete, onComplete, onOpenMessageGenerator, onScheduleFirst, viewMode }) => {
-    const { speakers, hosts, allSpeakerTags, allHostTags, savedViews, saveFilterView, deleteFilterView } = useData();
+    const { appData, allSpeakerTags, allHostTags, savedViews, saveFilterView, deleteFilterView } = useData();
+    const speakers = appData?.speakers || [];
+    const hosts = appData?.hosts || [];
     const { addToast } = useToast();
     const [dateFilter, setDateFilter] = useState<DateFilterType>('all');
     const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);

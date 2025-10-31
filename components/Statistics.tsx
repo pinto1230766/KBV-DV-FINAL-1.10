@@ -140,9 +140,13 @@ const RenderAnalysis: React.FC<{ text: string }> = ({ text }) => {
 
 
 export const Statistics: React.FC = () => {
-    const { speakers, hosts, upcomingVisits, archivedVisits, apiKey, isOnline } = useData();
+    const { appData, apiKey, isOnline } = useData();
+    const speakers = appData?.speakers || [];
+    const hosts = appData?.hosts || [];
+    const upcomingVisits = appData?.visits || [];
+    const archivedVisits = appData?.archivedVisits || [];
     const { addToast } = useToast();
-    const allVisits = useMemo(() => [...upcomingVisits, ...archivedVisits], [upcomingVisits, archivedVisits]);
+    const allVisits = useMemo(() => [...(upcomingVisits || []), ...(archivedVisits || [])], [upcomingVisits, archivedVisits]);
     
     const [analysis, setAnalysis] = useState<string | null>(null);
     const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
@@ -150,21 +154,21 @@ export const Statistics: React.FC = () => {
 
     const generalStats = useMemo(() => {
         const speakerVisitCounts = new Map<string, number>();
-        allVisits.forEach(v => {
+        (allVisits || []).forEach(v => {
             speakerVisitCounts.set(v.id, (speakerVisitCounts.get(v.id) || 0) + 1);
         });
 
         let mostFrequentSpeaker = { id: '', name: 'N/A', count: 0 };
         if (speakerVisitCounts.size > 0) {
             const [topSpeakerId, topCount] = [...speakerVisitCounts.entries()].reduce((a, b) => b[1] > a[1] ? b : a);
-            const speaker = speakers.find(s => s.id === topSpeakerId);
+            const speaker = (speakers || []).find(s => s.id === topSpeakerId);
             if (speaker) {
                 mostFrequentSpeaker = { id: speaker.id, name: speaker.nom, count: topCount };
             }
         }
         
         const hostVisitCounts = new Map<string, number>();
-        allVisits.forEach(v => {
+        (allVisits || []).forEach(v => {
             if (v.host && v.host !== 'À définir' && v.host !== 'Pas nécessaire' && v.host !== 'N/A') {
                 hostVisitCounts.set(v.host, (hostVisitCounts.get(v.host) || 0) + 1);
             }
@@ -176,7 +180,7 @@ export const Statistics: React.FC = () => {
             mostHospitableHost = { name: topHostName, count: topCount };
         }
         
-        const totalExpenses = allVisits.reduce((sum, visit) => {
+        const totalExpenses = (allVisits || []).reduce((sum, visit) => {
             return sum + (visit.expenses || []).reduce((expSum, exp) => expSum + exp.amount, 0);
         }, 0);
 
@@ -190,7 +194,7 @@ export const Statistics: React.FC = () => {
 
     const hostParticipationData = useMemo(() => {
         const counts = new Map<string, number>();
-        allVisits.forEach(v => {
+        (allVisits || []).forEach(v => {
             if (v.host && v.host !== 'À définir' && v.host !== 'Pas nécessaire' && v.host !== 'N/A') {
                  counts.set(v.host, (counts.get(v.host) || 0) + 1);
             }
@@ -203,8 +207,8 @@ export const Statistics: React.FC = () => {
 
     const congregationDistributionData = useMemo(() => {
         const speakerVisitCounts = new Map<string, number>();
-        allVisits.forEach(v => {
-             const speaker = speakers.find(s => s.id === v.id);
+        (allVisits || []).forEach(v => {
+             const speaker = (speakers || []).find(s => s.id === v.id);
              if (speaker) {
                 const cong = speaker.congregation || 'Non spécifiée';
                 speakerVisitCounts.set(cong, (speakerVisitCounts.get(cong) || 0) + 1);
@@ -218,7 +222,7 @@ export const Statistics: React.FC = () => {
     
     const talkPopularityData = useMemo(() => {
         const counts = new Map<string, number>();
-        allVisits.forEach(v => {
+        (allVisits || []).forEach(v => {
             if (v.talkTheme) {
                 counts.set(v.talkTheme, (counts.get(v.talkTheme) || 0) + 1);
             }
@@ -231,7 +235,7 @@ export const Statistics: React.FC = () => {
 
     const expenseByCategoryData = useMemo(() => {
         const expensesByCategory = new Map<string, number>();
-        allVisits.forEach(v => {
+        (allVisits || []).forEach(v => {
             (v.expenses || []).forEach(e => {
                 expensesByCategory.set(e.category, (expensesByCategory.get(e.category) || 0) + e.amount);
             });

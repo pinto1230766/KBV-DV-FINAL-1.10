@@ -78,11 +78,15 @@ const specialDateInfo: Record<SpecialDateType, { label: string; icon: React.FC<a
 
 
 export const CalendarView: React.FC<CalendarViewProps> = ({ onEditVisit }) => {
-    const { visits, archivedVisits, hosts, specialDates } = useData();
+    const { appData } = useData();
+    const visits = appData?.visits || [];
+    const archivedVisits = appData?.archivedVisits || [];
+    const hosts = appData?.hosts || [];
+    const specialDates = appData?.specialDates || [];
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState<DayDetails | null>(null);
 
-    const archivedVisitIds = useMemo(() => new Set(archivedVisits.map(v => v.visitId)), [archivedVisits]);
+    const archivedVisitIds = useMemo(() => new Set((archivedVisits || []).map(v => v.visitId)), [archivedVisits]);
 
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 

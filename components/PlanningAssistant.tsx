@@ -88,7 +88,20 @@ const toYYYYMMDD = (d: Date) => {
 };
 
 export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => {
-    const { upcomingVisits, archivedVisits, speakers, apiKey, congregationProfile, hosts, isOnline } = useData();
+    const { upcomingVisits, appData, apiKey, isOnline } = useData();
+    const archivedVisits = appData?.archivedVisits || [];
+    const speakers = appData?.speakers || [];
+    const hosts = appData?.hosts || [];
+    const congregationProfile = appData?.congregationProfile || {
+        name: "KBV DV LYON",
+        subtitle: "",
+        defaultTime: "14:30",
+        hospitalityOverseer: "",
+        hospitalityOverseerPhone: "",
+        backupPhoneNumber: "",
+        latitude: null,
+        longitude: null
+    };
     const { addToast } = useToast();
     const [weather, setWeather] = useState<string | null>(null);
     const [travelTime, setTravelTime] = useState<string | null>(null);

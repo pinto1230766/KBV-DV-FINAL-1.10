@@ -8,7 +8,8 @@ interface PrintPreviewModalProps {
 }
 
 export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ children, onClose }) => {
-    const { congregationProfile } = useData();
+    const { appData } = useData();
+    const congregationProfile = appData?.congregationProfile || {};
 
     return (
         <>
@@ -45,7 +46,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ children, 
 
                     {/* Footer */}
                     <div className="p-2 text-center text-xs text-gray-500 bg-gray-100 dark:bg-background-dark rounded-b-xl border-t border-border-light dark:border-border-dark">
-                        <p>Document généré le {new Date().toLocaleDateString('fr-FR')} par l'application de gestion des visiteurs - {congregationProfile.name}</p>
+                        <p>Document généré le {new Date().toLocaleDateString('fr-FR')} par l'application de gestion des visiteurs - {(congregationProfile as any)?.name || 'KBV DV LYON'}</p>
                     </div>
                 </div>
             </div>

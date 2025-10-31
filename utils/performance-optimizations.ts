@@ -158,15 +158,15 @@ export class ComponentOptimizations {
     fallback?: React.ComponentType
   ) {
     const LazyComponent = React.lazy(importFn);
-    
-    return React.forwardRef<any, React.ComponentProps<T>>((props, ref) => {
+
+    return (props: React.ComponentProps<T>) => {
       const FallbackComponent = fallback;
       return React.createElement(
         React.Suspense,
         { fallback: FallbackComponent ? React.createElement(FallbackComponent) : React.createElement('div', null, 'Chargement...') },
-        React.createElement(LazyComponent, { ...props, ref })
+        React.createElement(LazyComponent, props)
       );
-    });
+    };
   }
 
   // Mémoisation intelligente
@@ -180,20 +180,9 @@ export class ComponentOptimizations {
 
 // Optimisations pour les données
 export function optimizeDataOperations() {
-  // Intercepter les opérations de données pour les mesurer
-  const originalJSON = JSON.stringify;
-  JSON.stringify = function(value: any, replacer?: any, space?: any) {
-    return performanceMonitor.measureSync('json_stringify', () => 
-      originalJSON.call(this, value, replacer, space)
-    );
-  };
-
-  const originalParse = JSON.parse;
-  JSON.parse = function(text: string, reviver?: any) {
-    return performanceMonitor.measureSync('json_parse', () => 
-      originalParse.call(this, text, reviver)
-    );
-  };
+  // Désactiver temporairement les mesures de performance JSON car elles causent des erreurs
+  // TODO: Réactiver quand les problèmes de sérialisation seront résolus
+  console.log('Performance monitoring for JSON operations disabled');
 }
 
 // Optimisations pour le stockage

@@ -46,8 +46,28 @@ class Analytics {
       if (this.events.length > this.MAX_EVENTS) {
         this.events = this.events.slice(-this.MAX_EVENTS);
       }
-      
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.events));
+
+      // Essayer de sérialiser, sinon nettoyer les événements problématiques
+      let eventsToSave = this.events;
+      try {
+        JSON.stringify(eventsToSave);
+      } catch (serializeError) {
+        logger.warn('Erreur sérialisation analytics, nettoyage des événements', serializeError as Error);
+        // Nettoyer les événements avec des propriétés problématiques
+        eventsToSave = this.events.map(event => ({
+          ...event,
+          properties: this.sanitizeProperties(event.properties)
+        })).filter(event => {
+          try {
+            JSON.stringify(event);
+            return true;
+          } catch {
+            return false;
+          }
+        });
+      }
+
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(eventsToSave));
     } catch (error) {
       logger.error('Erreur sauvegarde analytics', error as Error);
     }
