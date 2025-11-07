@@ -31,7 +31,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, actions, onClose
         <div
             ref={menuRef}
             className="fixed z-50 bg-card-light dark:bg-card-dark rounded-md shadow-2xl border border-border-light dark:border-border-dark animate-fade-in"
-            style={{ top: y, left: x }}
+            style={{ top: `${y}px`, left: `${x}px` }}
         >
             <div className="py-1">
                 {actions.map((action, index) => (

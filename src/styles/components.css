@@ -1,0 +1,130 @@
+/* Animation pour les éléments avec délai */
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out forwards;
+  opacity: 0;
+  transform: translateY(10px);
+  animation-delay: var(--animation-delay, 0s);
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Style pour MessagingCenter */
+.message-container {
+  max-height: 60vh;
+  overflow-y: auto;
+  
+  /* Pour les navigateurs WebKit (Chrome, Safari, etc.) */
+  scrollbar-width: thin; /* Futur standard, déjà supporté par certains navigateurs */
+  scrollbar-color: #cbd5e1 #f1f5f9; /* Futur standard, déjà supporté par certains navigateurs */
+  
+  /* Pour IE et Edge */
+  -ms-overflow-style: -ms-autohiding-scrollbar;
+  
+  /* Fallback pour les anciens navigateurs */
+  padding-right: 4px; /* Évite que le contenu ne soit coupé par la barre de défilement */
+}
+
+/* Styles spécifiques pour WebKit (Chrome, Safari, etc.) */
+.message-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.message-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.message-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Pour les navigateurs plus anciens qui ne supportent pas les styles de barre de défilement personnalisés */
+@supports not (scrollbar-width: thin) {
+  .message-container {
+    /* Fallback pour les navigateurs qui ne supportent pas scrollbar-width */
+    scrollbar-width: thin; /* Pour Firefox */
+  }
+}
+
+/* Style pour la barre de progression dans MessagingCenter */
+.progress-bar {
+  width: 100%;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  height: 0.375rem;
+  margin-top: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.progress-bar-fill {
+  background-color: #3b82f6;
+  border-radius: 9999px;
+  height: 100%;
+  transition: width 0.5s;
+}
+
+/* Style pour DashboardDonutChart */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+}
+
+/* Style pour ContextMenu */
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  min-width: 200px;
+  overflow: hidden;
+}
+
+/* Style pour les éléments de liste avec animation */
+.animated-list-item {
+  animation: fadeInUp 0.3s ease-out forwards;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* Style pour les cartes de visite archivées */
+.archived-visit-card {
+  background-color: #f9fafb;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: fadeInUp 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+/* Style pour les cartes d'orateur dans SpeakerList */
+.speaker-card {
+  background-color: rgba(255, 255, 255, 0.5);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInUp 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+/* Style pour le conteneur du graphique en anneau */
+.donut-chart-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+}

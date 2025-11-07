@@ -41,7 +41,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ title, description, i
                 role="button" 
                 tabIndex={0} 
                 onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsExpanded(!isExpanded)}
-                aria-expanded={isExpanded ? 'true' : 'false'}
+                aria-expanded={isExpanded}
             >
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-secondary/10 rounded-full flex-shrink-0">

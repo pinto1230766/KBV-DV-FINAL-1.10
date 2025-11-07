@@ -8,8 +8,23 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- Theme Color for Browser UI on Mobile -->
-    <meta name="theme-color" content="#1e293b" />
+    <!-- Theme Color for Browser UI on Mobile (supported by Chrome, Edge, Safari, Samsung Internet) -->
+    <meta name="theme-color" content="#1e293b" media="not (prefers-color-scheme: dark)" id="theme-color-light">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" id="theme-color-dark">
+    
+    <!-- Microsoft and Windows specific -->
+    <meta name="msapplication-navbutton-color" content="#1e293b">
+    <meta name="msapplication-TileColor" content="#1e293b">
+    
+    <!-- Fallback for browsers that don't support media queries in theme-color -->
+    <script>
+      // Fallback pour les navigateurs qui ne prennent pas en charge les media queries dans theme-color
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.getElementById('theme-color-light').remove();
+      } else {
+        document.getElementById('theme-color-dark').remove();
+      }
+    </script>
     
     <!-- iOS PWA Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -118,12 +133,24 @@
       }
 
       /* Hide scrollbar for elements with this class */
-      .hide-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
       .hide-scrollbar {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        /* Hide scrollbar for IE, Edge */
+        .hide-scrollbar {
+          -ms-overflow-style: none;  /* IE and Edge */
+        }
+        /* Hide scrollbar for Firefox */
+        @supports (scrollbar-width: none) {
+          .hide-scrollbar {
+            scrollbar-width: none;  /* Firefox */
+          }
+        }
+        /* Fallback for older browsers */
+        overflow: -moz-scrollbars-none;  /* Older Firefox */
+        -ms-overflow-style: -ms-autohiding-scrollbar;  /* IE 11 */
       }
       
       .print-only { display: none; }

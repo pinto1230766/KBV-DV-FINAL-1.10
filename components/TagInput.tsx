@@ -42,7 +42,7 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, setTags, suggestions, 
                 {tags.map(tag => (
                     <span key={tag} className="flex items-center gap-1.5 px-2 py-1 bg-secondary/20 text-secondary dark:text-secondary rounded-full text-sm font-semibold capitalize">
                         {tag}
-                        <button type="button" onClick={() => handleRemoveTag(tag)} className="text-secondary hover:text-red-500">
+                        <button type="button" onClick={() => handleRemoveTag(tag)} className="text-secondary hover:text-red-500" aria-label={`Supprimer le tag ${tag}`} title={`Supprimer le tag ${tag}`}>
                             <XIcon className="w-4 h-4" />
                         </button>
                     </span>

@@ -45,9 +45,9 @@ const CommunicationProgress: React.FC<{ visit: Visit }> = ({ visit }) => {
     const progress = applicableSteps.length > 0 ? (completedSteps.length / applicableSteps.length) * 100 : 100;
 
     return (
-        <div className="w-full bg-gray-200 dark:bg-primary-light/20 rounded-full h-1.5 mt-2 group-hover:bg-gray-300 dark:group-hover:bg-primary-light/30 transition-colors">
+        <div className="progress-bar group-hover:bg-gray-300 dark:group-hover:bg-primary-light/30">
             <div
-                className="bg-secondary rounded-full h-1.5 transition-all duration-500"
+                className="progress-bar-fill"
                 style={{ width: `${progress}%` }}
             ></div>
             <span className="sr-only">{completedSteps.length} sur {applicableSteps.length} étapes complétées</span>
@@ -128,7 +128,7 @@ const ConversationDetailView: React.FC<{ visit: Visit, onOpenMessageGenerator: M
             {/* Header */}
             <div className="p-4 border-b border-border-light dark:border-border-dark flex items-center gap-4 flex-shrink-0">
                 {isMobile && (
-                    <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-light/20">
+                    <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-light/20" aria-label="Retour" title="Retour">
                         <ChevronLeftIcon className="w-6 h-6" />
                     </button>
                 )}

@@ -102,7 +102,7 @@ export const EncryptionPrompt: React.FC<EncryptionPromptProps> = ({
                             </div>
                         </div>
                         {isModal && onClose && (
-                             <button type="button" onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
+                             <button type="button" onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20" aria-label="Fermer" title="Fermer">
                                 <XIcon className="w-6 h-6" />
                             </button>
                         )}

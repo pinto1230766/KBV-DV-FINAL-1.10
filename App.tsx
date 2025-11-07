@@ -22,17 +22,14 @@ import { TabButton } from './components/TabButton';
 import useVisitNotifications from './hooks/useVisitNotifications';
 import { Avatar } from './components/Avatar';
 import { HostRequestModal } from './components/HostRequestModal';
-import { TalksManager } from './components/TalksManager';
-import { TimelineView } from './components/TimelineView';
 import { FeedbackModal } from './components/FeedbackModal';
 import { WeekView } from './components/WeekView';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { FAB } from './components/FAB';
-import { Statistics } from './components/Statistics';
 import { PrintPreviewModal } from './components/PrintPreviewModal';
 import { DashboardPrintLayout } from './components/DashboardPrintLayout';
 
-type Tab = 'dashboard' | 'planning' | 'messaging' | 'talks' | 'statistics' | 'settings';
+type Tab = 'dashboard' | 'planning' | 'messaging' | 'settings' | 'talks';
 
 const App: React.FC = () => {
     const { 
@@ -78,6 +75,10 @@ const App: React.FC = () => {
     // UI & Settings State
     const [viewMode, setViewMode] = useState<ViewMode>('cards');
     const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+    // Fonction pour changer d'onglet de manière sûre
+    const setTab = useCallback((tab: Tab) => {
+        setActiveTab(tab);
+    }, []);
     const [isImporting, setIsImporting] = useState(false);
     const [isSpeakerListExpanded, setIsSpeakerListExpanded] = useState(false);
     const [isHostListExpanded, setIsHostListExpanded] = useState(false);
@@ -152,10 +153,16 @@ const App: React.FC = () => {
 
     useEffect(() => {
         const root = document.documentElement;
-        if (language === 'fr') root.lang = 'fr';
-        else if (language === 'en') root.lang = 'en';
-        else if (language === 'es') root.lang = 'es';
-        else root.lang = language as string;
+        // Définition des langues supportées
+        const supportedLanguages = ['fr', 'en', 'es'] as const;
+        type SupportedLanguage = typeof supportedLanguages[number];
+        
+        // Vérification que la langue est supportée
+        const lang = supportedLanguages.includes(language as SupportedLanguage) 
+            ? language 
+            : 'fr';
+            
+        root.lang = lang;
     }, [language]);
 
     const handleEnableNotifications = async () => {
@@ -385,7 +392,8 @@ const App: React.FC = () => {
             case 'week':
                 return <WeekView onEditVisit={handleEditVisit} />;
             case 'timeline':
-                return <TimelineView onEditVisit={handleEditVisit} />;
+                // Utilisation de WeekView comme alternative à TimelineView
+                return <WeekView onEditVisit={handleEditVisit} />;
             case 'calendar':
                 return <CalendarView onEditVisit={handleEditVisit} />;
             case 'cards':
@@ -414,7 +422,7 @@ const App: React.FC = () => {
                     onEditVisitClick={handleEditVisit}
                     onOpenMessageGenerator={handleOpenMessageGenerator}
                     onOpenHostRequestModal={handleOpenHostRequestModal}
-                    setActiveTab={setActiveTab}
+                    setActiveTab={setTab}
                     onGoToSpeakers={handleGoToSpeakers}
                     onGoToHosts={handleGoToHosts}
                     onGoToPlanning={handleGoToPlanning}
@@ -455,10 +463,6 @@ const App: React.FC = () => {
                 return <MessagingCenter
                     onOpenMessageGenerator={handleOpenMessageGenerator}
                 />;
-            case 'talks':
-                return <TalksManager />;
-            case 'statistics':
-                return <Statistics />;
             case 'settings':
                 return <Settings
                     onImport={handleImportData}
@@ -492,7 +496,12 @@ const App: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    <button onClick={() => setIsSearchModalOpen(true)} className="p-3 rounded-full text-text-main dark:text-text-main-dark hover:bg-gray-200 dark:hover:bg-primary-light transition-colors">
+                                    <button 
+                                        onClick={() => setIsSearchModalOpen(true)} 
+                                        className="p-3 rounded-full text-text-main dark:text-text-main-dark hover:bg-gray-200 dark:hover:bg-primary-light transition-colors"
+                                        title="Rechercher"
+                                        aria-label="Ouvrir la recherche"
+                                    >
                                         <SearchIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                                     </button>
                                      {activeTab === 'dashboard' && (
@@ -511,16 +520,12 @@ const App: React.FC = () => {
                         <TabButton icon={DashboardIcon} label="Tableau de bord" isActive={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
                         <TabButton icon={CalendarIcon} label="Planning" isActive={activeTab === 'planning'} onClick={() => setActiveTab('planning')} />
                         <TabButton icon={EnvelopeIcon} label="Messagerie" isActive={activeTab === 'messaging'} onClick={() => setActiveTab('messaging')} />
-                        <TabButton icon={BookOpenIcon} label="Discours" isActive={activeTab === 'talks'} onClick={() => setActiveTab('talks')} />
-                        <TabButton icon={ChartBarIcon} label="Statistiques" isActive={activeTab === 'statistics'} onClick={() => setActiveTab('statistics')} />
                         <TabButton icon={CogIcon} label="Paramètres" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                     </nav>
                     <nav className="md:hidden bg-card-light/95 dark:bg-card-dark/95 backdrop-blur-lg flex items-center border-b border-border-light dark:border-border-dark shadow-sm no-print overflow-x-auto hide-scrollbar">
                         <TabButton icon={DashboardIcon} label="Accueil" isActive={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
                         <TabButton icon={CalendarIcon} label="Planning" isActive={activeTab === 'planning'} onClick={() => setActiveTab('planning')} />
                         <TabButton icon={EnvelopeIcon} label="Messages" isActive={activeTab === 'messaging'} onClick={() => setActiveTab('messaging')} />
-                        <TabButton icon={BookOpenIcon} label="Discours" isActive={activeTab === 'talks'} onClick={() => setActiveTab('talks')} />
-                        <TabButton icon={ChartBarIcon} label="Stats" isActive={activeTab === 'statistics'} onClick={() => setActiveTab('statistics')} />
                         <TabButton icon={CogIcon} label="Paramètres" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                     </nav>
                 </div>

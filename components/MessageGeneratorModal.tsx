@@ -373,26 +373,30 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
         <div className="bg-gray-50 dark:bg-background-dark px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-border-light dark:border-border-dark rounded-b-xl flex-shrink-0">
              <div className="flex items-center gap-2">
                  <button
-                    onClick={handleShare}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-transform active:scale-95"
-                >
-                    {Capacitor.isNativePlatform() ? <ArrowUpOnSquareIcon className="w-5 h-5" /> : <CheckIcon className="w-5 h-5" />}
-                    <span>{Capacitor.isNativePlatform() ? 'Partager' : (isFreeForm ? 'Copier' : 'Copier & Marquer')}</span>
-                </button>
+                   onClick={handleShare}
+                   className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-transform active:scale-95"
+                   aria-label={Capacitor.isNativePlatform() ? 'Partager le message' : (isFreeForm ? 'Copier le message' : 'Copier et marquer comme envoyé')}
+                   title={Capacitor.isNativePlatform() ? 'Partager' : (isFreeForm ? 'Copier' : 'Copier & Marquer')}
+               >
+                   {Capacitor.isNativePlatform() ? <ArrowUpOnSquareIcon className="w-5 h-5" aria-hidden="true" /> : <CheckIcon className="w-5 h-5" aria-hidden="true" />}
+                   <span>{Capacitor.isNativePlatform() ? 'Partager' : (isFreeForm ? 'Copier' : 'Copier & Marquer')}</span>
+               </button>
              </div>
-             <a
-                href={`https://wa.me/${formatPhoneNumber(currentRecipient?.telephone)}?text=${encodeURIComponent(messageText)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleActionAndConfirm}
-                className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg transition-transform ${
-                    currentRecipient?.telephone 
-                        ? 'hover:bg-green-700 active:scale-95' 
-                        : 'opacity-50 cursor-not-allowed'
-                }`}
-                aria-disabled={!currentRecipient?.telephone ? 'true' : 'false'}
-            >
-                <WhatsAppIcon className="w-5 h-5" />
+                <a
+                   href={currentRecipient?.telephone ? `https://wa.me/${formatPhoneNumber(currentRecipient.telephone)}?text=${encodeURIComponent(messageText)}` : '#'}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   onClick={currentRecipient?.telephone ? handleActionAndConfirm : (e) => e.preventDefault()}
+                   className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg transition-transform ${
+                       currentRecipient?.telephone 
+                           ? 'hover:bg-green-700 active:scale-95' 
+                           : 'opacity-50 cursor-not-allowed'
+                   }`}
+                   aria-disabled={!currentRecipient?.telephone}
+                   aria-label="Envoyer sur WhatsApp"
+                   title="Envoyer sur WhatsApp"
+               >
+                   <WhatsAppIcon className="w-5 h-5" aria-hidden="true" />
                 <span>Envoyer sur WhatsApp</span>
             </a>
         </div>

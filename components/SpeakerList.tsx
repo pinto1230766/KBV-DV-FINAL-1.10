@@ -304,10 +304,7 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
                                 <div
                                     key={speaker.id}
                                     className="bg-card-light/50 dark:bg-card-dark/50 p-4 rounded-xl shadow-md flex flex-col h-full animate-fade-in-up opacity-0"
-                                    style={{
-                                        '--animation-delay': `${index * 50}ms`,
-                                        animationDelay: `var(--animation-delay)`
-                                    } as React.CSSProperties}
+                                    style={{ animationDelay: `${index * 50}ms` } as React.CSSProperties}
                                 >
                                     <div className="flex items-center gap-4 flex-grow min-w-0">
                                         <Avatar item={speaker} size="w-12 h-12" />

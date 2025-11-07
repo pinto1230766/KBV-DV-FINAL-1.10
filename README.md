@@ -37,18 +37,6 @@ Une application mobile moderne pour gérer les visites d'orateurs, développée 
 - Support multilingue (Français, Anglais, Espagnol, etc.)
 - Templates personnalisables
 
-### Discours Publics
-
-- Base de données de 200+ discours
-- Recherche et filtrage avancés
-- Attribution aux orateurs
-
-### Statistiques
-
-- Graphiques et analyses
-- Statistiques par orateur
-- Rapports imprimables
-
 ### Notifications
 
 - Rappels pour les visites à venir

@@ -43,7 +43,10 @@ export const DashboardDonutChart: React.FC<DashboardDonutChartProps> = ({ data, 
                             strokeDasharray={`${circumference}`}
                             strokeDashoffset={circumference - (segment.percent / 100) * circumference}
                             strokeLinecap="round"
-                            style={{ transform: `rotate(${(segment.offset / 100) * 360}deg)`, transformOrigin: '50% 50%' }}
+                            style={{ 
+                                transform: `rotate(${(segment.offset / 100) * 360}deg)`, 
+                                transformOrigin: '50% 50%' 
+                            }}
                             onMouseEnter={() => setHoveredSegment(segment)}
                             onMouseLeave={() => setHoveredSegment(null)}
                         >
