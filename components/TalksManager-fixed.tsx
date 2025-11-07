@@ -50,9 +50,13 @@ const TalkCard: FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
                     {talk.number}
                 </div>
                 <div className="flex-grow min-w-0 text-left">
-                    <p className="font-semibold text-text-main dark:text-text-main-dark truncate" title={talk.theme}>{talk.theme}</p>
+                    <p className="font-semibold text-text-main dark:text-text-main-dark truncate" title={talk.theme}>
+                        {talk.theme}
+                    </p>
                     <div className="flex items-center gap-4 text-xs text-text-muted dark:text-text-muted-dark mt-1">
-                        <span className={`px-2 py-0.5 font-semibold rounded-full ${currentStatus.color}`}>{currentStatus.text}</span>
+                        <span className={`px-2 py-0.5 font-semibold rounded-full ${currentStatus.color}`}>
+                            {currentStatus.text}
+                        </span>
                         {talk.nextVisit ? (
                             <span>Prochaine fois: <strong>{talk.nextVisit.date}</strong> par <strong>{talk.nextVisit.speaker}</strong></span>
                         ) : talk.lastPresented ? (
@@ -62,6 +66,7 @@ const TalkCard: FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
                 </div>
                 <div className="flex items-center flex-shrink-0">
                     <button 
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); onAssign(talk); }} 
                         className="hidden sm:flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary dark:text-primary-light text-sm font-semibold rounded-md hover:bg-primary/20 transition-transform active:scale-95"
                         aria-label={`Attribuer le discours ${talk.number}`}
@@ -69,9 +74,10 @@ const TalkCard: FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
                         <PlusIcon className="w-4 h-4" /> Attribuer
                     </button>
                     <button 
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); onEdit(talk); }} 
                         className="p-2 text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-primary-light rounded-full transition-colors active:scale-90" 
-                        aria-label={`Modifier le discours ${talk.number}`} 
+                        aria-label={`Modifier le discours ${talk.number}`}
                         title="Modifier"
                     >
                         <EditIcon className="w-5 h-5" />
@@ -81,12 +87,13 @@ const TalkCard: FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
                         aria-hidden="true"
                     />
                 </div>
-            </div>
+            </button>
 
             {isExpanded && (
                 <div id={`talk-content-${talk.number}`} className="px-3 pb-3 animate-fade-in">
                     <div className="border-t border-border-light dark:border-border-dark pt-3">
                         <button 
+                            type="button"
                             onClick={(e) => { e.stopPropagation(); onAssign(talk); }} 
                             className="sm:hidden w-full flex items-center justify-center gap-2 mb-3 px-3 py-2 bg-primary/10 text-primary dark:text-primary-light text-sm font-semibold rounded-md hover:bg-primary/20 transition-transform active:scale-95"
                             aria-label={`Attribuer le discours ${talk.number}`}
@@ -116,7 +123,9 @@ const TalkCard: FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
                                 </table>
                             </div>
                         ) : (
-                            <p className="text-center text-sm text-text-muted dark:text-text-muted-dark py-4">Ce discours n'a jamais été présenté.</p>
+                            <p className="text-center text-sm text-text-muted dark:text-text-muted-dark py-4">
+                                Ce discours n'a jamais été présenté.
+                            </p>
                         )}
                     </div>
                 </div>
@@ -138,7 +147,6 @@ export const TalksManager: React.FC = () => {
 
     const talkHistoryMap = useMemo(() => {
         const history = new Map<string, { date: Date; speaker: string }>();
-        // Only archived visits count for "last presented"
         archivedVisits.forEach(visit => {
             if (visit.talkTheme) {
                 const theme = visit.talkTheme.trim();
@@ -150,71 +158,69 @@ export const TalksManager: React.FC = () => {
         });
         return history;
     }, [archivedVisits]);
-    
-    const allVisits = useMemo(() => [...visits, ...archivedVisits], [visits, archivedVisits]);
+
+    const upcomingTalksMap = useMemo(() => {
+        const upcoming = new Map<string, { date: string; speaker: string }>();
+        visits.forEach(visit => {
+            if (visit.talkTheme) {
+                upcoming.set(visit.talkTheme.trim(), { 
+                    date: new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR'),
+                    speaker: visit.nom 
+                });
+            }
+        });
+        return upcoming;
+    }, [visits]);
 
     const talksWithInfo = useMemo(() => {
-        let filtered = publicTalks.map(talk => {
-            const lastPresentedHistory = talkHistoryMap.get(talk.theme.trim());
-            const nextVisit = visits.find(v => v.talkTheme?.trim() === talk.theme.trim());
+        return publicTalks.map(talk => {
+            const theme = talk.theme.trim();
+            const lastPresented = talkHistoryMap.get(theme);
+            const nextVisit = upcomingTalksMap.get(theme);
             
-            let status: TalkStatus = 'New';
+            let status: TalkStatus = 'Available';
             if (nextVisit) {
                 status = 'Scheduled';
-            } else if (lastPresentedHistory) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const diffTime = today.getTime() - lastPresentedHistory.date.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                status = (diffDays <= 365) ? 'Recent' : 'Available';
+            } else if (lastPresented) {
+                const monthsSinceLast = (Date.now() - lastPresented.date.getTime()) / (1000 * 60 * 60 * 24 * 30);
+                status = monthsSinceLast < 6 ? 'Recent' : 'Available';
+            } else {
+                status = 'New';
             }
-            
+
             return {
                 ...talk,
-                lastPresented: lastPresentedHistory ? { date: lastPresentedHistory.date.toLocaleDateString('fr-FR'), speaker: lastPresentedHistory.speaker } : null,
-                nextVisit: nextVisit ? { date: new Date(nextVisit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR'), speaker: nextVisit.nom } : null,
                 status,
-                recencyDays: lastPresentedHistory ? (new Date().getTime() - lastPresentedHistory.date.getTime()) / (1000 * 3600 * 24) : null,
+                lastPresented: lastPresented ? {
+                    date: lastPresented.date.toLocaleDateString('fr-FR'),
+                    speaker: lastPresented.speaker
+                } : undefined,
+                nextVisit: nextVisit ? {
+                    date: nextVisit.date,
+                    speaker: nextVisit.speaker
+                } : undefined
             };
-        }).filter(talk => {
-            const lowerSearchTerm = searchTerm.toLowerCase();
-            const speakerHistory = allVisits
-                .filter(v => v.talkTheme?.trim() === talk.theme.trim())
-                .some(v => v.nom.toLowerCase().includes(lowerSearchTerm));
-
-            return talk.theme.toLowerCase().includes(lowerSearchTerm) ||
-                   talk.number.toString().toLowerCase().includes(lowerSearchTerm) ||
-                   speakerHistory;
         });
-        
-        if (statusFilter !== 'all') {
-            filtered = filtered.filter(t => t.status === statusFilter);
-        }
+    }, [publicTalks, talkHistoryMap, upcomingTalksMap]);
 
-        filtered.sort((a, b) => {
-            switch (sortOption) {
-                case 'theme':
-                    return a.theme.localeCompare(b.theme);
-                case 'lastVisit':
-                    const daysA = a.recencyDays === null ? -1 : a.recencyDays; // Never presented should be last
-                    const daysB = b.recencyDays === null ? -1 : b.recencyDays;
-                    return daysA - daysB; // Smaller days (more recent) first
-                case 'number':
-                default:
-                    const numA = typeof a.number === 'string' ? Infinity : a.number;
-                    const numB = typeof b.number === 'string' ? Infinity : b.number;
-                    if (numA === Infinity && numB === Infinity) return a.number.toString().localeCompare(b.number.toString());
-                    return numA - numB;
-            }
+    const filteredTalks = useMemo(() => {
+        const searchLower = searchTerm.toLowerCase();
+        return talksWithInfo.filter(talk => {
+            const matchesSearch = searchTerm === '' || 
+                talk.theme.toLowerCase().includes(searchLower) || 
+                talk.number.toString().includes(searchLower);
+            const matchesStatus = statusFilter === 'all' || talk.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        }).sort((a, b) => {
+            if (sortOption === 'number') return a.number - b.number;
+            if (sortOption === 'theme') return a.theme.localeCompare(b.theme);
+            
+            // Sort by last presentation date
+            const aDate = a.lastPresented ? new Date(a.lastPresented.date) : new Date(0);
+            const bDate = b.lastPresented ? new Date(b.lastPresented.date) : new Date(0);
+            return bDate.getTime() - aDate.getTime();
         });
-
-        return filtered;
-    }, [publicTalks, talkHistoryMap, visits, allVisits, searchTerm, sortOption, statusFilter]);
-
-    const handleAddTalk = () => {
-        setEditingTalk(null);
-        setIsDetailsModalOpen(true);
-    };
+    }, [talksWithInfo, searchTerm, statusFilter, sortOption]);
 
     const handleEditTalk = (talk: PublicTalk) => {
         setEditingTalk(talk);
@@ -227,84 +233,103 @@ export const TalksManager: React.FC = () => {
     };
 
     return (
-        <div className="bg-card-light dark:bg-card-dark rounded-xl shadow-lg p-6 animate-fade-in">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <div>
-                    <h2 className="text-3xl font-bold text-primary dark:text-white">Gestion des Discours</h2>
-                    <p className="text-text-muted dark:text-text-muted-dark mt-1">Consultez, ajoutez ou modifiez les discours publics.</p>
-                </div>
-                 <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                    <button onClick={() => setIsUpdateModalOpen(true)} className="flex-shrink-0 w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary dark:text-text-main-dark font-semibold rounded-lg transition-transform active:scale-95">
-                        <ArrowUpOnSquareIcon className="w-5 h-5 mr-2" />
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-2xl font-bold text-text-main dark:text-text-main-dark">Discours Publics</h2>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <button 
+                        type="button"
+                        onClick={() => setIsUpdateModalOpen(true)}
+                        className="px-4 py-2 bg-primary/10 text-primary dark:text-primary-light font-semibold rounded-lg hover:bg-primary/20 transition-colors"
+                    >
                         Mettre à jour la liste
                     </button>
-                    <button onClick={handleAddTalk} className="flex-shrink-0 w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-transform active:scale-95">
-                        <PlusIcon className="w-5 h-5 mr-2" />
-                        Ajouter un discours
+                    <button 
+                        type="button"
+                        onClick={() => {
+                            setEditingTalk(null);
+                            setIsDetailsModalOpen(true);
+                        }}
+                        className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-2 justify-center"
+                    >
+                        <PlusIcon className="w-5 h-5" />
+                        <span>Nouveau discours</span>
                     </button>
                 </div>
             </div>
-            <div className="flex flex-col md:flex-row gap-4 mb-4">
-                <div className="relative w-full flex-grow">
-                    <input
-                        type="text"
-                        placeholder="Rechercher par thème, n° ou orateur..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary bg-card-light dark:bg-card-dark text-text-main dark:text-text-main-dark dark:placeholder-text-muted-dark"
-                        aria-label="Rechercher un discours par thème, numéro ou orateur"
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <SearchIcon className="w-5 h-5 text-gray-400" />
-                    </div>
-                </div>
-                <div className="relative w-full md:w-52">
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as any)}
-                        className="w-full pl-3 pr-10 py-2 border border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary appearance-none bg-card-light dark:bg-card-dark text-text-main dark:text-text-main-dark"
-                        aria-label="Filtrer par statut"
-                    >
-                        <option value="all">Tous les statuts</option>
-                        {Object.entries(statusInfo).map(([key, value]) => (
-                            <option key={key} value={key}>{value.text}</option>
-                        ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <ChevronDownIcon className="w-5 h-5 text-gray-400" />
-                    </div>
-                </div>
-                <div className="relative w-full md:w-52">
-                    <select
-                        value={sortOption}
-                        onChange={(e) => setSortOption(e.target.value as SortOption)}
-                        className="w-full pl-3 pr-10 py-2 border border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary appearance-none bg-card-light dark:bg-card-dark text-text-main dark:text-text-main-dark"
-                        aria-label="Trier les discours par"
-                    >
-                        <option value="number">Trier par Numéro</option>
-                        <option value="theme">Trier par Thème</option>
-                        <option value="lastVisit">Trier par Récence</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <ChevronDownIcon className="w-5 h-5 text-gray-400" />
-                    </div>
-                </div>
-            </div>
-            {talksWithInfo.length > 0 ? (
-                <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 -mr-2">
-                    {talksWithInfo.map((talk, index) => (
-                        <div key={talk.number} className={`animate-fade-in-up opacity-0 animation-delay-${index * 30}`}>
-                            <TalkCard talk={talk} onEdit={handleEditTalk} onAssign={handleAssignTalk} />
+
+            <div className="bg-white dark:bg-card-dark rounded-xl shadow-sm p-4 space-y-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-grow">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <SearchIcon className="w-5 h-5 text-gray-400" />
                         </div>
-                    ))}
+                        <input
+                            type="text"
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-card-dark text-text-main dark:text-text-main-dark focus:ring-2 focus:ring-primary/50 focus:border-transparent"
+                            placeholder="Rechercher un discours..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            aria-label="Rechercher un discours"
+                        />
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative">
+                            <select
+                                className="appearance-none bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-600 rounded-lg pl-3 pr-8 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-transparent"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value as 'all' | TalkStatus)}
+                                aria-label="Filtrer par statut"
+                            >
+                                <option value="all">Tous les statuts</option>
+                                {Object.entries(statusInfo).map(([key, { text }]) => (
+                                    <option key={key} value={key}>{text}</option>
+                                ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <ChevronDownIcon className="w-5 h-5 text-gray-400" />
+                            </div>
+                        </div>
+                        <div className="relative">
+                            <select
+                                className="appearance-none bg-white dark:bg-card-dark border border-gray-300 dark:border-gray-600 rounded-lg pl-3 pr-8 py-2 text-sm focus:ring-2 focus:ring-primary/50 focus:border-transparent"
+                                value={sortOption}
+                                onChange={(e) => setSortOption(e.target.value as SortOption)}
+                                aria-label="Trier par"
+                            >
+                                <option value="number">Trier par Numéro</option>
+                                <option value="theme">Trier par Thème</option>
+                                <option value="lastVisit">Trier par Récence</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <ChevronDownIcon className="w-5 h-5 text-gray-400" />
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            ) : (
-                <div className="text-center py-12 px-6">
-                    <PodiumIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600" />
-                    <h3 className="mt-4 text-xl font-semibold text-text-main dark:text-text-main-dark">Aucun discours trouvé</h3>
-                    <p className="mt-1 text-text-muted dark:text-text-muted-dark">Essayez de modifier votre recherche ou ajoutez un nouveau discours.</p>
-                </div>
-            )}
+
+                {filteredTalks.length > 0 ? (
+                    <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 -mr-2">
+                        {filteredTalks.map((talk, index) => (
+                            <div key={talk.number} className={`animate-fade-in-up opacity-0 animation-delay-${index * 30}`}>
+                                <TalkCard 
+                                    talk={talk} 
+                                    onEdit={handleEditTalk} 
+                                    onAssign={handleAssignTalk} 
+                                />
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-12 px-6">
+                        <PodiumIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600" />
+                        <h3 className="mt-4 text-xl font-semibold text-text-main dark:text-text-main-dark">Aucun discours trouvé</h3>
+                        <p className="mt-1 text-text-muted dark:text-text-muted-dark">
+                            Essayez de modifier votre recherche ou ajoutez un nouveau discours.
+                        </p>
+                    </div>
+                )}
+            </div>
             
             {isDetailsModalOpen && (
                 <TalkDetailsModal 
@@ -329,3 +354,5 @@ export const TalksManager: React.FC = () => {
         </div>
     );
 };
+
+export default TalksManager;

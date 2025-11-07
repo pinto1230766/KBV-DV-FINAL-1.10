@@ -9,8 +9,7 @@ import {
     CheckCircleIcon, 
     ArrowRightIcon
 } from './Icons';
-// FIX: Corrected import path for ProactiveAssistant component. The component is exported from 'PlanningAssistant.tsx'.
-import { ProactiveAssistant } from './PlanningAssistant';
+import { ProactiveAssistant } from './ProactiveAssistant';
 import { DashboardDonutChart } from './DashboardDonutChart';
 
 interface DashboardProps {
@@ -118,14 +117,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     return (
         <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up animation-delay-100">
                  {stats.map((stat, index) => (
                     <QuickStatCard key={stat.title} {...stat} />
                 ))}
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-8 animate-fade-in-up opacity-0" style={{ animationDelay: '200ms' }}>
+                <div className="space-y-8 animate-fade-in-up opacity-0 animation-delay-200">
                     <ProactiveAssistant
                         onOpenHostRequestModal={onOpenHostRequestModal}
                         onEditVisitClick={onEditVisitClick}
@@ -133,7 +132,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         onScheduleVisitClick={onScheduleVisitClick}
                     />
                 </div>
-                 <div className="space-y-8 animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>
+                 <div className="space-y-8 animate-fade-in-up opacity-0 animation-delay-400">
                     <div>
                         <h2 className="text-2xl font-bold text-text-main dark:text-text-main-dark mb-4">Raccourcis</h2>
                         <div className="space-y-4">

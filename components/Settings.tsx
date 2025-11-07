@@ -35,7 +35,14 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ title, description, i
 
     return (
         <div ref={containerRef} className="bg-card-light dark:bg-card-dark rounded-xl shadow-soft-lg transition-all duration-300">
-            <div className="p-4 cursor-pointer flex justify-between items-center" onClick={() => setIsExpanded(!isExpanded)} role="button" tabIndex={0} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsExpanded(!isExpanded)} aria-expanded={isExpanded}>
+            <div 
+                className="p-4 cursor-pointer flex justify-between items-center" 
+                onClick={() => setIsExpanded(!isExpanded)} 
+                role="button" 
+                tabIndex={0} 
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsExpanded(!isExpanded)}
+                aria-expanded={isExpanded ? 'true' : 'false'}
+            >
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-secondary/10 rounded-full flex-shrink-0">
                        <Icon className="w-6 h-6 text-secondary"/>
@@ -239,11 +246,15 @@ const TemplateItem: React.FC<{
                     </button>
                 </div>
             </div>
+            <label className="sr-only" htmlFor="template-editor">Éditeur de modèle</label>
             <textarea
+                id="template-editor"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={8}
                 className="w-full p-2 border rounded-md bg-card-light dark:bg-card-dark border-border-light dark:border-border-dark font-mono text-sm"
+                aria-label="Éditeur de modèle"
+                placeholder="Saisissez votre modèle ici..."
             />
         </div>
     );
@@ -513,14 +524,28 @@ const StorageManagerContent: React.FC = () => {
         progressBarColor = 'bg-amber-500';
     }
 
+    const progressValue = Math.min(Math.round(usage.percent), 100);
+    const progressId = 'storage-progress';
+    
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center font-semibold">
                 <span>Espace utilisé</span>
                 <span>{usageMB} Mo / {quotaMB} Mo</span>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-primary-light/20 rounded-full h-2.5">
-                <div className={`${progressBarColor} h-2.5 rounded-full`} style={{ width: `${Math.min(usage.percent, 100)}%` }}></div>
+            <div className="relative">
+                <progress
+                    id={progressId}
+                    className={`w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-bar]:dark:bg-primary-light/20 [&::-webkit-progress-value]:${progressBarColor} [&::-moz-progress-bar]:${progressBarColor}`}
+                    value={progressValue}
+                    max="100"
+                    aria-describedby={`${progressId}-label`}
+                >
+                    {progressValue}% utilisé
+                </progress>
+                <div id={`${progressId}-label`} className="sr-only">
+                    {progressValue}% de l'espace de stockage est utilisé
+                </div>
             </div>
             {usage.percent > 75 && (
                 <div className={`p-3 rounded-md text-sm flex items-start space-x-3 ${usage.percent > 90 ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}`}>

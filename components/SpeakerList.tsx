@@ -3,8 +3,8 @@ import { Speaker, Visit } from '../types';
 import { PlusIcon, SearchIcon, ChevronDownIcon, UserCircleIcon, SparklesIcon, SpinnerIcon, ExclamationTriangleIcon, CarIcon, UserGroupIcon, MaleIcon, FemaleIcon, HomeIcon, XIcon, EnvelopeIcon } from './Icons';
 import { useData } from '../contexts/DataContext';
 import { Avatar } from './Avatar';
-import { useToast } from '../contexts/ToastContext';
-import { GoogleGenAI, Type } from '@google/genai';
+import { useToast } from '../contexts/ToastContext'; // Correction: GoogleGenAI -> GoogleGenerativeAI
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { SpeakerSuggestionModal } from './SpeakerSuggestionModal';
 
 interface SpeakerListProps {
@@ -43,7 +43,13 @@ const AISuggestionCriteriaModal: React.FC<{
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 border-b border-border-light dark:border-border-dark flex justify-between items-center">
                         <h3 className="text-lg font-bold text-text-main dark:text-text-main-dark">Critères de suggestion IA</h3>
-                        <button type="button" onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-text-muted dark:text-text-muted-dark hover:bg-gray-100 dark:hover:bg-primary-light/20">
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            className="p-2 -mt-2 -mr-2 rounded-full text-text-muted dark:text-text-muted-dark hover:bg-gray-100 dark:hover:bg-primary-light/20"
+                            title="Fermer la fenêtre de critères"
+                            aria-label="Fermer la fenêtre de critères"
+                        >
                             <XIcon className="w-6 h-6" />
                         </button>
                     </div>
@@ -176,31 +182,19 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
                 : "Donnez la priorité à ceux qui ne sont pas venus depuis le plus longtemps ou qui ne sont jamais venus.";
 
             const prompt = `Vous êtes un assistant aidant à planifier les orateurs pour une congrégation. Votre objectif est de promouvoir la variété. Voici une liste des orateurs disponibles et la date de leur dernière intervention :\n\n${speakerListString}\n\nEn vous basant sur cette liste, suggérez 3 orateurs à inviter prochainement. ${criteriaText} Retournez votre réponse sous la forme d'un tableau JSON d'objets. Chaque objet doit avoir deux clés : "speakerName" (le nom exact de la liste) et "reason" (une courte justification amicale en français pour la suggestion). Ne renvoyez que le tableau JSON, sans texte supplémentaire avant ou après.`;
-            
-            const ai = new GoogleGenAI({ apiKey });
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                speakerName: { type: Type.STRING },
-                                reason: { type: Type.STRING }
-                            },
-                            required: ["speakerName", "reason"]
-                        }
-                    }
-                }
+
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({
+                model: 'gemini-pro',
+                generationConfig: { responseMimeType: "application/json" }
             });
 
-            const jsonStr = response.text.trim();
-            const aiSuggestions: { speakerName: string, reason: string }[] = JSON.parse(jsonStr);
+            const result = await model.generateContent(prompt);
+            const response = result.response;
+            const jsonStr = response.text().trim();
 
-            const matchedSuggestions = aiSuggestions.map(suggestion => {
+            const aiSuggestions: { speakerName: string, reason: string }[] = JSON.parse(jsonStr.replace(/```json|```/g, '').trim());
+            const matchedSuggestions = aiSuggestions.map((suggestion) => {
                 const speaker = speakers.find(s => s.nom === suggestion.speakerName);
                 return speaker ? { speaker, reason: suggestion.reason } : null;
             }).filter((s): s is { speaker: Speaker, reason: string } => s !== null);
@@ -209,7 +203,7 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
 
         } catch (error) {
             console.error("Error suggesting speakers:", error);
-            addToast(error instanceof Error && error.message.includes("API key") 
+            addToast(error instanceof Error && error.message.includes("API key")
                 ? "Erreur: La clé API n'est pas configurée ou est invalide."
                 : "Erreur lors de la génération des suggestions.", 'error');
             setIsSuggestionModalOpen(false); // Close modal on error
@@ -282,7 +276,7 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
                             </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                            <button 
+                            <button
                                 onClick={() => setIsCriteriaModalOpen(true)}
                                 className="w-full md:w-auto flex-shrink-0 flex items-center justify-center px-4 py-3 bg-secondary/10 hover:bg-secondary/20 text-secondary dark:text-secondary font-semibold rounded-lg transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={isSuggesting || !isOnline || !apiKey}
@@ -291,7 +285,7 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
                                 {isSuggesting ? <SpinnerIcon className="w-5 h-5 mr-2" /> : <SparklesIcon className="w-5 h-5 mr-2" />}
                                 {isSuggesting ? "Suggestion..." : "Suggérer"}
                             </button>
-                            <button 
+                            <button
                                 onClick={onAddSpeaker}
                                 className="w-full md:w-auto flex-shrink-0 flex items-center justify-center px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                             >
@@ -307,10 +301,13 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
                                 const lastVisitDate = getMostRecentVisitDate(speaker);
                                 const isLocalSpeaker = speaker.congregation.toLowerCase().includes('lyon');
                                 return (
-                                <div 
-                                    key={speaker.id} 
+                                <div
+                                    key={speaker.id}
                                     className="bg-card-light/50 dark:bg-card-dark/50 p-4 rounded-xl shadow-md flex flex-col h-full animate-fade-in-up opacity-0"
-                                    style={{ animationDelay: `${index * 50}ms` }}
+                                    style={{
+                                        '--animation-delay': `${index * 50}ms`,
+                                        animationDelay: `var(--animation-delay)`
+                                    } as React.CSSProperties}
                                 >
                                     <div className="flex items-center gap-4 flex-grow min-w-0">
                                         <Avatar item={speaker} size="w-12 h-12" />
@@ -364,8 +361,8 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
                                         >
                                             <EnvelopeIcon className="w-5 h-5" />
                                         </button>
-                                        <button 
-                                            onClick={() => onSchedule(speaker)} 
+                                        <button
+                                            onClick={() => onSchedule(speaker)}
                                             className="flex-1 flex items-center justify-center px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                                         >
                                             <PlusIcon className="w-5 h-5 mr-2" />

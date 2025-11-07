@@ -3,7 +3,7 @@ import { Visit } from '../types';
 import { useData } from '../contexts/DataContext';
 import { UNASSIGNED_HOST } from '../constants';
 import { ArrowRightIcon, ExclamationTriangleIcon, StarIcon, PlusIcon, SunIcon, CarIcon, SpinnerIcon } from './Icons';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { useToast } from '../contexts/ToastContext';
 import { Avatar } from './Avatar';
 
@@ -107,8 +107,8 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
     const fetchWeather = async () => {
         if (!nextVisit || !apiKey || !isOnline || !canFetchWeather) return;
         setIsFetchingWeather(true);
-        try {
-            const ai = new GoogleGenAI({ apiKey });
+        try { // Correction déjà suggérée, mais confirmée ici
+            const genAI = new GoogleGenerativeAI(apiKey);
             
             // Utiliser la ville de la congrégation si elle est définie, sinon utiliser les coordonnées GPS
             let locationInfo = '';
@@ -138,10 +138,9 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
                         : `La date est dans ${daysUntilNextVisit} jours.`;
 
             const prompt = `Tu es un assistant météo. Quelle est la météo la plus probable pour ${locationInfo} le ${readableDate} (date exacte ${nextVisit.visitDate})? ${daysMessage} Même si les données sont incertaines, donne une estimation concise du temps attendu avec températures approximatives, par exemple : "Ensoleillé, 24°C / 18°C". N'indique jamais que tu ne peux pas fournir la météo.`;
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: [{ role: 'user', parts: [{ text: prompt }] }]
-            });
+            const model = genAI.getGenerativeModel({ model: 'gemini-pro' }); // Utilisation de gemini-pro
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
             const resultText = extractTextFromGeminiResponse(response);
             if (resultText) {
                 setWeather(resultText);
@@ -149,7 +148,6 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
                 addToast("Réponse météo indisponible.", 'warning');
             }
         } catch (error) {
-            console.error("Erreur lors de la récupération de la météo:", error);
             addToast("Impossible de récupérer la météo. Vérifiez votre connexion ou votre clé API.", 'error');
         } finally {
             setIsFetchingWeather(false);
@@ -163,13 +161,12 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
 
         setIsFetchingTravel(true);
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const genAI = new GoogleGenerativeAI(apiKey); // Correction déjà suggérée
             const destination = "Salle du Royaume des Témoins de Jéhovah, 16 Rue Imbert Colomes, 69001 Lyon"; // Example address
             const prompt = `Quel est le temps de trajet en voiture entre "${host.address}" et ${destination} un samedi après-midi à Lyon? Donne une estimation concise, par exemple : "Environ 25 min en voiture".`;
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: [{ role: 'user', parts: [{ text: prompt }] }]
-            });
+            const model = genAI.getGenerativeModel({ model: 'gemini-pro' }); // Utilisation de gemini-pro
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
             const resultText = extractTextFromGeminiResponse(response);
             if (resultText) {
                 setTravelTime(resultText);

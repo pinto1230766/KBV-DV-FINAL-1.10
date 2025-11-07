@@ -5,7 +5,7 @@ import { XIcon, CopyIcon, WhatsAppIcon, ChevronDownIcon, SaveIcon, ArrowUturnLef
 import { useToast } from '../contexts/ToastContext';
 import { useData } from '../contexts/DataContext';
 import { LanguageSelector } from './LanguageSelector';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 
@@ -220,7 +220,7 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
         }
         setIsGeneratingAI(true);
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const genAI = new GoogleGenerativeAI(apiKey);
 
             const speakerDetails = speaker ? `Nom: ${speaker.nom}, Congrégation: ${speaker.congregation}, Notes: ${speaker.notes || 'Aucune'}, Tags: ${(speaker.tags || []).join(', ')}` : 'Non applicable';
             const hostDetails = host ? `Nom: ${host.nom}, Notes: ${host.notes || 'Aucune'}, Tags: ${(host.tags || []).join(', ')}` : 'Non applicable';
@@ -249,12 +249,11 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
             4. **Ne retourne QUE le texte du message final**, sans aucun commentaire ou préambule.
             `;
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-            });
+            const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
 
-            setMessageText(response.text.trim());
+            setMessageText(response.text().trim());
             addToast("Message rédigé par l'IA !", 'success');
 
         } catch (error) {
@@ -295,7 +294,7 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
                         </p>
                     )}
                 </div>
-                <button type="button" onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
+                <button type="button" onClick={onClose} title="Fermer" className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
                     <XIcon className="w-6 h-6" />
                 </button>
             </div>
@@ -386,8 +385,12 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleActionAndConfirm}
-                className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-transform active:scale-95 ${!currentRecipient?.telephone ? 'opacity-50 cursor-not-allowed' : ''}`}
-                aria-disabled={!currentRecipient?.telephone}
+                className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg transition-transform ${
+                    currentRecipient?.telephone 
+                        ? 'hover:bg-green-700 active:scale-95' 
+                        : 'opacity-50 cursor-not-allowed'
+                }`}
+                aria-disabled={!currentRecipient?.telephone ? 'true' : 'false'}
             >
                 <WhatsAppIcon className="w-5 h-5" />
                 <span>Envoyer sur WhatsApp</span>

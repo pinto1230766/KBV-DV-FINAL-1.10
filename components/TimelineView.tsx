@@ -3,6 +3,7 @@ import { Visit } from '../types';
 import { useData } from '../contexts/DataContext';
 import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon, DocumentTextIcon, HomeIcon } from './Icons';
 import { Avatar } from './Avatar';
+import '../styles/timeline.css';
 
 interface TimelineViewProps {
     onEditVisit: (visit: Visit) => void;
@@ -32,11 +33,18 @@ const statusColors: { [key in Visit['status']]: { bg: string; text: string } } =
   completed: { bg: 'bg-blue-500', text: 'text-white' },
 };
 
-const Tooltip: FC<{ visit: Visit; position: { top: number, left: number } }> = ({ visit, position }) => (
-    <div
-        className="absolute z-30 p-3 bg-card-dark text-white rounded-lg shadow-xl text-sm w-64 animate-fade-in"
-        style={{ top: position.top, left: position.left, transform: 'translateY(-100%)' }}
-    >
+const Tooltip: FC<{ visit: Visit; position: { top: number, left: number } }> = ({ visit, position }) => {
+    const tooltipStyle = {
+        '--tooltip-top': `${position.top}px`,
+        '--tooltip-left': `${position.left}px`
+    } as React.CSSProperties;
+    
+    return (
+        <div
+            className="timeline-tooltip"
+            style={tooltipStyle}
+            role="tooltip"
+        >
         <p className="font-bold">{visit.nom}</p>
         <p className="text-xs text-text-muted-dark">{visit.congregation}</p>
         <div className="border-t border-border-dark my-2"></div>
@@ -102,8 +110,22 @@ export const TimelineView: FC<TimelineViewProps> = ({ onEditVisit }) => {
         <div className="bg-card-light dark:bg-card-dark p-4 rounded-xl shadow-soft-lg">
             <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                    <button onClick={handlePrev} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-light/20"><ChevronLeftIcon className="w-6 h-6" /></button>
-                    <button onClick={handleNext} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-light/20"><ChevronRightIcon className="w-6 h-6" /></button>
+                    <button 
+                        onClick={handlePrev} 
+                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-light/20"
+                        title="Mois précédent"
+                        aria-label="Mois précédent"
+                    >
+                        <ChevronLeftIcon className="w-6 h-6" />
+                    </button>
+                    <button 
+                        onClick={handleNext} 
+                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-light/20"
+                        title="Mois suivant"
+                        aria-label="Mois suivant"
+                    >
+                        <ChevronRightIcon className="w-6 h-6" />
+                    </button>
                 </div>
                 <h3 className="font-bold text-lg">{viewStartDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} - {addMonths(timelineData.endDate, -1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</h3>
             </div>
@@ -120,11 +142,18 @@ export const TimelineView: FC<TimelineViewProps> = ({ onEditVisit }) => {
                         ))}
                     </div>
                     <div className="flex-grow overflow-x-auto">
-                        <div style={{ width: `${timelineData.totalDays * 3}rem` }}>
+                        <div 
+                            className="timeline-container" 
+                            style={{ '--timeline-width': `${timelineData.totalDays * 3}rem` } as React.CSSProperties}
+                        >
                             {/* Header */}
                             <div className="flex h-16 border-b border-border-light dark:border-border-dark relative">
                                 {timelineData.months.map(month => (
-                                    <div key={`${month.name}-${month.year}`} className="border-r border-border-light dark:border-border-dark" style={{ width: `${month.days * 3}rem`}}>
+                                    <div 
+                                        key={`${month.name}-${month.year}`} 
+                                        className="border-r border-border-light dark:border-border-dark month-column" 
+                                        style={{ '--month-width': `${month.days * 3}rem` } as React.CSSProperties}
+                                    >
                                         <div className="font-bold text-center p-1">{month.name} {month.year}</div>
                                         <div className="flex">
                                             {[...Array(month.days)].map((_, day) => (
@@ -152,8 +181,11 @@ export const TimelineView: FC<TimelineViewProps> = ({ onEditVisit }) => {
                                                 onClick={() => onEditVisit(visit)}
                                                 onMouseEnter={(e) => setHoveredVisit({ visit, event: e })}
                                                 onMouseLeave={() => setHoveredVisit(null)}
-                                                className={`absolute top-1.5 h-9 rounded-md cursor-pointer flex items-center px-2 ${color.bg} ${color.text}`}
-                                                style={{ left: `${offset * 3}rem`, width: `${duration * 3}rem` }}
+                                                className={`absolute top-1.5 h-9 rounded-md cursor-pointer flex items-center px-2 ${color.bg} ${color.text} visit-block`}
+                                                style={{
+                                                    '--visit-left': `${offset * 3}rem`,
+                                                    '--visit-width': `${duration * 3}rem`
+                                                } as React.CSSProperties}
                                             >
                                                 <p className="text-xs font-bold truncate">{visit.talkTheme || visit.nom}</p>
                                             </div>

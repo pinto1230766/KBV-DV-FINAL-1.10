@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { generateUUID } from '../utils/uuid';
 import { Visit, MessageRole, MessageType, ActiveFilters, SavedView } from '../types';
+import '../styles/animations.css';
 import { CalendarIcon, EditIcon, TrashIcon, CheckIcon, InformationCircleIcon, ExclamationTriangleIcon, ChatBubbleOvalLeftEllipsisIcon, PlusIcon, DocumentTextIcon, VideoCameraIcon, EnvelopeIcon, EllipsisVerticalIcon, BellIcon, SparklesIcon, HomeIcon, PrintIcon, ListViewIcon, DashboardIcon, WifiIcon, AdjustmentsHorizontalIcon, XIcon, SaveIcon } from './Icons';
 import { UNASSIGNED_HOST, NO_HOST_NEEDED } from '../constants';
 import { useData } from '../contexts/DataContext';
@@ -191,7 +192,7 @@ interface VisitCardActionsProps {
 }
 
 const VisitCardActions: React.FC<VisitCardActionsProps> = ({ visit, onEdit, onDelete, onComplete, onOpenMessageGenerator, isLocalSpeaker, isRemote, isSpecialEvent, isMenuOpen, setIsMenuOpen }) => {
-    const menuRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLButtonElement>(null);
     
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -218,8 +219,17 @@ const VisitCardActions: React.FC<VisitCardActionsProps> = ({ visit, onEdit, onDe
                      <button onClick={() => onEdit(visit)} className="p-3 rounded-full text-text-muted dark:text-text-muted-dark hover:bg-white/20 dark:hover:bg-primary-light/20 hover:text-primary dark:hover:text-white transition-colors active:scale-90 flex items-center justify-center" title="Modifier">
                         <EditIcon className="w-5 h-5" />
                     </button>
-                     <div className="relative" ref={menuRef}>
-                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-3 rounded-full text-text-muted dark:text-text-muted-dark hover:bg-white/20 dark:hover:bg-primary-light/20 transition-colors active:scale-90">
+                     <div className="relative">
+                        <button 
+                            ref={menuRef}
+                            onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                            className="p-3 rounded-full text-text-muted dark:text-text-muted-dark hover:bg-white/20 dark:hover:bg-primary-light/20 transition-colors active:scale-90"
+                            title="Afficher les options"
+                            aria-label="Afficher les options"
+                            aria-expanded={isMenuOpen ? 'true' : 'false'}
+                            aria-haspopup="true"
+                            aria-controls={`menu-${visit.visitId}`}
+                        >
                             <EllipsisVerticalIcon className="w-5 h-5" />
                         </button>
                         {isMenuOpen && (
@@ -295,11 +305,11 @@ const VisitCard: React.FC<{
 
     return (
         <div
-            style={{ animationDelay: `${index * 100}ms` }}
-            className={`relative ${isMenuOpen ? 'z-40' : ''} animate-fade-in-up opacity-0`}
+            className={`relative ${isMenuOpen ? 'z-40' : ''} animate-fade-in-up opacity-0 ${index < 10 ? `animation-delay-${index * 50}` : ''}`}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            data-testid={`visit-card-${index}`}
         >
             <div 
                 className={`rounded-xl shadow-soft-lg border border-white/20 dark:border-white/10 backdrop-blur-xl ${isMenuOpen ? 'bg-card-light dark:bg-card-dark' : 'bg-glass dark:bg-glass-dark'}`}
@@ -357,16 +367,17 @@ const VisitRow: React.FC<Omit<UpcomingVisitsProps, 'visits' | 'onScheduleFirst' 
     const statusStyle = statusStyles[status];
 
     return (
-         <tr 
-            className="border-b border-border-light dark:border-border-dark last:border-b-0 animate-fade-in-up opacity-0"
-            style={{ animationDelay: `${index * 30}ms` }}
+        <tr 
+            key={visit.visitId}
+className={`bg-gray-50 dark:bg-primary-light/10 animate-fade-in-up opacity-0 ${index < 20 ? `animation-delay-${index * 50}` : ''}`}
+            data-testid="visit-row"
         >
-            <td className="p-3 text-left">
+            <td className="p-3">
                 <p className="font-semibold text-text-main dark:text-text-main-dark">{new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR')}</p>
                 <p className="text-xs text-text-muted dark:text-text-muted-dark">{formatWeekday(visit.visitDate)}</p>
             </td>
-            <td className="p-3 text-left">
-                <div className="flex items-center gap-3">
+            <td>
+                <div className="flex items-center gap-3 p-3">
                     <div className="w-5 flex-shrink-0" title={visit.locationType === 'physical' ? 'Présentiel' : visit.locationType === 'zoom' ? 'Zoom' : 'Streaming'}>
                         {visit.locationType === 'physical' && <HomeIcon className="w-5 h-5 text-gray-500" />}
                         {visit.locationType === 'zoom' && <VideoCameraIcon className="w-5 h-5 text-indigo-500" />}
@@ -378,19 +389,38 @@ const VisitRow: React.FC<Omit<UpcomingVisitsProps, 'visits' | 'onScheduleFirst' 
                     </div>
                 </div>
             </td>
-            <td className="p-3 text-left text-sm text-text-muted dark:text-text-muted-dark truncate max-w-sm" title={visit.talkTheme || ''}>
+            <td className="text-sm text-text-muted dark:text-text-muted-dark p-3 truncate max-w-sm" title={visit.talkTheme || ''}>
                 {visit.talkTheme || 'N/A'}
             </td>
-             <td className="p-3 text-left">
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${isUrgent ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>{visit.host}</span>
+            <td className="p-3">
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${isUrgent ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
+                    {visit.host}
+                </span>
             </td>
-             <td className="p-3 text-left">
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusStyle.listBadge}`}>{statusStyle.text}</span>
+            <td className="p-3">
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusStyle.listBadge}`}>
+                    {statusStyle.text}
+                </span>
             </td>
-            <td className="p-3 text-right">
+            <td className="p-3">
                 <div className="flex items-center justify-end space-x-1">
-                     <button onClick={() => onOpenMessageGenerator(visit, 'speaker')} disabled={isSpecialEvent} className="p-3 text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-white rounded-full disabled:opacity-50" title="Message Orateur"><ChatBubbleOvalLeftEllipsisIcon className="w-5 h-5"/></button>
-                     <button onClick={() => onEdit(visit)} className="p-3 text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-white rounded-full" title="Modifier"><EditIcon className="w-5 h-5"/></button>
+                    <button 
+                        onClick={() => onOpenMessageGenerator(visit, 'speaker')} 
+                        disabled={isSpecialEvent} 
+                        className="p-3 text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-white rounded-full disabled:opacity-50" 
+                        title="Message Orateur"
+                        aria-label="Envoyer un message à l'orateur"
+                    >
+                        <ChatBubbleOvalLeftEllipsisIcon className="w-5 h-5"/>
+                    </button>
+                    <button 
+                        onClick={() => onEdit(visit)} 
+                        className="p-3 text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-white rounded-full" 
+                        title="Modifier"
+                        aria-label="Modifier la visite"
+                    >
+                        <EditIcon className="w-5 h-5"/>
+                    </button>
                 </div>
             </td>
         </tr>
@@ -398,15 +428,35 @@ const VisitRow: React.FC<Omit<UpcomingVisitsProps, 'visits' | 'onScheduleFirst' 
 };
 
 
-const FilterButton = <T extends string>({ label, value, active, onClick }: { label: string; value: T; active: boolean; onClick: (v: T) => void; }) => (
-    <button
-      onClick={() => onClick(value)}
-      className={`px-4 py-3 text-sm font-semibold rounded-full transition-all duration-200 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50 active:scale-95 ${active ? 'bg-white dark:bg-card-dark shadow-md text-primary dark:text-white' : 'text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-white'}`}
-      aria-pressed={active}
-    >
-      {label}
-    </button>
-  );
+interface FilterButtonProps<T extends string> {
+    label: string;
+    value: T;
+    active: boolean;
+    onClick: (value: T) => void;
+}
+
+const FilterButton = <T extends string>({ label, value, active, onClick }: FilterButtonProps<T>) => {
+    const buttonClasses = [
+        'px-4 py-3 text-sm font-semibold rounded-full transition-all duration-200 whitespace-nowrap',
+        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50 active:scale-95',
+        active 
+            ? 'bg-white dark:bg-card-dark shadow-md text-primary dark:text-white' 
+            : 'text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-white'
+    ].join(' ');
+    
+    return (
+        <button
+            type="button"
+            onClick={() => onClick(value)}
+            className={buttonClasses}
+            aria-pressed={active}
+            title={`Filtrer par ${label.toLowerCase()}`}
+            aria-label={`Filtrer par ${label.toLowerCase()}`}
+        >
+            {label}
+        </button>
+    );
+};
 
 export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits, onEdit, onDelete, onComplete, onOpenMessageGenerator, onScheduleFirst, viewMode }) => {
     const { speakers, hosts, allSpeakerTags, allHostTags, savedViews, saveFilterView, deleteFilterView } = useData();
@@ -623,7 +673,14 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits, onEdit, 
                                         <h4 className="font-semibold text-sm mb-2">Sauvegarder la vue</h4>
                                         <div className="flex gap-2">
                                             <input type="text" value={newViewName} onChange={e => setNewViewName(e.target.value)} placeholder="Nom de la vue" className="flex-grow w-full border border-border-light dark:border-border-dark rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-primary bg-gray-50 dark:bg-primary-light/10 text-sm" />
-                                            <button onClick={handleSaveView} className="p-2 bg-primary text-white rounded-md hover:bg-primary-light"><SaveIcon className="w-4 h-4"/></button>
+                                            <button 
+                                                onClick={handleSaveView} 
+                                                className="p-2 bg-primary text-white rounded-md hover:bg-primary-light"
+                                                title="Enregistrer la vue"
+                                                aria-label="Enregistrer la vue actuelle"
+                                            >
+                                                <SaveIcon className="w-4 h-4"/>
+                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -641,7 +698,14 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits, onEdit, 
                                     {savedViews.length > 0 ? savedViews.map(view => (
                                         <div key={view.id} className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 dark:hover:bg-primary-light/20">
                                             <button onClick={() => applyView(view)} className="text-left flex-grow text-sm">{view.name}</button>
-                                            <button onClick={() => deleteFilterView(view.id)} className="p-1 text-red-500 hover:text-red-700"><TrashIcon className="w-4 h-4" /></button>
+                                            <button 
+                                                onClick={() => deleteFilterView(view.id)} 
+                                                className="p-1 text-red-500 hover:text-red-700"
+                                                title={`Supprimer la vue "${view.name}"`}
+                                                aria-label={`Supprimer la vue "${view.name}"`}
+                                            >
+                                                <TrashIcon className="w-4 h-4" />
+                                            </button>
                                         </div>
                                     )) : <p className="text-center text-xs text-text-muted dark:text-text-muted-dark p-3">Aucune vue sauvegardée.</p>}
                                 </div>

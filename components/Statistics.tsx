@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import { ChartBarIcon, UserIcon, HomeIcon, SparklesIcon, SpinnerIcon, ExclamationTriangleIcon, ReceiptIcon } from './Icons';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { useToast } from '../contexts/ToastContext';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: React.FC<any>; children?: React.ReactNode }> = ({ title, value, icon: Icon, children }) => (
@@ -29,9 +29,12 @@ const HorizontalBarChart: React.FC<{ data: { label: string; value: number }[], t
                         <span className="text-sm font-medium text-text-muted dark:text-text-muted-dark truncate col-span-1" title={label}>{label}</span>
                         <div className="col-span-3 flex items-center gap-2">
                              <div className="w-full bg-gray-200 dark:bg-primary-light/20 rounded-full h-4">
-                                <div
-                                    className="bg-secondary rounded-full h-4"
-                                    style={{ width: `${maxValue > 0 ? (value / maxValue) * 100 : 0}%` }}
+                                <div 
+                                    className="bg-secondary rounded-full h-4 transition-all duration-500 ease-in-out"
+                                    style={{
+                                        '--bar-width': `${maxValue > 0 ? (value / maxValue) * 100 : 0}%`,
+                                        width: 'var(--bar-width)'
+                                    } as React.CSSProperties}
                                 ></div>
                             </div>
                             <span className="font-bold text-sm w-16 text-right">{isCurrency ? `${value.toFixed(2)} €` : value}</span>
@@ -285,13 +288,12 @@ ${expenseDataString}
 
 Analysez ces données et fournissez des aperçus actionnables. Par exemple, commentez la diversité des orateurs, la charge sur les familles d'accueil, ou les thèmes populaires et les postes de dépenses.`;
             
-            const ai = new GoogleGenAI({ apiKey });
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-            });
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
             
-            setAnalysis(response.text);
+            setAnalysis(response.text());
 
         } catch (error) {
             console.error("Error generating AI analysis:", error);

@@ -61,7 +61,10 @@ export const ArchivedVisits: React.FC<ArchivedVisitsProps> = ({ onLeaveFeedback 
                         <div 
                             key={visit.visitId} 
                             className="bg-gray-50 dark:bg-primary-light/10 p-3 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-2 animate-fade-in-up opacity-0"
-                            style={{ animationDelay: `${index * 50}ms` }}
+                            style={{
+                                '--animation-delay': `${index * 50}ms`,
+                                animationDelay: 'var(--animation-delay)'
+                            } as React.CSSProperties}
                         >
                             <div>
                                 <p className="font-semibold text-text-main dark:text-text-main-dark">{visit.nom}</p>

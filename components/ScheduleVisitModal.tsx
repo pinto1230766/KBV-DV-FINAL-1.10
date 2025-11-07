@@ -5,7 +5,7 @@ import { XIcon, PlusIcon, PaperclipIcon, TrashIcon, InformationCircleIcon, Spark
 import { useToast } from '../contexts/ToastContext';
 import { UNASSIGNED_HOST, NO_HOST_NEEDED } from '../constants';
 import { useData } from '../contexts/DataContext';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { resizeImage } from '../utils/image';
 
 // Form Data Interface
@@ -153,8 +153,8 @@ const ExpenseManager: React.FC<{
                                 <p className="font-semibold">{exp.description} <span className="text-xs text-text-muted dark:text-text-muted-dark capitalize">({exp.category})</span></p>
                                 <p className="text-sm">{exp.amount.toFixed(2)} € - {new Date(exp.date + 'T00:00:00').toLocaleDateString('fr-FR')}</p>
                             </div>
-                            {exp.receiptUrl && <a href={exp.receiptUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-primary dark:text-primary-light hover:bg-primary/10 rounded-full"><EyeIcon className="w-5 h-5"/></a>}
-                            <button type="button" onClick={() => handleDeleteExpense(exp.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-full"><TrashIcon className="w-5 h-5"/></button>
+                            {exp.receiptUrl && <a href={exp.receiptUrl} target="_blank" rel="noopener noreferrer" title="Voir le justificatif" className="p-2 text-primary dark:text-primary-light hover:bg-primary/10 rounded-full"><EyeIcon className="w-5 h-5"/></a>}
+                            <button type="button" onClick={() => handleDeleteExpense(exp.id)} title="Supprimer la dépense" className="p-2 text-red-500 hover:bg-red-500/10 rounded-full"><TrashIcon className="w-5 h-5"/></button>
                         </div>
                     ))
                 )}
@@ -166,8 +166,19 @@ const ExpenseManager: React.FC<{
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input type="text" placeholder="Description (ex: Billet de train)" value={newExpense.description} onChange={e => setNewExpense({...newExpense, description: e.target.value})} className="w-full border border-border-light dark:border-border-dark rounded-md py-1 px-2 text-sm bg-card-light dark:bg-card-dark"/>
                     <input type="number" placeholder="Montant (€)" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: e.target.value})} className="w-full border border-border-light dark:border-border-dark rounded-md py-1 px-2 text-sm bg-card-light dark:bg-card-dark"/>
-                    <input type="date" value={newExpense.date} onChange={e => setNewExpense({...newExpense, date: e.target.value})} className="w-full border border-border-light dark:border-border-dark rounded-md py-1 px-2 text-sm bg-card-light dark:bg-card-dark"/>
-                    <select value={newExpense.category} onChange={e => setNewExpense({...newExpense, category: e.target.value as Expense['category']})} className="w-full border border-border-light dark:border-border-dark rounded-md py-1 px-2 text-sm bg-card-light dark:bg-card-dark">
+                    <input 
+                        type="date" 
+                        value={newExpense.date} 
+                        onChange={e => setNewExpense({...newExpense, date: e.target.value})} 
+                        className="w-full border border-border-light dark:border-border-dark rounded-md py-1 px-2 text-sm bg-card-light dark:bg-card-dark"
+                        aria-label="Date de la dépense"
+                    />
+                    <select 
+                        value={newExpense.category} 
+                        onChange={e => setNewExpense({...newExpense, category: e.target.value as Expense['category']})} 
+                        className="w-full border border-border-light dark:border-border-dark rounded-md py-1 px-2 text-sm bg-card-light dark:bg-card-dark"
+                        aria-label="Catégorie de la dépense"
+                    >
                         <option value="transport">Transport</option>
                         <option value="repas">Repas</option>
                         <option value="hébergement">Hébergement</option>
@@ -179,10 +190,10 @@ const ExpenseManager: React.FC<{
                         <CameraIcon className="w-5 h-5"/>
                         {receiptFile ? 'Justificatif ajouté' : 'Joindre un justificatif'}
                     </label>
-                    <input id="receipt-upload" type="file" accept="image/*" className="sr-only" onChange={handleReceiptUpload}/>
-                    {receiptFile && <button type="button" onClick={() => setReceiptFile(null)} className="text-xs text-red-500">Annuler</button>}
+                    <input id="receipt-upload" type="file" accept="image/*" className="sr-only" onChange={handleReceiptUpload} aria-label="Joindre un justificatif de dépense" />
+                    {receiptFile && <button type="button" onClick={() => setReceiptFile(null)} className="text-xs text-red-500" title="Annuler le justificatif">Annuler</button>}
                 </div>
-                <button type="button" onClick={handleAddExpense} className="w-full px-4 py-2 bg-primary/20 text-primary dark:text-primary-light font-bold rounded-lg transition-transform active:scale-95 text-sm">Ajouter</button>
+                <button type="button" onClick={handleAddExpense} className="w-full px-4 py-2 bg-primary/20 text-primary dark:text-primary-light font-bold rounded-lg transition-transform active:scale-95 text-sm">Ajouter une dépense</button>
             </div>
         </div>
     );
@@ -449,9 +460,16 @@ const VisitForm: React.FC<{
                 <div className="mt-2 space-y-2">
                     {formData.checklist.map((item, index) => (
                         <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-primary-light/10 rounded-md">
-                            <input type="checkbox" checked={item.completed} onChange={() => toggleChecklistItem(index)} className="h-5 w-5 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary" />
+                            <input 
+                                type="checkbox" 
+                                id={`checklist-item-${index}`}
+                                checked={item.completed} 
+                                onChange={() => toggleChecklistItem(index)} 
+                                className="h-5 w-5 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary" 
+                                aria-label={item.completed ? `Marquer la tâche "${item.text}" comme non terminée` : `Marquer la tâche "${item.text}" comme terminée`}
+                            />
                             <span className={`flex-grow text-sm ${item.completed ? 'line-through text-text-muted dark:text-text-muted-dark' : ''}`}>{item.text}</span>
-                            <button type="button" onClick={() => removeChecklistItem(index)} className="p-1 text-red-500 hover:text-red-700"><TrashIcon className="w-4 h-4" /></button>
+                            <button type="button" onClick={() => removeChecklistItem(index)} title="Supprimer la tâche" className="p-1 text-red-500 hover:text-red-700"><TrashIcon className="w-4 h-4" /></button>
                         </div>
                     ))}
                     {formData.checklist.length === 0 && <p className="text-xs text-center text-text-muted dark:text-text-muted-dark py-2">Aucune tâche. Utilisez le générateur IA ou ajoutez-en manuellement.</p>}
@@ -469,10 +487,10 @@ const VisitForm: React.FC<{
             <div>
                 <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark">Pièces jointes (PDF, max 2Mo/fichier)</label>
                 <div className="mt-2"><label htmlFor="file-upload" className="w-full flex justify-center px-4 py-2 border-2 border-border-light dark:border-border-dark border-dashed rounded-md cursor-pointer hover:border-primary dark:hover:border-primary-light"><div className="space-y-1 text-center"><PaperclipIcon className="mx-auto h-8 w-8 text-gray-400" /><div className="flex text-sm text-gray-600 dark:text-gray-400"><span>Ajouter un fichier</span><input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept="application/pdf" /></div></div></label></div>
-                {formData.attachments.length > 0 && <div className="mt-3 space-y-2">{formData.attachments.map((file, index) => <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-primary-light/10 rounded-md text-sm"><a href={file.dataUrl} download={file.name} className="truncate text-primary dark:text-primary-light hover:underline" title={file.name}>{file.name}</a><button type="button" onClick={() => removeAttachment(index)} className="ml-3 p-1 text-red-500 hover:text-red-700"><TrashIcon className="w-4 h-4" /></button></div>)}</div>}
+                {formData.attachments.length > 0 && <div className="mt-3 space-y-2">{formData.attachments.map((file, index) => <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-primary-light/10 rounded-md text-sm"><a href={file.dataUrl} download={file.name} className="truncate text-primary dark:text-primary-light hover:underline" title={file.name}>{file.name}</a><button type="button" onClick={() => removeAttachment(index)} title={`Supprimer ${file.name}`} className="ml-3 p-1 text-red-500 hover:text-red-700"><TrashIcon className="w-4 h-4" /></button></div>)}</div>}
             </div>
              {isEditing && (
-                <ExpenseManager 
+                <ExpenseManager
                     expenses={formData.expenses}
                     onExpensesChange={(newExpenses) => onFormChange('expenses', newExpenses)}
                     visitDate={formData.visitDate}
@@ -659,7 +677,7 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
         setIsSuggestingHosts(true);
         setHostSuggestions(null);
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const genAI = new GoogleGenerativeAI(apiKey);
             
             const availableHosts = hosts.filter(h => isHostAvailable(h, formData.visitDate));
             const hostListString = availableHosts
@@ -690,26 +708,10 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
             **Format de sortie OBLIGATOIRE :**
             Retourne un tableau JSON contenant jusqu'à 3 objets. Chaque objet doit avoir deux clés : "hostName" (le nom exact du foyer) et "reason" (ta justification). Ne renvoie que le tableau JSON, sans texte supplémentaire.`;
     
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                hostName: { type: Type.STRING },
-                                reason: { type: Type.STRING }
-                            },
-                            required: ["hostName", "reason"]
-                        }
-                    }
-                }
-            });
-    
-            const parsedSuggestions = JSON.parse(response.text.trim());
+            const model = genAI.getGenerativeModel({ model: 'gemini-pro', generationConfig: { responseMimeType: "application/json" } });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const parsedSuggestions = JSON.parse(response.text());
             const matchedSuggestions = parsedSuggestions
                 .map((s: { hostName: string; reason: string }) => ({
                     host: hosts.find(h => h.nom === s.hostName),
@@ -731,15 +733,12 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
         if (!apiKey) { addToast("Veuillez configurer votre clé API pour utiliser l'IA.", 'error'); return; }
         setIsGeneratingChecklist(true);
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const genAI = new GoogleGenerativeAI(apiKey);
             const prompt = `Génère une check-list de préparation pour une visite d'orateur en français. Visite: ${formData.locationType}, Hébergement: ${formData.accommodation || 'Non'}, Repas: ${formData.meals || 'Non'}. Réponds en JSON: [{text: string, completed: false}]. Inclue 3-5 tâches pertinentes.`;
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash', contents: prompt,
-                config: { responseMimeType: "application/json", responseSchema: {
-                    type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING }, completed: { type: Type.BOOLEAN } }, required: ["text", "completed"] }
-                }}
-            });
-            const newItems = JSON.parse(response.text.trim());
+            const model = genAI.getGenerativeModel({ model: 'gemini-pro', generationConfig: { responseMimeType: "application/json" } });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const newItems = JSON.parse(response.text());
             handleFormChange('checklist', [...formData.checklist, ...newItems]);
         } catch (error) { addToast("Erreur lors de la génération de la checklist.", 'error'); } finally { setIsGeneratingChecklist(false); }
     };
@@ -750,10 +749,12 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
         if (!apiKey) { addToast("Veuillez configurer votre clé API pour utiliser l'IA.", 'error'); return; }
         setIsGeneratingNotes(true);
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const genAI = new GoogleGenerativeAI(apiKey);
             const prompt = `Génère des notes de préparation pour une visite d'un orateur. Orateur: ${speakerForVisit.nom} de ${speakerForVisit.congregation}. Préférences: ${speakerForVisit.notes || 'Aucune'}. Notes existantes: ${formData.notes || 'Aucune'}. Rédige quelques points clés.`;
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            const newNotes = formData.notes ? `${formData.notes}\n\n---\n${response.text}` : response.text;
+            const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const newNotes = formData.notes ? `${formData.notes}\n\n---\n${response.text()}` : response.text();
             handleFormChange('notes', newNotes);
         } catch (error) { addToast("Erreur lors de la génération des notes.", 'error'); } finally { setIsGeneratingNotes(false); }
     };
@@ -767,20 +768,17 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
         setReplacementSuggestions(null);
 
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const genAI = new GoogleGenerativeAI(apiKey);
             const availableSpeakers = allSpeakers.filter(s => s.id !== speakerForVisit.id && !visits.some(v => v.visitDate === visit.visitDate && v.id === s.id));
             const speakerListString = availableSpeakers.map(s => `- ${s.nom} de ${s.congregation}. Notes: ${s.notes || 'Aucune'}. Tags: ${(s.tags || []).join(', ')}`).join('\n');
             const hostDetails = hostForVisit ? `Hôte: ${hostForVisit.nom}. Notes: ${hostForVisit.notes || 'Aucune'}. Tags: ${(hostForVisit.tags || []).join(', ')}` : "Pas d'hôte assigné.";
 
             const prompt = `Trouve les 3 meilleurs remplaçants pour une visite annulée le ${visit.visitDate}. ${hostDetails}. Orateurs disponibles:\n${speakerListString}\n\nAnalyse la compatibilité entre les orateurs et l'hôte (allergies, etc.). Réponds en JSON: [{speakerName: string, reason: string}]. Ne renvoie que le JSON.`;
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash', contents: prompt,
-                config: { responseMimeType: "application/json", responseSchema: {
-                    type: Type.ARRAY, items: { type: Type.OBJECT, properties: { speakerName: { type: Type.STRING }, reason: { type: Type.STRING } }, required: ["speakerName", "reason"] }
-                }}
-            });
-            const parsed = JSON.parse(response.text.trim());
+            const model = genAI.getGenerativeModel({ model: 'gemini-pro', generationConfig: { responseMimeType: "application/json" } });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const parsed = JSON.parse(response.text());
             const matched = parsed.map((s: { speakerName: string, reason: string }) => ({ speaker: allSpeakers.find(sp => sp.nom === s.speakerName), reason: s.reason })).filter((s: any) => s.speaker);
             setReplacementSuggestions(matched);
 
@@ -835,7 +833,15 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
                             <h2 className="text-2xl font-bold">{isEditing ? 'Modifier la visite' : 'Programmer une visite'}</h2>
                             <p className="opacity-80 mt-1">pour <span className="font-semibold">{currentSpeaker?.nom}</span></p>
                         </div>
-                        <button type="button" onClick={onClose} className="p-3 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20"><XIcon className="w-6 h-6" /></button>
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            className="p-3 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20"
+                            title="Fermer la fenêtre"
+                            aria-label="Fermer la fenêtre de programmation de visite"
+                        >
+                            <XIcon className="w-6 h-6" />
+                        </button>
                     </div>
                 </div>
 
@@ -848,7 +854,7 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
                         <div className="px-6 pb-4">
                             <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                                 <h4 className="font-bold text-blue-800 dark:text-blue-300">Assistant de Remplacement</h4>
-                                <p className="text-sm text-blue-700 dark:text-blue-200 mt-1">La visite est annulée. Souhaitez-vous trouver un remplaçant ?</p>
+                            <p className="text-sm text-blue-700 dark:text-blue-200 mt-1">La visite est annulée. Souhaitez-vous trouver un remplaçant ?</p>
                                 <button type="button" onClick={handleFindReplacement} disabled={isFindingReplacement || !isOnline || !apiKey} className="mt-3 flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-light transition-transform active:scale-95 disabled:opacity-50">
                                     {isFindingReplacement ? <SpinnerIcon className="w-5 h-5" /> : <SparklesIcon className="w-5 h-5" />}
                                     {isFindingReplacement ? 'Recherche en cours...' : "Trouver un remplaçant avec l'IA"}

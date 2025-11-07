@@ -207,11 +207,18 @@ export const HostDetailsModal: React.FC<HostDetailsModalProps> = ({ isOpen, onCl
                             Galerie
                         </label>
                         <input id="photo-upload-host" name="photo-upload-host" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
-                        <label htmlFor="camera-upload-host" className="cursor-pointer px-3 py-2 flex items-center gap-2 bg-card-light dark:bg-primary-light/10 border border-gray-300 dark:border-border-dark rounded-md text-sm font-medium text-text-main dark:text-text-main-dark hover:bg-gray-50 dark:hover:bg-primary-light/20">
+                        <label className="cursor-pointer px-3 py-2 flex items-center gap-2 bg-card-light dark:bg-primary-light/10 border border-gray-300 dark:border-border-dark rounded-md text-sm font-medium text-text-main dark:text-text-main-dark hover:bg-gray-50 dark:hover:bg-primary-light/20">
                             <CameraIcon className="w-4 h-4" />
-                            Prendre
+                            <span>Prendre</span>
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                onChange={handlePhotoChange}
+                                className="hidden"
+                                capture="environment"
+                                aria-label="Prendre une photo avec l'appareil photo"
+                            />
                         </label>
-                        <input id="camera-upload-host" name="camera-upload-host" type="file" className="sr-only" accept="image/*" capture onChange={handlePhotoChange} />
                         {photoUrl && (
                             <button type="button" onClick={removePhoto} className="px-3 py-2 border border-transparent rounded-md text-sm font-medium text-red-700 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50">
                                 Supprimer
@@ -276,7 +283,7 @@ export const HostDetailsModal: React.FC<HostDetailsModalProps> = ({ isOpen, onCl
                     {unavailabilities.map((period, index) => (
                         <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-primary-light/10 rounded-md text-sm">
                             <span>Du <strong>{new Date(period.start + 'T00:00:00').toLocaleDateString('fr-FR')}</strong> au <strong>{new Date(period.end + 'T00:00:00').toLocaleDateString('fr-FR')}</strong></span>
-                            <button type="button" onClick={() => handleRemoveUnavailability(index)} className="p-1 text-red-500 hover:text-red-700"><TrashIcon className="w-4 h-4" /></button>
+                            <button type="button" onClick={() => handleRemoveUnavailability(index)} className="p-1 text-red-500 hover:text-red-700" aria-label={`Supprimer la période d'indisponibilité du ${new Date(period.start + 'T00:00:00').toLocaleDateString('fr-FR')} au ${new Date(period.end + 'T00:00:00').toLocaleDateString('fr-FR')}`}><TrashIcon className="w-4 h-4" /></button>
                         </div>
                     ))}
                 </div>
@@ -339,7 +346,13 @@ export const HostDetailsModal: React.FC<HostDetailsModalProps> = ({ isOpen, onCl
                 <div className="p-6 bg-gradient-to-br from-primary to-secondary dark:from-primary-dark dark:to-secondary text-white rounded-t-xl flex-shrink-0">
                     <div className="flex justify-between items-start">
                          <h2 className="text-2xl font-bold">{isAdding ? "Ajouter un contact" : `Profil de ${host?.nom}`}</h2>
-                        <button type="button" onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20"
+                            title="Fermer la fenêtre"
+                            aria-label="Fermer la fenêtre"
+                        >
                             <XIcon className="w-6 h-6" />
                         </button>
                     </div>

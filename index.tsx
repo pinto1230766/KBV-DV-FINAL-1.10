@@ -4,6 +4,7 @@ import App from './App';
 import { ToastProvider } from './contexts/ToastContext';
 import { ConfirmProvider } from './contexts/ConfirmContext';
 import { DataProvider } from './contexts/DataContext';
+import './styles/animations.css';
 
 // Register Service Worker for PWA capabilities
 if ('serviceWorker' in navigator) {

@@ -122,7 +122,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isEncrypted, setIsEncrypted] = useState(false);
     const [sessionPassword, setSessionPassword] = useState<string | null>(null);
     const [storedApiKey, setStoredApiKey] = useLocalStorage<string>('gemini-api-key', '');
-    const apiKey = useMemo(() => (typeof process !== 'undefined' && process.env?.API_KEY) ? process.env.API_KEY : storedApiKey, [storedApiKey]);
+    const apiKey = useMemo(() => (import.meta.env?.VITE_GEMINI_API_KEY) ? import.meta.env.VITE_GEMINI_API_KEY : storedApiKey, [storedApiKey]);
 
     const updateApiKey = (key: string) => {
         setStoredApiKey(key);

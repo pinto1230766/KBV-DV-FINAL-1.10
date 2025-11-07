@@ -4,8 +4,8 @@ import { XIcon, CopyIcon, SparklesIcon, SpinnerIcon, ArrowUpOnSquareIcon, EditIc
 import { useToast } from '../contexts/ToastContext';
 import { useData } from '../contexts/DataContext';
 import { hostRequestMessageTemplates } from '../constants';
-import { LanguageSelector } from './LanguageSelector';
-import { GoogleGenAI } from '@google/genai';
+import { LanguageSelector } from './LanguageSelector'; // Correction: GoogleGenAI -> GoogleGenerativeAI
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 
@@ -130,9 +130,11 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
         const prompt = `${promptAction}\n\n---\n\n${message}`;
 
         try {
-            const ai = new GoogleGenAI({ apiKey });
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            setMessage(response.text.trim());
+            const ai = new GoogleGenerativeAI(apiKey);
+            const model = ai.getGenerativeModel({ model: 'gemini-pro' });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            setMessage(response.text());
             addToast("Message amélioré par l'IA !", 'success');
         } catch (error) {
             console.error("Error refining message with AI:", error);
@@ -162,7 +164,7 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
                 <div className="p-6 bg-gradient-to-br from-primary to-secondary dark:from-primary-dark dark:to-secondary text-white rounded-t-xl">
                     <div className="flex justify-between items-center">
                         <h2 className="text-2xl font-bold">Demande d'accueil groupée</h2>
-                        <button onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
+                        <button onClick={onClose} title="Fermer" className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
                             <XIcon className="w-6 h-6" />
                         </button>
                     </div>
@@ -186,13 +188,20 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
                     ) : (
                         <div>
                              <div className="flex justify-between items-center mb-2">
-                                <label className="block text-sm font-bold text-text-main dark:text-text-main-dark">Aperçu du message</label>
+                                <label htmlFor="message-preview" className="block text-sm font-bold text-text-main dark:text-text-main-dark">Aperçu du message</label>
                                 <button onClick={() => setIsEditingTemplate(true)} className="flex items-center gap-1.5 px-2 py-1 text-xs text-primary dark:text-primary-light font-semibold rounded-md hover:bg-primary/10">
                                     <EditIcon className="w-4 h-4" /> Modifier le modèle
                                 </button>
                             </div>
                             <div className="relative">
-                                <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={12} className="w-full p-2 pr-12 border rounded-md bg-gray-50 dark:bg-primary-light/10 border-border-light dark:border-border-dark whitespace-pre-wrap" />
+                                <textarea 
+                                    id="message-preview"
+                                    value={message} 
+                                    onChange={(e) => setMessage(e.target.value)} 
+                                    rows={12} 
+                                    className="w-full p-2 pr-12 border rounded-md bg-gray-50 dark:bg-primary-light/10 border-border-light dark:border-border-dark whitespace-pre-wrap" 
+                                    placeholder="Le contenu du message s'affichera ici..."
+                                />
                                 <div className="absolute bottom-3 right-3">
                                     <div className="relative">
                                         <button

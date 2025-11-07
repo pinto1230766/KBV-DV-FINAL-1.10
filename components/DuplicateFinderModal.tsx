@@ -178,7 +178,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                 <div className="p-6 bg-gradient-to-br from-primary to-secondary dark:from-primary-dark dark:to-secondary text-white rounded-t-xl">
                     <div className="flex justify-between items-center">
                         <h2 className="text-2xl font-bold">Recherche de Doublons</h2>
-                        <button onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
+                        <button onClick={onClose} title="Fermer" className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
                             <XIcon className="w-6 h-6" />
                         </button>
                     </div>

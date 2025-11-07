@@ -1,0 +1,38 @@
+/* Timeline styles */
+.timeline-tooltip {
+    position: absolute;
+    z-index: 30;
+    padding: 0.75rem;
+    background-color: var(--card-dark);
+    color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    width: 16rem;
+    animation: fadeIn 0.2s ease-out;
+    top: var(--tooltip-top);
+    left: var(--tooltip-left);
+    transform: translateY(-100%);
+}
+
+.timeline-container {
+    --timeline-width: 0;
+    width: var(--timeline-width);
+    min-width: 100%;
+}
+
+.visit-block {
+    position: relative;
+    left: var(--visit-left);
+    width: var(--visit-width);
+    min-width: 4rem;
+    z-index: 10;
+}
+
+.month-column {
+    width: var(--month-width);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
