@@ -1,12 +1,24 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, SetStateAction, Dispatch } from 'react';
+
+// Extend the Intl namespace for DateTimeFormatOptions
+declare global {
+  namespace Intl {
+    interface DateTimeFormatOptions {
+      month?: 'numeric' | '2-digit' | 'long' | 'short' | 'narrow';
+      day?: 'numeric' | '2-digit';
+      weekday?: 'long' | 'short' | 'narrow';
+      year?: 'numeric' | '2-digit';
+    }
+  }
+}
 import { generateUUID } from '../utils/uuid';
-import { Visit, MessageRole, MessageType, ActiveFilters, SavedView } from '../types';
-import { CalendarIcon, EditIcon, TrashIcon, CheckIcon, InformationCircleIcon, ExclamationTriangleIcon, ChatBubbleOvalLeftEllipsisIcon, PlusIcon, DocumentTextIcon, VideoCameraIcon, EnvelopeIcon, EllipsisVerticalIcon, BellIcon, SparklesIcon, HomeIcon, PrintIcon, ListViewIcon, DashboardIcon, WifiIcon, AdjustmentsHorizontalIcon, XIcon, SaveIcon } from './Icons';
+import type { Visit, MessageRole, MessageType, ActiveFilters, SavedView, Host, Speaker } from '../types';
+import { CalendarIcon, EditIcon, TrashIcon, CheckIcon, ExclamationTriangleIcon, ChatBubbleOvalLeftEllipsisIcon, PlusIcon, DocumentTextIcon, VideoCameraIcon, EnvelopeIcon, EllipsisVerticalIcon, BellIcon, SparklesIcon, HomeIcon, WifiIcon, AdjustmentsHorizontalIcon, SaveIcon } from './Icons';
 import { UNASSIGNED_HOST, NO_HOST_NEEDED } from '../constants';
 import { useData } from '../contexts/DataContext';
 import { Avatar } from './Avatar';
 import { useToast } from '../contexts/ToastContext';
-import { ContextMenu, ContextMenuAction } from './ContextMenu';
+import { ContextMenu } from './ContextMenu';
 
 interface UpcomingVisitsProps {
     visits: Visit[];
@@ -20,9 +32,33 @@ interface UpcomingVisitsProps {
 
 type DateFilterType = 'all' | 'week' | 'month';
 
-const formatMonth = (dateString: string) => new Date(dateString + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '');
-const formatDay = (dateString: string) => new Date(dateString + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit' });
-const formatWeekday = (dateString: string) => new Date(dateString + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long' });
+
+// Helper function to parse date string into Date object
+const parseDate = (dateString: string): Date => {
+  if (!dateString) return new Date();
+  const parts = dateString.split('-');
+  if (parts.length !== 3) return new Date();
+  const year = Number(parts[0]);
+  const month = Number(parts[1]) - 1; // months are 0-indexed
+  const day = Number(parts[2]);
+  return new Date(year, month, day);
+};
+
+// Format date functions with proper type assertions
+const formatMonth = (dateString: string): string => {
+  const date = parseDate(dateString);
+  return date.toLocaleDateString('fr-FR', { month: 'short' } as Intl.DateTimeFormatOptions).toUpperCase().replace('.', '');
+};
+
+const formatDay = (dateString: string): string => {
+  const date = parseDate(dateString);
+  return date.toLocaleDateString('fr-FR', { day: '2-digit' } as Intl.DateTimeFormatOptions);
+};
+
+const formatWeekday = (dateString: string): string => {
+  const date = parseDate(dateString);
+  return date.toLocaleDateString('fr-FR', { weekday: 'long' } as Intl.DateTimeFormatOptions);
+};
 
 const statusStyles: { [key in Visit['status'] | 'completed']: { text: string; cardBorder: string; listBadge: string } } = {
   pending: { text: 'En attente', cardBorder: 'bg-amber-400', listBadge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300' },
@@ -76,7 +112,7 @@ const VisitCardDateInfo: React.FC<{ visit: Visit; isZoom: boolean; isStreaming: 
     </div>
 );
 
-const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void; hostExists: boolean; isZoom: boolean; isStreaming: boolean; isLocalSpeaker: boolean; isRemote: boolean; isSpecialEvent: boolean; }> = ({ visit, onEdit, hostExists, isZoom, isStreaming, isLocalSpeaker, isRemote, isSpecialEvent }) => {
+const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void; hostExists: boolean; isZoom: boolean; isLocalSpeaker: boolean; isRemote: boolean; isSpecialEvent: boolean; }> = ({ visit, onEdit, hostExists, isZoom, isLocalSpeaker, isRemote, isSpecialEvent }) => {
     const comms = visit.communicationStatus || {};
     const confirmationDone = !!comms.confirmation?.speaker;
     const prepSpeakerDone = !!comms.preparation?.speaker;
@@ -85,7 +121,7 @@ const VisitCardHostInfo: React.FC<{ visit: Visit; onEdit: (visit: Visit) => void
     const thanksDone = !!(comms.thanks?.speaker || comms.thanks?.host);
     
     const checklist = visit.checklist || [];
-    const completedTasks = checklist.filter(task => task.completed).length;
+    const completedTasks = checklist.filter((task: { completed: boolean }) => task.completed).length;
     const totalTasks = checklist.length;
 
     const renderContent = () => {
@@ -255,8 +291,8 @@ const VisitCard: React.FC<{
 }> = ({ visit, onEdit, onDelete, onComplete, onOpenMessageGenerator, index, setContextMenu }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { hosts, archivedVisits } = useData();
-    const isArchived = useMemo(() => archivedVisits.some(v => v.visitId === visit.visitId), [archivedVisits, visit.visitId]);
-    const hostExists = useMemo(() => visit.host === UNASSIGNED_HOST || visit.host === NO_HOST_NEEDED || hosts.some(h => h.nom === visit.host), [hosts, visit.host]);
+    const isArchived = useMemo(() => archivedVisits.some((v: Visit) => v.visitId === visit.visitId), [archivedVisits, visit.visitId]);
+    const hostExists = useMemo(() => visit.host === UNASSIGNED_HOST || visit.host === NO_HOST_NEEDED || hosts.some((h: Host) => h.nom === visit.host), [hosts, visit.host]);
     const isLocalSpeaker = visit.congregation.toLowerCase().includes('lyon');
     const isZoom = visit.locationType === 'zoom';
     const isStreaming = visit.locationType === 'streaming';
@@ -321,7 +357,6 @@ const VisitCard: React.FC<{
                                 onEdit={onEdit}
                                 hostExists={hostExists}
                                 isZoom={isZoom} 
-                                isStreaming={isStreaming}
                                 isLocalSpeaker={isLocalSpeaker}
                                 isRemote={isRemote}
                                 isSpecialEvent={isSpecialEvent}
@@ -349,7 +384,7 @@ const VisitCard: React.FC<{
 const VisitRow: React.FC<Omit<UpcomingVisitsProps, 'visits' | 'onScheduleFirst' | 'viewMode'> & { visit: Visit; index: number }> = (props) => {
     const { visit, onEdit, onOpenMessageGenerator, index } = props;
     const { archivedVisits } = useData();
-    const isArchived = useMemo(() => archivedVisits.some(v => v.visitId === visit.visitId), [archivedVisits, visit.visitId]);
+    const isArchived = useMemo(() => archivedVisits.some((v: Visit) => v.visitId === visit.visitId), [archivedVisits, visit.visitId]);
     const isSpecialEvent = visit.congregation === 'Événement spécial';
     const isUrgent = visit.host === UNASSIGNED_HOST && visit.locationType === 'physical';
 
@@ -446,7 +481,7 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits, onEdit, 
         setActiveFilters(prev => {
             const currentValues = prev[category];
             const newValues = (currentValues as any[]).includes(value)
-                ? currentValues.filter(v => v !== value)
+                ? currentValues.filter((v: typeof value) => v !== value)
                 : [...currentValues, value];
             return { ...prev, [category]: newValues };
         });
@@ -504,7 +539,7 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits, onEdit, 
             return dateFilteredVisits;
         }
 
-        return dateFilteredVisits.filter(visit => {
+        return dateFilteredVisits.filter((visit: Visit) => {
             if (activeFilters.status.length > 0 && !activeFilters.status.includes(visit.status)) return false;
             if (activeFilters.locationType.length > 0 && !activeFilters.locationType.includes(visit.locationType)) return false;
 
@@ -514,13 +549,13 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits, onEdit, 
             }
 
             if (activeFilters.speakerTags.length > 0) {
-                const speaker = speakers.find(s => s.id === visit.id);
-                if (!speaker || !(speaker.tags || []).some(tag => activeFilters.speakerTags.includes(tag))) return false;
+                const speaker = speakers.find((s: Speaker) => s.id === visit.id);
+                if (!speaker || !(speaker.tags || []).some((tag: string) => activeFilters.speakerTags.includes(tag))) return false;
             }
 
             if (activeFilters.hostTags.length > 0) {
-                const host = hosts.find(h => h.nom === visit.host);
-                if (!host || !(host.tags || []).some(tag => activeFilters.hostTags.includes(tag))) return false;
+                const host = hosts.find((h: Host) => h.nom === visit.host);
+                if (!host || !(host.tags || []).some((tag: string) => activeFilters.hostTags.includes(tag))) return false;
             }
             
             return true;
