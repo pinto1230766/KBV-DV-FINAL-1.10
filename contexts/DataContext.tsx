@@ -352,7 +352,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updateAppData(prev => ({
             ...prev,
             speakers: prev.speakers.map(s => s.id === speakerData.id ? speakerData : s).sort((a, b) => a.nom.localeCompare(b.nom)),
-            visits: prev.visits.map(v => v.id === speakerData.id ? { ...v, nom: speakerData.nom, congregation: speakerData.congregation, telephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v)
+            visits: prev.visits.map(v => v.id === speakerData.id ? { ...v, nom: speakerData.nom, congregation: speakerData.congregation, telephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v),
+            archivedVisits: prev.archivedVisits.map(v => v.id === speakerData.id ? { ...v, nom: speakerData.nom, congregation: speakerData.congregation, telephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v)
         }));
         addToast("Orateur mis à jour.", 'success');
     };
@@ -363,7 +364,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updateAppData(prev => ({
             ...prev,
             speakers: prev.speakers.filter(s => s.id !== speakerId),
-            visits: prev.visits.filter(v => v.id !== speakerId)
+            visits: prev.visits.filter(v => v.id !== speakerId),
+            archivedVisits: prev.archivedVisits.filter(v => v.id !== speakerId)
         }));
         addToast(`"${speakerToDelete.nom}" et ses visites associées ont été supprimés.`, 'success');
     };
@@ -431,12 +433,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const removeDuplicateArchivedVisits = () => {
         updateAppData(prev => {
+            const normalizeName = (value: string) => value
+                ? value.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-_]/g, ' ').replace(/\s+/g, ' ')
+                : "";
+            const compositeKey = (visit: Visit) => `${normalizeName(visit.nom)}|${visit.visitDate}`;
+
             const uniqueVisits = new Map<string, Visit>();
             
-            // Keep only the first occurrence of each visitId
+            // Keep only the first occurrence of each composite key
             prev.archivedVisits.forEach(visit => {
-                if (!uniqueVisits.has(visit.visitId)) {
-                    uniqueVisits.set(visit.visitId, visit);
+                const key = compositeKey(visit);
+                if (!uniqueVisits.has(key)) {
+                    uniqueVisits.set(key, visit);
                 }
             });
             

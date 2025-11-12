@@ -130,10 +130,18 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
 
     const findDuplicates = useCallback(() => {
         setIsLoading(true);
+
+        const normalize = (name: string) => name
+            .toLowerCase()
+            .trim()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "") // Remove accents
+            .replace(/[-_]/g, ' '); // Replace hyphens and underscores with spaces
+
         // Find duplicate speakers
         const speakerMap = new Map<string, Speaker[]>();
         speakers.forEach(speaker => {
-            const key = speaker.nom.toLowerCase().trim();
+            const key = normalize(speaker.nom);
             if (!speakerMap.has(key)) {
                 speakerMap.set(key, []);
             }
@@ -145,7 +153,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         // Find duplicate hosts
         const hostMap = new Map<string, Host[]>();
         hosts.forEach(host => {
-            const key = host.nom.toLowerCase().trim();
+            const key = normalize(host.nom);
             if (!hostMap.has(key)) {
                 hostMap.set(key, []);
             }
