@@ -51,26 +51,25 @@
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
 
     <!-- ========================================== -->
-    <!-- AUTORISATIONS GÉOLOCALISATION -->
-    <!-- ========================================== -->
-    <!-- Localisation précise (GPS) -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    
-    <!-- Localisation approximative (réseau) -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    
-    <!-- Localisation en arrière-plan (décommentez si nécessaire) -->
-    <!-- ATTENTION : Nécessite une justification pour le Google Play Store -->
-    <!-- <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" /> -->
-
-    <!-- ========================================== -->
     <!-- AUTORISATIONS SYSTÈME -->
     <!-- ========================================== -->
     <!-- Service en premier plan (pour les notifications persistantes) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     
     <!-- Empêcher l'appareil de se mettre en veille -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- ATTENTION : Nécessite une justification pour le Google Play Store -->
+    <!-- <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" /> -->
+
+    <!-- ========================================== -->
+    <!-- AUTORISATIONS GÉOLOCALISATION (si nécessaire) -->
+    <!-- ========================================== -->
+    <!-- Décommentez si votre application utilise la géolocalisation -->
+    <!-- <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> -->
+    <!-- <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> -->
+    
+    <!-- Localisation en arrière-plan (décommentez si nécessaire) -->
+    <!-- ATTENTION : Nécessite une justification pour le Google Play Store -->
+    <!-- <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" /> -->
 
     <!-- ========================================== -->
     <!-- CONFIGURATION DE L'APPLICATION -->

@@ -4,15 +4,15 @@
   "description": "Une application pour gérer l'accueil des orateurs visiteurs.",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23b91c1c'/%3E%3Ctext x='50' y='48' dominant-baseline='middle' text-anchor='middle' font-family='Montserrat, sans-serif' font-size='35' font-weight='bold' fill='white'%3EKBV%3C/text%3E%3Ctext x='50' y='70' dominant-baseline='middle' text-anchor='middle' font-family='Inter, sans-serif' font-size='15' font-weight='bold' fill='white'%3EDV LYON%3C/text%3E%3C/svg%3E",
-      "type": "image/svg+xml",
-      "sizes": "48x48 72x72 96x96 128x128 144x144 192x192 256x256 512x512",
+      "src": "/icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23b91c1c'/%3E%3Ctext x='50' y='48' dominant-baseline='middle' text-anchor='middle' font-family='Montserrat, sans-serif' font-size='35' font-weight='bold' fill='white'%3EKBV%3C/text%3E%3Ctext x='50' y='70' dominant-baseline='middle' text-anchor='middle' font-family='Inter, sans-serif' font-size='15' font-weight='bold' fill='white'%3EDV LYON%3C/text%3E%3C/svg%3E",
-      "type": "image/svg+xml",
-      "sizes": "192x192 512x512",
+      "src": "/icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
       "purpose": "maskable"
     }
   ],

@@ -1,240 +1,387 @@
-# KBV DV LYON - Application de Gestion des Visites
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\ANDROID_SETUP.md ---
 
-Une application mobile moderne pour gérer les visites d'orateurs, développée avec React, TypeScript et Capacitor.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![React](https://img.shields.io/badge/React-19-blue)
-![Capacitor](https://img.shields.io/badge/Capacitor-7-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\AUTORISATIONS_ANDROID.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\CORRECTIONS_APPLIQUEES.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\CORRECTIONS_MARKDOWN.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\DEPLOIEMENT_SAMSUNG_S10_ULTRA.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\ERREUR_MANIFEST_CORRIGEE.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\GUIDE_GIT_PUSH.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\INSTALLATION_COMPLETE.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\INTEGRATION_ICONES.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\PHOTOS_INTEGREES.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\PROBLEMES_IMAGES_RESOLUS.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\PROJET_PRET.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\PUSH_GITHUB_MAINTENANT.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\RAPPORT_VERIFICATION.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\README.md ---
+
+# KBV Lyon - Application de Gestion
+
+Cette application, développée avec React et Capacitor, permet la gestion des visites d'orateurs, des contacts, et la planification d'événements pour l'assemblée KBV Lyon.
+
+## 📋 Sommaire
+
+- [Prérequis](#-prérequis)
+- [Installation](#-installation)
+- [Configuration de l'environnement](#-configuration-de-lenvironnement)
+- [Scripts disponibles](#-scripts-disponibles)
+- [Déploiement sur Android](#-déploiement-sur-android)
+- [Développement sans fil (WiFi)](#-développement-sans-fil-wifi)
+- [Gestion des assets (icônes et images)](#-gestion-des-assets-icônes-et-images)
+- [Construction d'un APK pour la distribution](#-construction-dun-apk-pour-la-distribution)
+- [Dépannage](#-dépannage)
 
 ---
 
-## Fonctionnalités
+## Prérequis
 
-### Gestion des Visites
+Avant de commencer, assurez-vous d'avoir installé les logiciels suivants :
 
-- Planification des visites d'orateurs
-- Vues multiples : Cartes, Liste, Calendrier, Semaine, Chronologie
-- Archivage automatique des visites terminées
-- Rappels et notifications
+- **Node.js** (version 18 ou supérieure) - [Télécharger](https://nodejs.org/)
+- **Android Studio** - [Télécharger](https://developer.android.com/studio)
 
-### Gestion des Orateurs
+### Configuration d'Android Studio
 
-- Base de données complète des orateurs
-- Historique des visites par orateur
-- Informations de contact
-- Liste des discours disponibles
+1. Installez Android Studio et assurez-vous que les composants suivants sont inclus :
+    - Android SDK
+    - Android SDK Platform-Tools
+    - Android Virtual Device (pour l'émulateur, optionnel)
 
-### Gestion des Contacts d'Accueil
-
-- Base de données des frères pour l'accueil
-- Géolocalisation des adresses
-- Envoi de messages personnalisés
-
-### Messagerie Intelligente
-
-- Génération de messages avec IA (Google Gemini)
-- Support multilingue (Français, Anglais, Espagnol, etc.)
-- Templates personnalisables
-
-### Discours Publics
-
-- Base de données de 200+ discours
-- Recherche et filtrage avancés
-- Attribution aux orateurs
-
-### Statistiques
-
-- Graphiques et analyses
-- Statistiques par orateur
-- Rapports imprimables
-
-### Notifications
-
-- Rappels pour les visites à venir
-- Notifications programmables
-- Gestion des préférences
-
-### Interface Moderne
-
-- Mode sombre/clair
-- Design responsive (tablettes et smartphones)
-- PWA (Progressive Web App)
-- Interface intuitive
+2. Configurez la variable d'environnement `ANDROID_HOME` pour qu'elle pointe vers le répertoire de votre SDK Android.
+    - Exemple Windows : `C:\Users\VotreNom\AppData\Local\Android\Sdk`
+    - Ajoutez également le dossier `platform-tools` à votre `PATH` système.
 
 ---
 
-## Installation Rapide
+## 🛠️ Installation
 
-### Prérequis
+Vous pouvez utiliser les scripts `setup-android.bat` (pour CMD) ou `setup-android.ps1` (pour PowerShell) qui automatisent toutes les étapes ci-dessous.
 
-- Node.js 18+ ([Télécharger](https://nodejs.org/))
-- Android Studio ([Télécharger](https://developer.android.com/studio))
-- Samsung Galaxy Tab S10 Ultra (ou autre appareil Android)
-
-### Installation Automatique
-
-#### Windows (PowerShell)
-
-```powershell
-.\setup-android.ps1
-```
-
-#### Windows (Batch)
-
-```cmd
-setup-android.bat
-```
-
-### Installation Manuelle
+Si vous préférez une installation manuelle, suivez ces étapes :
 
 1. **Installer les dépendances**
+    Ouvrez un terminal à la racine du projet et exécutez :
 
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 
-2. **Construire l'application**
+2. **Configurer l'environnement**
+    Copiez le fichier `.env.local.example` vers `.env.local` et ajoutez votre clé API Google Gemini.
 
-   ```bash
-   npm run build
-   ```
+    ```bash
+    cp .env.local.example .env.local
+    ```
 
-3. **Ajouter la plateforme Android**
+    Modifiez le fichier `.env.local` :
 
-   ```bash
-   npx cap add android
-   ```
+    ```env
+    VITE_GEMINI_API_KEY=votre_cle_api_gemini_ici
+    ```
 
-4. **Configurer les autorisations**
+    Vous pouvez obtenir une clé API sur Google AI Studio.
 
-   - Copiez le contenu de `AndroidManifest.template.xml`
-   - Collez-le dans `android/app/src/main/AndroidManifest.xml`
+3. **Construire l'application web**
+    Cette commande compile le code React/TypeScript dans le dossier `dist/`.
 
-5. **Synchroniser**
+    ```bash
+    npm run build
+    ```
 
-   ```bash
-   npx cap sync android
-   ```
+4. **Ajouter la plateforme Android**
+    Cette commande crée le projet natif Android dans le dossier `android/`.
 
-6. **Ouvrir dans Android Studio**
+    ```bash
+    npx cap add android
+    ```
 
-   ```bash
-   npx cap open android
-   ```
+5. **Configurer le manifeste Android**
+    Copiez le contenu du fichier `AndroidManifest.template.xml` et remplacez entièrement le contenu du fichier `android/app/src/main/AndroidManifest.xml`. Ce template contient toutes les autorisations nécessaires.
 
----
+6. **Synchroniser le projet**
+    Cette commande copie les fichiers web (`dist/`) et met à jour les plugins natifs.
 
-## Documentation Complète
-
-- **[INSTALLATION_COMPLETE.md](./INSTALLATION_COMPLETE.md)** - Guide d'installation détaillé
-- **[DEPLOIEMENT_SAMSUNG_S10ULTRA.md](./DEPLOIEMENT_SAMSUNG_S10ULTRA.md)** - Déploiement sur tablette Samsung
-- **[ANDROID_SETUP.md](./ANDROID_SETUP.md)** - Configuration Android détaillée
-- **[AUTORISATIONS_ANDROID.md](./AUTORISATIONS_ANDROID.md)** - Liste complète des autorisations
-
----
-
-## Technologies
-
-### Frontend
-
-- **React 19** - Framework UI
-- **TypeScript 5.8** - Typage statique
-- **Vite 6** - Build tool ultra-rapide
-
-### Mobile
-
-- **Capacitor 7** - Framework mobile natif
-- **@capacitor/android** - Plateforme Android
-- **@capacitor/camera** - Accès caméra
-- **@capacitor/geolocation** - Géolocalisation
-- **@capacitor/local-notifications** - Notifications
-- **@capacitor/filesystem** - Système de fichiers
-- **@capacitor/share** - Partage de contenu
-
-### IA et Services
-
-- **Google Gemini AI** - Génération de messages intelligents
-- **@ionic/pwa-elements** - Éléments PWA
+    ```bash
+    npx cap sync android
+    ```
 
 ---
 
-## Autorisations Android
+## 🚀 Scripts disponibles
 
-L'application nécessite les autorisations suivantes :
-
-### Essentielles
-
-- **INTERNET** - API Google Gemini
-- **ACCESS_NETWORK_STATE** - Vérification connexion
-- **POST_NOTIFICATIONS** - Notifications (Android 13+)
-- **SCHEDULE_EXACT_ALARM** - Rappels précis
-
-### Optionnelles
-
-- **CAMERA** - Appareil photo
-- **ACCESS_FINE_LOCATION** - Géolocalisation
-- **READ_MEDIA_IMAGES** - Accès galerie (Android 13+)
-
-Consultez [AUTORISATIONS_ANDROID.md](./AUTORISATIONS_ANDROID.md) pour la liste complète.
+- `npm run dev`: Lance le serveur de développement pour tester l'application dans un navigateur web.
+- `npm run build`: Construit l'application web pour la production.
+- `npm run android`: Exécute `build`, `sync` et ouvre Android Studio.
+- `npm run android:open`: Ouvre le projet dans Android Studio.
 
 ---
 
-## Scripts npm
+## 📱 Déploiement sur Android
+
+### 1. Configuration de l'appareil Android
+
+a. **Activer le Mode Développeur**
+
+- Allez dans **Paramètres** > **À propos de l'appareil**.
+- Appuyez **7 fois** sur **Numéro de build** jusqu'à ce qu'un message confirme l'activation.
+
+b. **Activer le Débogage USB**
+
+- Retournez dans **Paramètres**, puis allez dans le nouveau menu **Options de développeur**.
+- Activez **Débogage USB**.
+
+### 2. Déploiement via USB
+
+a. **Connecter l'appareil**
+
+- Connectez votre tablette ou téléphone à votre ordinateur via un câble USB.
+- Sur l'appareil, autorisez le débogage USB lorsque la pop-up apparaît.
+
+b. **Lancer l'application**
+
+- Exécutez la commande suivante pour ouvrir Android Studio :
+
+     ```bash
+     npm run android:open
+     ```
+
+- Dans Android Studio, sélectionnez votre appareil dans la liste déroulante en haut.
+- Cliquez sur le bouton **Run (▶️)** pour compiler et installer l'application sur votre appareil.
+
+---
+
+## 🌐 Développement sans fil (WiFi)
+
+Pour déployer sans câble, vous pouvez utiliser ADB sur WiFi.
+
+1. **Configuration initiale (une seule fois)**
+    - Connectez votre appareil via USB.
+    - Assurez-vous que votre PC et votre appareil sont sur le même réseau WiFi.
+    - Exécutez `adb tcpip 5555` dans un terminal.
+    - Débranchez le câble USB.
+    - Trouvez l'adresse IP de votre appareil (dans les paramètres WiFi) et exécutez :
+
+      ```bash
+      adb connect VOTRE_ADRESSE_IP:5555
+      ```
+
+2. **Déploiements suivants**
+    Assurez-vous simplement que l'appareil est connecté (`adb devices`) et utilisez les commandes de déploiement habituelles.
+
+---
+
+## 🎨 Gestion des assets (icônes et images)
+
+Pour une gestion simplifiée et complète des icônes et écrans de démarrage de votre application (pour le web, Android et iOS), il est fortement recommandé d'utiliser l'outil `@capacitor/assets`.
+
+### 1. Préparer votre image source
+
+Créez une image de haute résolution (idéalement 1024x1024 pixels ou plus, au format PNG ou SVG) pour votre icône d'application. Placez-la par exemple à la racine de votre projet sous le nom `app-icon.png`.
+
+### 2. Installer `@capacitor/assets`
 
 ```bash
-# Développement web
-npm run dev
+npm install -D @capacitor/assets
+```
 
-# Construction
-npm run build
+### 3. Générer les assets
 
-# Prévisualisation
-npm run preview
+Exécutez la commande suivante en spécifiant votre image source :
 
-# Android : Build + Sync + Open
-npm run android
+```bash
+npx @capacitor/assets generate --icon app-icon.png --splash splash.png --pwa
+```
 
-# Android : Build + Sync seulement
-npm run android:build
+Cette commande va :
+- Créer toutes les icônes nécessaires dans les dossiers `mipmap-xxx` de votre projet Android.
+- Créer les icônes pour les PWA dans `public/assets/icons/`.
+- Mettre à jour `index.html` et `manifest.json` pour référencer ces nouvelles icônes.
 
-# Android : Open Android Studio
-npm run android:open
+**Note :** Si vous n'avez pas d'image de splash screen (`splash.png`), vous pouvez omettre l'option `--splash`.
+
+### Images dans l'application
+
+Placez toutes les autres images (photos, illustrations) dans le dossier `public/` et référencez-les avec un chemin absolu depuis la racine.
+
+**Exemple :**
+
+```tsx
+// L'image est située dans public/images/mon-image.jpg
+<img src="/images/mon-image.jpg" alt="Description" />
 ```
 
 ---
 
-## Structure du Projet
+## 📦 Construction d'un APK pour la distribution
 
-```text
-kbv-dv-lyon-final/
-├── android/                    # Projet Android (après npx cap add android)
-├── assets/                     # Images et ressources
-├── components/                 # Composants React
-│   ├── Dashboard.tsx
-│   ├── CalendarView.tsx
-│   ├── MessagingCenter.tsx
-│   └── ...
-├── contexts/                   # Contextes React
-│   ├── DataContext.tsx
-│   ├── ToastContext.tsx
-│   └── ConfirmContext.tsx
-├── hooks/                      # Hooks personnalisés
-├── utils/                      # Fonctions utilitaires
-├── dist/                       # Build de production
-├── App.tsx                     # Composant principal
-├── index.tsx                   # Point d'entrée
-├── types.ts                    # Types TypeScript
-├── constants.ts                # Constantes
-├── capacitor.config.ts         # Configuration Capacitor
-├── vite.config.ts              # Configuration Vite
-├── tsconfig.json               # Configuration TypeScript
-├── package.json                # Dépendances
-├── AndroidManifest.template.xml # Template autorisations
-├── setup-android.ps1           # Script installation PowerShell
-├── setup-android.bat           # Script installation Batch
-└── Documentation/
-    ├── INSTALLATION_COMPLETE.md
-    ├── DEPLOIEMENT_SAMSUNG_S10ULTRA.md
-    ├── ANDROID_SETUP.md
-    └── AUTORISATIONS_ANDROID.md
+### APK de débogage (pour tests)
+
+```bash
+cd android
+./gradlew assembleDebug
+```
+
+L'APK sera généré dans `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+### APK de production (signé)
+
+1. **Créer un keystore** (si vous n'en avez pas) :
+
+    ```bash
+    keytool -genkey -v -keystore mon-app.keystore -alias mon_alias -keyalg RSA -keysize 2048 -validity 10000
+    ```
+
+2. **Configurer la signature**
+    Créez un fichier `keystore.properties` à la racine du dossier `android/` (ajoutez-le à `.gitignore`) avec les informations suivantes :
+
+    ```properties
+    storePassword=votre_mot_de_passe_keystore
+    keyAlias=mon_alias
+    keyPassword=votre_mot_de_passe_alias
+    storeFile=../mon-app.keystore
+    ```
+
+3. **Modifier `build.gradle`**
+    Dans `android/app/build.gradle`, chargez ces propriétés et configurez le `signingConfig`.
+
+4. **Construire l'APK** :
+
+    ```bash
+    cd android
+    ./gradlew assembleRelease
+    ```
+
+L'APK signé sera généré dans `android/app/build/outputs/apk/release/app-release.apk`.
+
+---
+
+## 🔧 Dépannage
+
+### Erreur : `SDK location not found`
+
+Assurez-vous que la variable d'environnement `ANDROID_HOME` est correctement configurée et qu'elle pointe vers le répertoire de votre SDK Android.
+
+### Erreur : `Manifest merger failed`
+
+Cette erreur se produit souvent en cas de conflit entre le `AndroidManifest.xml` principal et ceux des plugins. Le `AndroidManifest.template.xml` fourni contient déjà une correction pour un conflit courant avec `android:exported`.
+
+**Solution générale :**
+
+1. Ajoutez le namespace `tools` à la balise `<manifest>` :
+
+    ```xml
+    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools">
+    ```
+
+2. Sur l'élément qui pose problème, ajoutez `tools:replace="android:attributeName"` pour forcer l'utilisation de votre valeur.
+
+    ```xml
+    <receiver
+        android:name="..."
+        android:exported="true"
+        tools:replace="android:exported">
+        ...
+    </receiver>
+    ```
+
+### L'application se ferme immédiatement au démarrage
+
+1. Ouvrez Android Studio et allez dans l'onglet **Logcat**.
+2. Filtrez les logs par le nom de votre package (ex: `com.kbv.lyon`).
+3. Recherchez les erreurs (en rouge) qui se produisent au lancement. Les causes courantes sont des autorisations manquantes ou des erreurs de plugin.
+
+### La tablette n'est pas détectée par `adb`
+
+1. **Vérifiez le câble USB** : utilisez un câble de données, pas seulement de chargement.
+2. **Changez de port USB**.
+3. **Révoquez les autorisations de débogage USB** sur la tablette (dans les Options de développeur) et reconnectez l'appareil.
+4. **Installez les drivers USB** de votre appareil sur votre ordinateur.
+
+### Problèmes d'images ou de styles (CSS)
+
+1. **Videz le cache** de votre navigateur ou de l'application sur l'appareil.
+2. **Vérifiez les chemins** : toutes les ressources dans `public/` doivent être appelées avec un chemin absolu (ex: `/images/logo.png`).
+3. **Reconstruisez et resynchronisez** le projet pour vous assurer que les derniers fichiers sont copiés :
+
+    ```bash
+    npm run build
+    npx cap sync android
+    ```
+
+---
+
+**Bon développement ! 🚀**
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\RESOUDRE_ERREUR_JAVA.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\RESUME_FINAL.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\SOLUTION_IMMEDIATE_JAVA.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\STATUT_FINAL.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\TELECHARGER_JAVA_21.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\TOUT_EST_PARFAIT.md ---
+
+
+
+--- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\VERIFICATION_FINALE.md ---
+
+
+
+
+--- End of content ---

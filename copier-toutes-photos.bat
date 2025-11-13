@@ -6,8 +6,10 @@ echo   Copie des Photos des Orateurs
 echo ========================================
 echo.
 
-set "SOURCE=D:\PROJETCS APLICATIONS ANDROIDE\KBV DV LYON"
-set "DEST=C:\Users\FP123\Downloads\kbv-dv-lyon-final\public\photos"
+rem Le script s'attend à ce que les photos soient dans un dossier 'photos-orateurs' à la racine du projet.
+set "SOURCE=..\photos-orateurs"
+rem Le dossier de destination est le dossier 'public\photos' de l'application.
+set "DEST=.\public\photos"
 
 echo Creation du dossier photos...
 if not exist "%DEST%" mkdir "%DEST%"
