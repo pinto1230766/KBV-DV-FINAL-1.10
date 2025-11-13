@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useCallback, ReactNode, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useCallback, ReactNode, useState, useEffect, useRef } from 'react';
 import { generateUUID } from '../utils/uuid';
 import { Speaker, Visit, Host, CustomMessageTemplates, CustomHostRequestTemplates, Language, MessageType, MessageRole, TalkHistory, CongregationProfile, PublicTalk, Feedback, SavedView, ActiveFilters, SpecialDate } from '../types';
 import { initialSpeakers, initialHosts, UNASSIGNED_HOST, NO_HOST_NEEDED, initialVisits, initialPublicTalks, initialSpecialDates } from '../constants';
@@ -205,30 +205,39 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [addToast]);
 
     // Persist data on change effect
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     useEffect(() => {
         if (!appData || isLoading) return;
 
-        const saveData = async (dataToSave: AppData) => {
-            try {
-                if (isEncrypted && sessionPassword) {
-                    const encryptedData = await encrypt(dataToSave, sessionPassword);
-                    await set('encryptedAppData', encryptedData);
-                    await del('appData');
-                } else if (!isEncrypted) {
-                    await set('appData', dataToSave);
-                    await del('encryptedAppData');
-                }
-            } catch (error) {
-                console.error("Error saving data to IndexedDB:", error);
-                let userMessage = "Erreur critique de sauvegarde. Vos derniers changements pourraient ne pas être enregistrés.";
-                if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'QUOTA_EXCEEDED_ERR')) {
-                    userMessage = "Erreur de sauvegarde : le stockage de votre appareil est plein. Essayez de supprimer des photos ou des pièces jointes.";
-                }
-                addToast(userMessage, "error", 10000);
-            }
-        };
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
 
-        saveData(appData);
+        saveTimeoutRef.current = setTimeout(() => {
+            const saveData = async (dataToSave: AppData) => {
+                try {
+                    if (isEncrypted && sessionPassword) {
+                        const encryptedData = await encrypt(dataToSave, sessionPassword);
+                        await set('encryptedAppData', encryptedData);
+                        await del('appData');
+                    } else if (!isEncrypted) {
+                        await set('appData', dataToSave);
+                        await del('encryptedAppData');
+                    }
+                } catch (error) {
+                    console.error("Error saving data to IndexedDB:", error);
+                    let userMessage = "Erreur critique de sauvegarde. Vos derniers changements pourraient ne pas être enregistrés.";
+                    if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'QUOTA_EXCEEDED_ERR')) {
+                        userMessage = "Erreur de sauvegarde : le stockage de votre appareil est plein. Essayez de supprimer des photos ou des pièces jointes.";
+                    } else if (error instanceof Error) {
+                        userMessage += `\n${error.name}: ${error.message}`;
+                    }
+                    addToast(userMessage, "error", 10000);
+                }
+            };
+            saveData(appData);
+        }, 500);
+
     }, [appData, isEncrypted, sessionPassword, isLoading, addToast]);
 
     const unlock = async (password: string): Promise<boolean> => {
@@ -989,36 +998,55 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!appData) return;
         
         const googleSheetId = '1drIzPPi6AohCroSyUkF1UmMFxuEtMACBF4XATDjBOcg';
-        const googleSheetRange = 'Planning!A:E';
+        const range = 'A:E';
+        const currentYear = new Date().getFullYear();
+        const sheetNamesToTry = [`Planning ${currentYear}`, 'Planning'];
 
-        const rangeParts = googleSheetRange.split('!');
-        const [sheetName, range] = rangeParts;
+        let data: any = null;
+        let successfulSheetName: string | null = null;
 
-        const url = `https://docs.google.com/spreadsheets/d/${googleSheetId}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}&tqx=out:json`;
+        for (const sheetName of sheetNamesToTry) {
+            const url = `https://docs.google.com/spreadsheets/d/${googleSheetId}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}&tqx=out:json`;
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.warn(`Could not fetch sheet "${sheetName}". Trying next one.`);
+                    continue;
+                }
+                
+                const rawText = await response.text();
+                const jsonMatch = rawText.match(/google\.visualization\.Query\.setResponse\((.*)\)/);
+                if (!jsonMatch || !jsonMatch[1]) {
+                    console.warn(`Invalid response from sheet "${sheetName}". Trying next one.`);
+                    continue;
+                }
+                
+                const parsedData = JSON.parse(jsonMatch[1]);
+                if (parsedData.status === 'error') {
+                    console.warn(`Error in sheet "${sheetName}": ${parsedData.errors.map((e: any) => e.detailed_message).join(', ')}. Trying next one.`);
+                    continue;
+                }
+
+                data = parsedData;
+                successfulSheetName = sheetName;
+                break; // Success!
+            } catch (error) {
+                console.warn(`Error fetching or parsing sheet "${sheetName}":`, error);
+            }
+        }
+
+        if (!data || !successfulSheetName) {
+            addToast(`Impossible de trouver une feuille de calcul valide ("Planning ${currentYear}" ou "Planning").`, 'error');
+            return;
+        }
 
         try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Erreur ${response.status}: Impossible de récupérer les données. Vérifiez que la feuille est partagée publiquement.`);
-            }
-            
-            const rawText = await response.text();
-            const jsonMatch = rawText.match(/google\.visualization\.Query\.setResponse\((.*)\)/);
-            if (!jsonMatch || !jsonMatch[1]) {
-                throw new Error("Réponse de l'API Google Visualization invalide.");
-            }
-            const data = JSON.parse(jsonMatch[1]);
-
-
-            if (data.status === 'error') {
-                throw new Error(data.errors.map((e: any) => e.detailed_message).join(', '));
-            }
-
             const rows = data.table.rows;
             const cols = data.table.cols;
 
             if (!rows || rows.length === 0) {
-                addToast("Aucune donnée trouvée dans la feuille de calcul (après les en-têtes).", 'warning');
+                addToast(`Aucune donnée trouvée dans la feuille "${successfulSheetName}".`, 'warning');
                 return;
             }
 
@@ -1135,7 +1163,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 return { ...prev, speakers: newSpeakers, visits: newVisits };
             });
 
-            let toastMessage = `Synchronisation terminée !\n- ${addedCount} visite(s) ajoutée(s)\n- ${updatedCount} visite(s) mise(s) à jour\n- ${skippedCount} ligne(s) ignorée(s)`;
+            let toastMessage = `Synchronisation depuis "${successfulSheetName}" terminée !\n- ${addedCount} visite(s) ajoutée(s)\n- ${updatedCount} visite(s) mise(s) à jour\n- ${skippedCount} ligne(s) ignorée(s)`;
             if (addedVisitsDetails.length > 0) {
                 toastMessage += `\n\nAjouts:\n${addedVisitsDetails.join('\n')}`;
             }
