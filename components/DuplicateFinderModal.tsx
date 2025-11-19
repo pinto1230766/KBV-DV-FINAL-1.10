@@ -136,7 +136,9 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
             .trim()
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "") // Remove accents
-            .replace(/[-_]/g, ' '); // Replace hyphens and underscores with spaces
+            .replace(/[-_]/g, ' ') // Replace hyphens and underscores with spaces
+            .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+            .trim(); // Remove leading/trailing spaces again
 
         // Find duplicate speakers
         const speakerMap = new Map<string, Speaker[]>();
