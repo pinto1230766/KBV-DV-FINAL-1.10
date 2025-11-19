@@ -996,57 +996,58 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const syncWithGoogleSheet = async (): Promise<void> => {
         if (!appData) return;
-        
+
         const googleSheetId = '1drIzPPi6AohCroSyUkF1UmMFxuEtMACBF4XATDjBOcg';
         const range = 'A:E';
-        const currentYear = new Date().getFullYear();
-        const sheetNamesToTry = [`Planning ${currentYear}`, 'Planning'];
+        const sheetGidsToTry = ['490509024', '1817293373', '936069614', '1474640023'];
 
-        let data: any = null;
-        let successfulSheetName: string | null = null;
+        let allRows: any[] = [];
+        let cols: any = null;
+        let successfulGids: string[] = [];
 
-        for (const sheetName of sheetNamesToTry) {
-            const url = `https://docs.google.com/spreadsheets/d/${googleSheetId}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}&tqx=out:json`;
-            
+        for (const gid of sheetGidsToTry) {
+            const url = `https://docs.google.com/spreadsheets/d/${googleSheetId}/gviz/tq?gid=${gid}&range=${encodeURIComponent(range)}&tqx=out:json`;
+
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
-                    console.warn(`Could not fetch sheet "${sheetName}". Trying next one.`);
+                    console.warn(`Could not fetch sheet with gid "${gid}". Trying next one.`);
                     continue;
                 }
-                
+
                 const rawText = await response.text();
                 const jsonMatch = rawText.match(/google\.visualization\.Query\.setResponse\((.*)\)/);
                 if (!jsonMatch || !jsonMatch[1]) {
-                    console.warn(`Invalid response from sheet "${sheetName}". Trying next one.`);
-                    continue;
-                }
-                
-                const parsedData = JSON.parse(jsonMatch[1]);
-                if (parsedData.status === 'error') {
-                    console.warn(`Error in sheet "${sheetName}": ${parsedData.errors.map((e: any) => e.detailed_message).join(', ')}. Trying next one.`);
+                    console.warn(`Invalid response from sheet with gid "${gid}". Trying next one.`);
                     continue;
                 }
 
-                data = parsedData;
-                successfulSheetName = sheetName;
-                break; // Success!
+                const parsedData = JSON.parse(jsonMatch[1]);
+                if (parsedData.status === 'error') {
+                    console.warn(`Error in sheet with gid "${gid}": ${parsedData.errors.map((e: any) => e.detailed_message).join(', ')}. Trying next one.`);
+                    continue;
+                }
+
+                if (parsedData.table && parsedData.table.rows) {
+                    allRows.push(...parsedData.table.rows);
+                    if (!cols) cols = parsedData.table.cols;
+                    successfulGids.push(gid);
+                }
             } catch (error) {
-                console.warn(`Error fetching or parsing sheet "${sheetName}":`, error);
+                console.warn(`Error fetching or parsing sheet with gid "${gid}":`, error);
             }
         }
 
-        if (!data || !successfulSheetName) {
-            addToast(`Impossible de trouver une feuille de calcul valide ("Planning ${currentYear}" ou "Planning").`, 'error');
+        if (allRows.length === 0) {
+            addToast('Impossible de récupérer des données depuis les onglets spécifiés.', 'error');
             return;
         }
 
         try {
-            const rows = data.table.rows;
-            const cols = data.table.cols;
+            const rows = allRows;
 
             if (!rows || rows.length === 0) {
-                addToast(`Aucune donnée trouvée dans la feuille "${successfulSheetName}".`, 'warning');
+                addToast('Aucune donnée trouvée dans les feuilles synchronisées.', 'warning');
                 return;
             }
 
@@ -1163,7 +1164,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 return { ...prev, speakers: newSpeakers, visits: newVisits };
             });
 
-            let toastMessage = `Synchronisation depuis "${successfulSheetName}" terminée !\n- ${addedCount} visite(s) ajoutée(s)\n- ${updatedCount} visite(s) mise(s) à jour\n- ${skippedCount} ligne(s) ignorée(s)`;
+            let toastMessage = `Synchronisation depuis les onglets ${successfulGids.join(', ')} terminée !\n- ${addedCount} visite(s) ajoutée(s)\n- ${updatedCount} visite(s) mise(s) à jour\n- ${skippedCount} ligne(s) ignorée(s)`;
             if (addedVisitsDetails.length > 0) {
                 toastMessage += `\n\nAjouts:\n${addedVisitsDetails.join('\n')}`;
             }
