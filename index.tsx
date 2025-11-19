@@ -4,6 +4,7 @@ import App from './App';
 import { ToastProvider } from './contexts/ToastContext';
 import { ConfirmProvider } from './contexts/ConfirmContext';
 import { DataProvider } from './contexts/DataContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Register Service Worker for PWA capabilities
 if ('serviceWorker' in navigator) {
@@ -26,12 +27,14 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ToastProvider>
-      <ConfirmProvider>
-        <DataProvider>
-          <App />
-        </DataProvider>
-      </ConfirmProvider>
-    </ToastProvider>
+    <ErrorBoundary>
+      <DataProvider>
+        <ToastProvider>
+          <ConfirmProvider>
+            <App />
+          </ConfirmProvider>
+        </ToastProvider>
+      </DataProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

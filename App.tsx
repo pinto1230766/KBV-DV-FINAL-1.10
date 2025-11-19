@@ -3,10 +3,15 @@ import { Speaker, Visit, MessageRole, Language, Host, MessageType, TalkHistory, 
 import { UpcomingVisits } from './components/UpcomingVisits';
 import { SpeakerList } from './components/SpeakerList';
 import { ScheduleVisitModal } from './components/ScheduleVisitModal';
-import { CalendarView } from './components/CalendarView';
-import { MessagingCenter } from './components/MessagingCenter';
+// Lazy loaded components for performance
+const Dashboard = React.lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
+const CalendarView = React.lazy(() => import('./components/CalendarView').then(module => ({ default: module.CalendarView })));
+const MessagingCenter = React.lazy(() => import('./components/MessagingCenter').then(module => ({ default: module.MessagingCenter })));
+const TalksManager = React.lazy(() => import('./components/TalksManager').then(module => ({ default: module.TalksManager })));
+const Statistics = React.lazy(() => import('./components/Statistics').then(module => ({ default: module.Statistics })));
+const Settings = React.lazy(() => import('./components/Settings').then(module => ({ default: module.Settings })));
+
 import { SpeakerDetailsModal } from './components/SpeakerDetailsModal';
-import { Settings } from './components/Settings';
 import { CalendarIcon, ListViewIcon, EnvelopeIcon, CogIcon, MoonIcon, SunIcon, SearchIcon, DashboardIcon, BookOpenIcon, PodiumIcon, ChartBarIcon, CalendarDaysIcon, PlusIcon, UserIcon, HomeIcon, PrintIcon } from './components/Icons';
 import { useToast } from './contexts/ToastContext';
 import { useConfirm } from './contexts/ConfirmContext';
@@ -15,22 +20,26 @@ import { useData } from './contexts/DataContext';
 import { NotificationPermissionBanner } from './components/NotificationPermissionBanner';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { HostDetailsModal } from './components/HostDetailsModal';
-import { Dashboard } from './components/Dashboard';
 import { HostList } from './components/HostList';
 import { PastVisitsManager } from './components/PastVisitsManager';
 import { TabButton } from './components/TabButton';
 import useVisitNotifications from './hooks/useVisitNotifications';
 import { Avatar } from './components/Avatar';
 import { HostRequestModal } from './components/HostRequestModal';
-import { TalksManager } from './components/TalksManager';
 import { TimelineView } from './components/TimelineView';
 import { FeedbackModal } from './components/FeedbackModal';
 import { WeekView } from './components/WeekView';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { FAB } from './components/FAB';
-import { Statistics } from './components/Statistics';
 import { PrintPreviewModal } from './components/PrintPreviewModal';
 import { DashboardPrintLayout } from './components/DashboardPrintLayout';
+
+// Loading Fallback Component
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-full min-h-[50vh]">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+);
 
 type Tab = 'dashboard' | 'planning' | 'messaging' | 'talks' | 'statistics' | 'settings';
 
@@ -526,34 +535,36 @@ const App: React.FC = () => {
                 </div>
 
                 <main className="flex-grow min-h-0 mobile-nav-safe-area">
-                    {activeTab === 'messaging' ? (
-                        renderContent()
-                    ) : (
-                        <div className="h-full overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-                             {activeTab === 'planning' && (
-                                <div className="flex flex-col sm:flex-row justify-end items-center mb-4 gap-4 pt-4 sm:pt-0 no-print">
-                                     <div className="flex items-center rounded-lg p-1 bg-gray-200 dark:bg-primary-light/20 overflow-x-auto hide-scrollbar">
-                                        <button onClick={() => setViewMode('cards')} className={`whitespace-nowrap px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${viewMode === 'cards' ? 'bg-white dark:bg-card-dark shadow-md' : ''}`}>
-                                           <DashboardIcon className="w-5 h-5" /> Cartes
-                                        </button>
-                                        <button onClick={() => setViewMode('list')} className={`whitespace-nowrap px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${viewMode === 'list' ? 'bg-white dark:bg-card-dark shadow-md' : ''}`}>
-                                           <ListViewIcon className="w-5 h-5" /> Liste
-                                        </button>
-                                        <button onClick={() => setViewMode('week')} className={`whitespace-nowrap px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${viewMode === 'week' ? 'bg-white dark:bg-card-dark shadow-md' : ''}`}>
-                                           <CalendarDaysIcon className="w-5 h-5" /> Semaine
-                                        </button>
-                                        <button onClick={() => setViewMode('calendar')} className={`whitespace-nowrap px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${viewMode === 'calendar' ? 'bg-white dark:bg-card-dark shadow-md' : ''}`}>
-                                           <CalendarIcon className="w-5 h-5" /> Calendrier
-                                        </button>
-                                        <button onClick={() => setViewMode('timeline')} className={`whitespace-nowrap px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${viewMode === 'timeline' ? 'bg-white dark:bg-card-dark shadow-md' : ''}`}>
-                                           <ChartBarIcon className="w-5 h-5" /> Chronologie
-                                        </button>
+                    <React.Suspense fallback={<PageLoader />}>
+                        {activeTab === 'messaging' ? (
+                            renderContent()
+                        ) : (
+                            <div className="h-full overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+                                 {activeTab === 'planning' && (
+                                    <div className="flex flex-col sm:flex-row justify-end items-center mb-4 gap-4 pt-4 sm:pt-0 no-print">
+                                         <div className="flex items-center rounded-lg p-1 bg-gray-200 dark:bg-primary-light/20 overflow-x-auto hide-scrollbar">
+                                            <button onClick={() => setViewMode('cards')} className={`whitespace-nowrap px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${viewMode === 'cards' ? 'bg-white dark:bg-card-dark shadow-md' : ''}`}>
+                                               <DashboardIcon className="w-5 h-5" /> Cartes
+                                            </button>
+                                            <button onClick={() => setViewMode('list')} className={`whitespace-nowrap px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${viewMode === 'list' ? 'bg-white dark:bg-card-dark shadow-md' : ''}`}>
+                                               <ListViewIcon className="w-5 h-5" /> Liste
+                                            </button>
+                                            <button onClick={() => setViewMode('week')} className={`whitespace-nowrap px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${viewMode === 'week' ? 'bg-white dark:bg-card-dark shadow-md' : ''}`}>
+                                               <CalendarDaysIcon className="w-5 h-5" /> Semaine
+                                            </button>
+                                            <button onClick={() => setViewMode('calendar')} className={`whitespace-nowrap px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${viewMode === 'calendar' ? 'bg-white dark:bg-card-dark shadow-md' : ''}`}>
+                                               <CalendarIcon className="w-5 h-5" /> Calendrier
+                                            </button>
+                                            <button onClick={() => setViewMode('timeline')} className={`whitespace-nowrap px-3 py-1 text-sm font-semibold rounded-md flex items-center gap-2 ${viewMode === 'timeline' ? 'bg-white dark:bg-card-dark shadow-md' : ''}`}>
+                                               <ChartBarIcon className="w-5 h-5" /> Chronologie
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                            {renderContent()}
-                        </div>
-                    )}
+                                )}
+                                {renderContent()}
+                            </div>
+                        )}
+                    </React.Suspense>
                 </main>
             </div>
 
