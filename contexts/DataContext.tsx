@@ -126,7 +126,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const updateApiKey = (key: string) => {
         setStoredApiKey(key);
-        addToast("Clé API enregistrée.", 'success');
+        setTimeout(() => addToast("Clé API enregistrée.", 'success'), 0);
     };
 
     const defaultLogo = useMemo(() => {
@@ -146,13 +146,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLogoUrl(newUrl);
             if (favicon) favicon.href = newUrl;
             if (appleTouchIcon) appleTouchIcon.href = newUrl;
-            addToast("Nouveau logo appliqué.", 'success');
+            setTimeout(() => addToast("Nouveau logo appliqué.", 'success'), 0);
         } else {
             localStorage.removeItem('customAppLogo');
             setLogoUrl(defaultLogo);
             if (favicon) favicon.href = defaultLogo;
             if (appleTouchIcon) appleTouchIcon.href = defaultLogo;
-            addToast("Logo par défaut restauré.", 'info');
+            setTimeout(() => addToast("Logo par défaut restauré.", 'info'), 0);
         }
     }, [defaultLogo, addToast]);
 
@@ -170,7 +170,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 localStorage.removeItem('dataIsEncrypted');
                 localStorage.removeItem('encryptedAppData');
                 localStorage.removeItem('appData'); // Clean up everything
-                addToast("Stockage mis à jour pour une meilleure performance.", "info");
+                setTimeout(() => addToast("Stockage mis à jour pour une meilleure performance.", "info"), 0);
             } else if (lsAppData) {
                 try {
                     const data = JSON.parse(lsAppData);
@@ -178,7 +178,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     localStorage.removeItem('appData');
                     localStorage.removeItem('encryptedAppData');
                     localStorage.removeItem('dataIsEncrypted');
-                    addToast("Stockage mis à jour pour une meilleure performance.", "info");
+                    setTimeout(() => addToast("Stockage mis à jour pour une meilleure performance.", "info"), 0);
                 } catch (e) { console.error("Could not parse old localStorage data.", e); }
             }
             // --- End Migration ---
@@ -195,7 +195,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     setAppData(dataFromDb || initialData);
                 } catch (error) {
                     console.error("Error loading plaintext data:", error);
-                    addToast("Erreur de chargement des données.", "error");
+                    setTimeout(() => addToast("Erreur de chargement des données.", "error"), 0);
                     setAppData(initialData);
                 }
             }
@@ -232,7 +232,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     } else if (error instanceof Error) {
                         userMessage += `\n${error.name}: ${error.message}`;
                     }
-                    addToast(userMessage, "error", 10000);
+                    setTimeout(() => addToast(userMessage, "error", 10000), 0);
                 }
             };
             saveData(appData);
@@ -243,7 +243,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const unlock = async (password: string): Promise<boolean> => {
         const encryptedData = await get<string>('encryptedAppData');
         if (!encryptedData) {
-            addToast("Aucune donnée chiffrée trouvée.", "error");
+            setTimeout(() => addToast("Aucune donnée chiffrée trouvée.", "error"), 0);
             return false;
         }
         try {
@@ -251,17 +251,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setAppData(decryptedData);
             setSessionPassword(password);
             setIsLocked(false);
-            addToast("Données déverrouillées.", "success");
+            setTimeout(() => addToast("Données déverrouillées.", "success"), 0);
             return true;
         } catch (error) {
-            addToast("Mot de passe incorrect.", "error");
+            setTimeout(() => addToast("Mot de passe incorrect.", "error"), 0);
             return false;
         }
     };
     
     const enableEncryption = async (password: string): Promise<boolean> => {
         if (!appData) {
-            addToast("Les données ne sont pas prêtes.", "error");
+            setTimeout(() => addToast("Les données ne sont pas prêtes.", "error"), 0);
             return false;
         }
         try {
@@ -272,17 +272,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             localStorage.clear(); // Clear all old localStorage data
             setIsEncrypted(true);
             setSessionPassword(password);
-            addToast("Chiffrement activé avec succès.", "success");
+            setTimeout(() => addToast("Chiffrement activé avec succès.", "success"), 0);
             return true;
         } catch (error) {
-            addToast("L'activation du chiffrement a échoué.", "error");
+            setTimeout(() => addToast("L'activation du chiffrement a échoué.", "error"), 0);
             return false;
         }
     };
 
     const disableEncryption = async (password: string): Promise<boolean> => {
         if (!appData) {
-             addToast("Les données ne sont pas prêtes.", "error");
+             setTimeout(() => addToast("Les données ne sont pas prêtes.", "error"), 0);
              return false;
         }
         try {
@@ -295,10 +295,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             await del('dataIsEncrypted');
             setIsEncrypted(false);
             setSessionPassword(null);
-            addToast("Chiffrement désactivé.", "success");
+            setTimeout(() => addToast("Chiffrement désactivé.", "success"), 0);
             return true;
         } catch (error) {
-             addToast("Mot de passe incorrect. Le chiffrement ne peut pas être désactivé.", "error");
+             setTimeout(() => addToast("Mot de passe incorrect. Le chiffrement ne peut pas être désactivé.", "error"), 0);
             return false;
         }
     };
@@ -353,7 +353,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...prev,
             speakers: [...prev.speakers, speakerData].sort((a, b) => a.nom.localeCompare(b.nom))
         }));
-        addToast("Orateur ajouté.", 'success');
+        setTimeout(() => addToast("Orateur ajouté.", 'success'), 0);
     };
 
     const updateSpeaker = (speakerData: Speaker) => {
@@ -363,7 +363,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             visits: prev.visits.map(v => v.id === speakerData.id ? { ...v, nom: speakerData.nom, congregation: speakerData.congregation, telephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v),
             archivedVisits: prev.archivedVisits.map(v => v.id === speakerData.id ? { ...v, nom: speakerData.nom, congregation: speakerData.congregation, telephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v)
         }));
-        addToast("Orateur mis à jour.", 'success');
+        setTimeout(() => addToast("Orateur mis à jour.", 'success'), 0);
     };
 
     const deleteSpeaker = (speakerId: string) => {
@@ -375,23 +375,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             visits: prev.visits.filter(v => v.id !== speakerId),
             archivedVisits: prev.archivedVisits.filter(v => v.id !== speakerId)
         }));
-        addToast(`"${speakerToDelete.nom}" et ses visites associées ont été supprimés.`, 'success');
+        setTimeout(() => addToast(`"${speakerToDelete.nom}" et ses visites associées ont été supprimés.`, 'success'), 0);
     };
 
     const addVisit = (visitData: Visit) => {
         const visitWithStatus = { ...visitData, communicationStatus: {} };
         updateAppData(prev => ({ ...prev, visits: [...prev.visits, visitWithStatus] }));
-        addToast("Visite programmée avec succès.", 'success');
+        setTimeout(() => addToast("Visite programmée avec succès.", 'success'), 0);
     };
     
     const updateVisit = (visitData: Visit) => {
         updateAppData(prev => ({ ...prev, visits: prev.visits.map(v => v.visitId === visitData.visitId ? visitData : v) }));
-        addToast("Visite mise à jour avec succès.", 'success');
+        setTimeout(() => addToast("Visite mise à jour avec succès.", 'success'), 0);
     };
     
     const deleteVisit = (visitId: string) => {
         updateAppData(prev => ({ ...prev, visits: prev.visits.filter(v => v.visitId !== visitId) }));
-        addToast("Visite supprimée.", 'success');
+        setTimeout(() => addToast("Visite supprimée.", 'success'), 0);
     };
 
     const completeVisit = (visit: Visit) => {
@@ -400,7 +400,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const isAlreadyArchived = prev.archivedVisits.some(v => v.visitId === visit.visitId);
             
             if (isAlreadyArchived) {
-                addToast(`Cette visite est déjà archivée.`, 'warning');
+                setTimeout(() => addToast(`Cette visite est déjà archivée.`, 'warning'), 0);
                 return prev;
             }
 
@@ -422,7 +422,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 visits: prev.visits.filter(v => v.visitId !== visit.visitId)
             };
         });
-        addToast(`Visite de ${visit.nom} marquée comme terminée et archivée.`, 'success');
+        setTimeout(() => addToast(`Visite de ${visit.nom} marquée comme terminée et archivée.`, 'success'), 0);
     };
 
     const addFeedbackToVisit = (visitId: string, feedback: Feedback) => {
@@ -436,7 +436,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const deleteArchivedVisit = (visitId: string) => {
         updateAppData(prev => ({ ...prev, archivedVisits: prev.archivedVisits.filter(v => v.visitId !== visitId) }));
-        addToast("Visite supprimée définitivement de l'archive.", 'info');
+        setTimeout(() => addToast("Visite supprimée définitivement de l'archive.", 'info'), 0);
     };
 
     const removeDuplicateArchivedVisits = () => {
@@ -460,9 +460,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const duplicatesRemoved = prev.archivedVisits.length - deduplicated.length;
             
             if (duplicatesRemoved > 0) {
-                addToast(`${duplicatesRemoved} doublon(s) supprimé(s) de l'archive.`, 'success');
+                setTimeout(() => addToast(`${duplicatesRemoved} doublon(s) supprimé(s) de l'archive.`, 'success'), 0);
             } else {
-                addToast("Aucun doublon trouvé dans l'archive.", 'info');
+                setTimeout(() => addToast("Aucun doublon trouvé dans l'archive.", 'info'), 0);
             }
             
             return {
@@ -493,7 +493,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
             return { ...prev, hosts: newHosts, visits: newVisits, archivedVisits: newArchived };
         });
-        addToast(`Informations pour "${updatedData.nom || hostName}" mises à jour.`, 'info');
+        setTimeout(() => addToast(`Informations pour "${updatedData.nom || hostName}" mises à jour.`, 'info'), 0);
     };
 
     const deleteHost = (hostName: string) => {
@@ -506,9 +506,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 : prev.visits
         }));
         if (assignedVisits && assignedVisits.length > 0) {
-            addToast(`"${hostName}" supprimé. ${assignedVisits.length} visite(s) associée(s) ont été mises à jour.`, 'success');
+            setTimeout(() => addToast(`"${hostName}" supprimé. ${assignedVisits.length} visite(s) associée(s) ont été mises à jour.`, 'success'), 0);
         } else {
-            addToast(`"${hostName}" a été supprimé.`, 'success');
+            setTimeout(() => addToast(`"${hostName}" a été supprimé.`, 'success'), 0);
         }
     };
     
@@ -527,7 +527,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
                 return v;
             });
-            if(confirmedToast) addToast("Statut de la visite mis à 'Confirmé'.", 'success');
+            if(confirmedToast) setTimeout(() => addToast("Statut de la visite mis à 'Confirmé'.", 'success'), 0);
             return { ...prev, visits: newVisits };
         });
     };
@@ -540,7 +540,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             newTemplates[language]![messageType]![role] = text;
             return { ...prev, customTemplates: newTemplates };
         });
-        addToast("Modèle de message sauvegardé !", 'success');
+        setTimeout(() => addToast("Modèle de message sauvegardé !", 'success'), 0);
     };
     
     const deleteCustomTemplate = (language: Language, messageType: MessageType, role: MessageRole) => {
@@ -553,12 +553,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
             return { ...prev, customTemplates: newTemplates };
         });
-        addToast("Modèle par défaut restauré.", 'info');
+        setTimeout(() => addToast("Modèle par défaut restauré.", 'info'), 0);
     };
 
     const saveCustomHostRequestTemplate = (language: Language, text: string) => {
         updateAppData(prev => ({ ...prev, customHostRequestTemplates: { ...prev.customHostRequestTemplates, [language]: text } }));
-        addToast("Modèle de message de demande d'accueil sauvegardé !", 'success');
+        setTimeout(() => addToast("Modèle de message de demande d'accueil sauvegardé !", 'success'), 0);
     };
 
     const deleteCustomHostRequestTemplate = (language: Language) => {
@@ -567,18 +567,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             delete newTemplates[language];
             return { ...prev, customHostRequestTemplates: newTemplates };
         });
-        addToast("Modèle par défaut restauré pour la demande d'accueil.", 'info');
+        setTimeout(() => addToast("Modèle par défaut restauré pour la demande d'accueil.", 'info'), 0);
     };
     
     const updateCongregationProfile = (profile: CongregationProfile) => {
         updateAppData(prev => ({...prev, congregationProfile: profile }));
-        addToast("Profil de la congrégation mis à jour.", 'success');
+        setTimeout(() => addToast("Profil de la congrégation mis à jour.", 'success'), 0);
     };
 
     const addTalk = (talkData: PublicTalk) => {
         updateAppData(prev => {
             if (prev.publicTalks.some(t => t.number === talkData.number)) {
-                addToast(`Le discours n°${talkData.number} existe déjà.`, 'error');
+                setTimeout(() => addToast(`Le discours n°${talkData.number} existe déjà.`, 'error'), 0);
                 return prev;
             }
             const newTalks = [...prev.publicTalks, talkData].sort((a, b) => {
@@ -589,7 +589,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
                 return numA - numB;
             });
-            addToast(`Discours n°${talkData.number} ajouté.`, 'success');
+            setTimeout(() => addToast(`Discours n°${talkData.number} ajouté.`, 'success'), 0);
             return { ...prev, publicTalks: newTalks };
         });
     };
@@ -598,7 +598,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updateAppData(prev => {
             const talkExists = prev.publicTalks.some(t => t.number === updatedData.number && t.number !== talkNumber);
             if (talkExists) {
-                addToast(`Le discours n°${updatedData.number} existe déjà.`, 'error');
+                setTimeout(() => addToast(`Le discours n°${updatedData.number} existe déjà.`, 'error'), 0);
                 return prev;
             }
             const newTalks = prev.publicTalks.map(t => (t.number === talkNumber ? updatedData : t)).sort((a, b) => {
@@ -609,7 +609,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
                 return numA - numB;
             });
-            addToast(`Discours n°${updatedData.number} mis à jour.`, 'success');
+            setTimeout(() => addToast(`Discours n°${updatedData.number} mis à jour.`, 'success'), 0);
             return { ...prev, publicTalks: newTalks };
         });
     };
@@ -619,7 +619,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const isTalkAssigned = allVisits.some(v => v.talkNoOrType === talkNumber.toString());
 
         if (isTalkAssigned) {
-            addToast(`Impossible de supprimer le discours n°${talkNumber} car il est assigné à une ou plusieurs visites.`, 'error');
+            setTimeout(() => addToast(`Impossible de supprimer le discours n°${talkNumber} car il est assigné à une ou plusieurs visites.`, 'error'), 0);
             return;
         }
 
@@ -627,7 +627,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...prev,
             publicTalks: prev.publicTalks.filter(t => t.number !== talkNumber),
         }));
-        addToast(`Discours n°${talkNumber} supprimé.`, 'success');
+        setTimeout(() => addToast(`Discours n°${talkNumber} supprimé.`, 'success'), 0);
     };
     
     const updatePublicTalksList = (talksList: string) => {
@@ -673,17 +673,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return { ...prev, publicTalks: finalTalks };
         });
     
-        addToast(`${addedCount} discours ajoutés et ${updatedCount} mis à jour.`, 'success');
+        setTimeout(() => addToast(`${addedCount} discours ajoutés et ${updatedCount} mis à jour.`, 'success'), 0);
     };
 
     const saveFilterView = (view: SavedView) => {
         updateAppData(prev => ({ ...prev, savedViews: [...(prev.savedViews || []), view] }));
-        addToast(`Vue "${view.name}" sauvegardée.`, 'success');
+        setTimeout(() => addToast(`Vue "${view.name}" sauvegardée.`, 'success'), 0);
     };
     
     const deleteFilterView = (viewId: string) => {
         updateAppData(prev => ({ ...prev, savedViews: (prev.savedViews || []).filter(v => v.id !== viewId) }));
-        addToast("Vue supprimée.", 'info');
+        setTimeout(() => addToast("Vue supprimée.", 'info'), 0);
     };
 
     const downloadFallback = useCallback((blob: Blob, fileName: string) => {
@@ -699,7 +699,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const exportData = useCallback(async () => {
         if (!appData) {
-            addToast("Aucune donnée à exporter.", "warning");
+            setTimeout(() => addToast("Aucune donnée à exporter.", "warning"), 0);
             return;
         }
         
@@ -797,7 +797,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     successMessage = `Sauvegarde enregistrée: ${fileName}`;
                 }
                 
-                addToast(successMessage, 'success', 7000);
+                setTimeout(() => addToast(successMessage, 'success', 7000), 0);
             } catch (error) {
                 console.error("Erreur lors de la sauvegarde native :", error);
                 
@@ -819,19 +819,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     const shouldCopy = confirm(`Impossible d'enregistrer le fichier automatiquement. Voulez-vous copier les données dans le presse-papiers ?`);
                     if (shouldCopy) {
                         await navigator.clipboard.writeText(dataString);
-                        addToast("Les données ont été copiées dans le presse-papiers.", "info", 8000);
+                        setTimeout(() => addToast("Les données ont été copiées dans le presse-papiers.", "info", 8000), 0);
                     } else {
-                        addToast("Sauvegarde échouée. Veuillez vérifier les autorisations de l'application.", "error", 8000);
+                        setTimeout(() => addToast("Sauvegarde échouée. Veuillez vérifier les autorisations de l'application.", "error", 8000), 0);
                     }
                 } catch (fallbackError) {
                     console.error("Échec de la sauvegarde de secours:", fallbackError);
-                    addToast("Échec de la sauvegarde. Veuillez vérifier les autorisations de l'application.", "error", 8000);
+                    setTimeout(() => addToast("Échec de la sauvegarde. Veuillez vérifier les autorisations de l'application.", "error", 8000), 0);
                 }
             }
         } else {
             const blob = new Blob([dataString], { type: 'application/json' });
             downloadFallback(blob, fileName);
-            addToast("Téléchargement de la sauvegarde démarré.", 'success');
+            setTimeout(() => addToast("Téléchargement de la sauvegarde démarré.", 'success'), 0);
         }
     }, [appData, addToast, downloadFallback]);
 
@@ -840,11 +840,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             throw new Error("Fichier de sauvegarde non valide ou corrompu.");
         }
         if (!appData) {
-            addToast("Les données actuelles ne sont pas chargées, impossible de fusionner.", "error");
+            setTimeout(() => addToast("Les données actuelles ne sont pas chargées, impossible de fusionner.", "error"), 0);
             return;
         }
     
-        addToast("Fusion des données en cours...", "info");
+        setTimeout(() => addToast("Fusion des données en cours...", "info"), 0);
     
         const unifyByName = <T extends { nom: string }>(current: T[], imported: T[]): T[] => {
             const map = new Map<string, T>();
@@ -966,12 +966,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
     
         setAppData(newAppData);
-        addToast("Les données ont été fusionnées intelligemment pour éviter les doublons !", 'success');
+        setTimeout(() => addToast("Les données ont été fusionnées intelligemment pour éviter les doublons !", 'success'), 0);
     };
 
     const resetData = () => {
         updateAppData(prev => ({...prev, ...initialData}));
-        addToast("Toutes les données ont été réinitialisées.", 'success');
+        setTimeout(() => addToast("Toutes les données ont été réinitialisées.", 'success'), 0);
     };
 
     const parseDate = (dateStr: string): Date | null => {
@@ -1039,7 +1039,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         if (allRows.length === 0) {
-            addToast('Impossible de récupérer des données depuis les onglets spécifiés.', 'error');
+            setTimeout(() => addToast('Impossible de récupérer des données depuis les onglets spécifiés.', 'error'), 0);
             return;
         }
 
@@ -1047,19 +1047,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const rows = allRows;
 
             if (!rows || rows.length === 0) {
-                addToast('Aucune donnée trouvée dans les feuilles synchronisées.', 'warning');
+                setTimeout(() => addToast('Aucune donnée trouvée dans les feuilles synchronisées.', 'warning'), 0);
                 return;
             }
 
             const headers = cols.map((h: any) => h.label.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, ''));
-            const dateIndex = headers.findIndex(h => h.includes('data'));
-            const speakerIndex = headers.findIndex(h => h.includes('orador'));
-            const congIndex = headers.findIndex(h => h.includes('kongregason'));
-            const talkNoIndex = headers.findIndex(h => h.includes('n'));
-            const themeIndex = headers.findIndex(h => h.includes('tema'));
+            const dateIndex = headers.findIndex((h: string) => h.includes('data'));
+            const speakerIndex = headers.findIndex((h: string) => h.includes('orador'));
+            const congIndex = headers.findIndex((h: string) => h.includes('kongregason'));
+            const talkNoIndex = headers.findIndex((h: string) => h.includes('n'));
+            const themeIndex = headers.findIndex((h: string) => h.includes('tema'));
 
             if ([dateIndex, speakerIndex, congIndex].some(i => i === -1)) {
-                addToast("En-têtes requis manquants: Data, Orador, Kongregason.", 'error');
+                setTimeout(() => addToast("En-têtes requis manquants: Data, Orador, Kongregason.", 'error'), 0);
                 return;
             }
 
@@ -1172,11 +1172,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 toastMessage += `\n\nMises à jour:\n${updatedVisitsDetails.join('\n')}`;
             }
             localStorage.setItem('lastGoogleSheetSync', new Date().toISOString());
-            addToast(toastMessage, 'success', 15000);
+            setTimeout(() => addToast(toastMessage, 'success', 15000), 0);
 
         } catch (error) {
             console.error("Error syncing with Google Sheet:", error);
-            addToast(`Erreur de synchronisation: ${error instanceof Error ? error.message : 'Inconnue'}.`, 'error');
+            setTimeout(() => addToast(`Erreur de synchronisation: ${error instanceof Error ? error.message : 'Inconnue'}.`, 'error'), 0);
         }
     };
 
@@ -1184,7 +1184,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updateAppData(prev => {
             const primarySpeaker = prev.speakers.find(s => s.id === primarySpeakerId);
             if (!primarySpeaker) {
-                addToast("Erreur : l'orateur principal n'a pas été trouvé.", 'error');
+                setTimeout(() => addToast("Erreur : l'orateur principal n'a pas été trouvé.", 'error'), 0);
                 return prev;
             }
     
@@ -1211,7 +1211,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 archivedVisits: newArchivedVisits,
             };
         });
-        addToast("Orateurs fusionnés avec succès.", "success");
+        setTimeout(() => addToast("Orateurs fusionnés avec succès.", "success"), 0);
     };
 
     const mergeHosts = (primaryHostName: string, duplicateNames: string[]) => {
@@ -1239,7 +1239,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 archivedVisits: newArchivedVisits,
             };
         });
-        addToast("Contacts d'accueil fusionnés avec succès.", "success");
+        setTimeout(() => addToast("Contacts d'accueil fusionnés avec succès.", "success"), 0);
     };
     
     const addSpecialDate = (dateData: SpecialDate) => {
@@ -1247,7 +1247,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...prev,
             specialDates: [...(prev.specialDates || []), dateData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         }));
-        addToast("Date spéciale ajoutée.", 'success');
+        setTimeout(() => addToast("Date spéciale ajoutée.", 'success'), 0);
     };
 
     const updateSpecialDate = (dateData: SpecialDate) => {
@@ -1255,7 +1255,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...prev,
             specialDates: (prev.specialDates || []).map(d => d.id === dateData.id ? dateData : d).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         }));
-        addToast("Date spéciale mise à jour.", 'success');
+        setTimeout(() => addToast("Date spéciale mise à jour.", 'success'), 0);
     };
 
     const deleteSpecialDate = (dateId: string) => {
@@ -1263,7 +1263,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...prev,
             specialDates: (prev.specialDates || []).filter(d => d.id !== dateId)
         }));
-        addToast("Date spéciale supprimée.", 'success');
+        setTimeout(() => addToast("Date spéciale supprimée.", 'success'), 0);
     };
     
     const value: DataContextType = {
