@@ -74,6 +74,7 @@ interface DataContextType {
   deleteArchivedVisit: (visitId: string) => void;
   removeDuplicateArchivedVisits: () => void;
   removeDuplicateVisits: () => void;
+  getMultipleVisitsSameDate: () => Map<string, Visit[]>;
   addHost: (hostData: Host) => boolean;
   updateHost: (hostName: string, updatedData: Partial<Host>) => void;
   deleteHost: (hostName: string) => void;
@@ -517,7 +518,36 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         return false;
     };
-    
+
+    const getVisitsByDate = () => {
+        if (!appData) return new Map<string, Visit[]>();
+        
+        const visitsByDate = new Map<string, Visit[]>();
+        
+        appData.visits.forEach(visit => {
+            const date = visit.visitDate;
+            if (!visitsByDate.has(date)) {
+                visitsByDate.set(date, []);
+            }
+            visitsByDate.get(date)!.push(visit);
+        });
+        
+        return visitsByDate;
+    };
+
+    const getMultipleVisitsSameDate = () => {
+        const visitsByDate = getVisitsByDate();
+        const multipleVisits = new Map<string, Visit[]>();
+        
+        visitsByDate.forEach((visits, date) => {
+            if (visits.length > 1) {
+                multipleVisits.set(date, visits);
+            }
+        });
+        
+        return multipleVisits;
+    };
+
     const updateHost = (hostName: string, updatedData: Partial<Host>) => {
         updateAppData(prev => {
             const newHosts = prev.hosts.map(h => h.nom === hostName ? { ...h, ...updatedData } : h).sort((a,b) => a.nom.localeCompare(b.nom));
@@ -1146,7 +1176,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         speaker.congregation = congregation;
                     }
 
-                    const existingVisitIndex = newVisits.findIndex(v => v.nom.toLowerCase() === speakerName.toLowerCase() && v.visitDate === formattedDate);
+                    const existingVisitIndex = newVisits.findIndex(v => v.visitDate === formattedDate);
 
                     const talkNoValue = talkNoIndex > -1 ? (cells[talkNoIndex]?.v !== null ? String(cells[talkNoIndex]?.v) : null) : null;
                     const themeValue = themeIndex > -1 ? (cells[themeIndex]?.v !== null ? String(cells[themeIndex]?.v) : null) : null;
@@ -1313,7 +1343,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logoUrl,
         updateLogo,
         addSpeaker, updateSpeaker, deleteSpeaker,
-        addVisit, updateVisit, deleteVisit, completeVisit, addFeedbackToVisit, deleteArchivedVisit, removeDuplicateArchivedVisits, removeDuplicateVisits,
+        addVisit, updateVisit, deleteVisit, completeVisit, addFeedbackToVisit, deleteArchivedVisit, removeDuplicateArchivedVisits, removeDuplicateVisits, getMultipleVisitsSameDate,
         addHost, updateHost, deleteHost,
         saveCustomTemplate, deleteCustomTemplate, saveCustomHostRequestTemplate, deleteCustomHostRequestTemplate,
         logCommunication, exportData, importData, resetData,
