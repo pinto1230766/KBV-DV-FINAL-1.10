@@ -64,10 +64,10 @@ const QuickStatCard: React.FC<QuickStatCardProps> = ({ title, value, icon: Icon,
 const ShortcutButton: React.FC<{ label: string; onClick: () => void; icon: React.FC<any>; }> = ({ label, onClick, icon: Icon }) => (
     <button
         onClick={onClick}
-        className="flex items-center p-4 bg-white dark:bg-primary-light rounded-xl shadow-soft-lg w-full text-left hover:bg-gray-100 dark:hover:bg-primary transition-colors transform active:scale-95"
+        className="flex items-center p-4 bg-card-light dark:bg-card-dark/90 rounded-xl shadow-soft-lg w-full text-left transition-colors transform active:scale-95 hover:bg-gray-100 dark:hover:bg-primary-dark/70"
     >
-        <div className="p-3 bg-secondary/10 dark:bg-secondary/20 rounded-lg">
-            <Icon className="w-6 h-6 text-secondary dark:text-secondary" />
+        <div className="p-3 bg-secondary/10 dark:bg-secondary/30 rounded-lg">
+            <Icon className="w-6 h-6 text-secondary dark:text-secondary-light" />
         </div>
         <span className="ml-4 font-semibold text-text-main dark:text-text-main-dark flex-grow">{label}</span>
         <ArrowRightIcon className="w-5 h-5 ml-auto text-text-muted dark:text-text-muted-dark" />
