@@ -197,3 +197,5 @@ export interface SpecialDate {
   type: SpecialDateType;
   description?: string;
 }
+
+export type Tab = 'dashboard' | 'planning' | 'messaging' | 'talks' | 'statistics' | 'settings';
