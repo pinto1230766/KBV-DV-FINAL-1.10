@@ -627,7 +627,7 @@ const UsefulLinksContent: React.FC = () => {
 
 const MaintenanceContent: React.FC = () => {
     const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
-    const { removeDuplicateArchivedVisits } = useData();
+    const { removeDuplicateArchivedVisits, removeDuplicateVisits } = useData();
 
     return (
         <div className="space-y-6">
@@ -653,6 +653,20 @@ const MaintenanceContent: React.FC = () => {
                     </div>
                     <button onClick={removeDuplicateArchivedVisits} className="flex-shrink-0 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition-transform active:scale-95">
                         Nettoyer les archives
+                    </button>
+                </div>
+            </div>
+
+            <div className="border-t border-border-light dark:border-border-dark pt-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                       <p className="font-semibold text-text-main dark:text-text-main-dark">Supprimer les doublons du planning</p>
+                       <p className="text-sm text-text-muted dark:text-text-muted-dark mt-1 max-w-md">
+                            Si vous voyez des visites en double dans le planning, utilisez ce bouton pour les supprimer automatiquement.
+                       </p>
+                    </div>
+                    <button onClick={removeDuplicateVisits} className="flex-shrink-0 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-transform active:scale-95">
+                        Nettoyer le planning
                     </button>
                 </div>
             </div>

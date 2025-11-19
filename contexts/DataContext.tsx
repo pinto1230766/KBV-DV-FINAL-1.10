@@ -73,6 +73,7 @@ interface DataContextType {
   addFeedbackToVisit: (visitId: string, feedback: Feedback) => void;
   deleteArchivedVisit: (visitId: string) => void;
   removeDuplicateArchivedVisits: () => void;
+  removeDuplicateVisits: () => void;
   addHost: (hostData: Host) => boolean;
   updateHost: (hostName: string, updatedData: Partial<Host>) => void;
   deleteHost: (hostName: string) => void;
@@ -469,6 +470,41 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 ...prev,
                 archivedVisits: deduplicated.sort((a, b) => 
                     new Date(b.visitDate + 'T00:00:00').getTime() - new Date(a.visitDate + 'T00:00:00').getTime()
+                )
+            };
+        });
+    };
+
+    const removeDuplicateVisits = () => {
+        updateAppData(prev => {
+            const normalizeName = (value: string) => value
+                ? value.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-_]/g, ' ').replace(/\s+/g, ' ')
+                : "";
+            const compositeKey = (visit: Visit) => `${normalizeName(visit.nom)}|${visit.visitDate}`;
+            
+            const uniqueVisits = new Map<string, Visit>();
+            
+            // Keep only the first occurrence of each composite key
+            prev.visits.forEach(visit => {
+                const key = compositeKey(visit);
+                if (!uniqueVisits.has(key)) {
+                    uniqueVisits.set(key, visit);
+                }
+            });
+            
+            const deduplicated = Array.from(uniqueVisits.values());
+            const duplicatesRemoved = prev.visits.length - deduplicated.length;
+            
+            if (duplicatesRemoved > 0) {
+                setTimeout(() => addToast(`${duplicatesRemoved} doublon(s) supprimé(s) du planning.`, 'success'), 0);
+            } else {
+                setTimeout(() => addToast("Aucun doublon trouvé dans le planning.", 'info'), 0);
+            }
+            
+            return {
+                ...prev,
+                visits: deduplicated.sort((a, b) => 
+                    new Date(a.visitDate + 'T00:00:00').getTime() - new Date(b.visitDate + 'T00:00:00').getTime()
                 )
             };
         });
@@ -1277,7 +1313,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logoUrl,
         updateLogo,
         addSpeaker, updateSpeaker, deleteSpeaker,
-        addVisit, updateVisit, deleteVisit, completeVisit, addFeedbackToVisit, deleteArchivedVisit, removeDuplicateArchivedVisits,
+        addVisit, updateVisit, deleteVisit, completeVisit, addFeedbackToVisit, deleteArchivedVisit, removeDuplicateArchivedVisits, removeDuplicateVisits,
         addHost, updateHost, deleteHost,
         saveCustomTemplate, deleteCustomTemplate, saveCustomHostRequestTemplate, deleteCustomHostRequestTemplate,
         logCommunication, exportData, importData, resetData,

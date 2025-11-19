@@ -9,7 +9,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.13.1'
         classpath 'com.google.gms:google-services:4.4.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.10"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -18,20 +18,15 @@ buildscript {
 
 apply from: "variables.gradle"
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
+// Removed repositories from allprojects as they're defined in settings.gradle
 
 subprojects { subproject ->
     afterEvaluate {
         if (subproject.hasProperty('android')) {
             subproject.android {
                 compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_17
-                    targetCompatibility JavaVersion.VERSION_17
+                    sourceCompatibility JavaVersion.VERSION_21
+                    targetCompatibility JavaVersion.VERSION_21
                 }
             }
             subproject.plugins.withId('org.jetbrains.kotlin.android') {
@@ -39,7 +34,7 @@ subprojects { subproject ->
                     def kotlinCompileClass = Class.forName('org.jetbrains.kotlin.gradle.tasks.KotlinCompile')
                     subproject.tasks.withType(kotlinCompileClass).configureEach {
                         kotlinOptions {
-                            jvmTarget = "17"
+                            jvmTarget = "21"
                         }
                     }
                 } catch (ClassNotFoundException e) {
