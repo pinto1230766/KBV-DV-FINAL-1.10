@@ -199,3 +199,13 @@ export interface SpecialDate {
 }
 
 export type Tab = 'dashboard' | 'planning' | 'messaging' | 'talks' | 'statistics' | 'settings';
+
+export interface WeatherData {
+  date: string;
+  location: string;
+  temperature: number; // in Celsius
+  condition: string; // Soleil, Nuageux, Pluie, Tempête, etc.
+  humidity: number; // percentage
+  windSpeed: number; // km/h
+  precipitationChance: number; // percentage
+}
