@@ -28,13 +28,13 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <DataProvider>
-        <ToastProvider>
+      <ToastProvider>
+        <DataProvider>
           <ConfirmProvider>
             <App />
           </ConfirmProvider>
-        </ToastProvider>
-      </DataProvider>
+        </DataProvider>
+      </ToastProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );
