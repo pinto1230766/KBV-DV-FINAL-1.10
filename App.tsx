@@ -473,7 +473,7 @@ const App: React.FC = () => {
                     onResetData={handleResetData}
                     isImporting={isImporting}
                     onLeaveFeedback={handleOpenFeedbackModal}
-                    archiveSectionRef={archiveSectionRef}
+                    archiveSectionRef={archiveSectionRef as any}
                 />;
             default:
                 return null;

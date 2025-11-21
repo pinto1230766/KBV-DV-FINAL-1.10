@@ -136,7 +136,7 @@ export interface Toast {
   duration?: number;
 }
 
-export type Language = 'fr' | 'cv';
+export type Language = 'fr' | 'cv' | 'en' | 'es';
 export type MessageType = 'confirmation' | 'preparation' | 'reminder-7' | 'reminder-2' | 'thanks';
 export type MessageRole = 'speaker' | 'host';
 

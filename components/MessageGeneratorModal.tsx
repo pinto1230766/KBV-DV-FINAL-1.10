@@ -254,7 +254,8 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
                 contents: prompt,
             });
 
-            setMessageText(response.text.trim());
+            const refined = typeof response?.text === 'string' ? response.text.trim() : '';
+            setMessageText(refined);
             addToast("Message rédigé par l'IA !", 'success');
 
         } catch (error) {

@@ -232,7 +232,7 @@ Rédige un résumé qui synthétise ces informations pour aider à planifier le 
                 contents: prompt,
             });
     
-            setAiSummary(response.text.trim());
+            setAiSummary(response.text?.trim() || '');
     
         } catch (error) {
             console.error("Error generating summary:", error);

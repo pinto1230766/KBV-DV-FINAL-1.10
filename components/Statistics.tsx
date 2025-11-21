@@ -291,7 +291,7 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
                 contents: prompt,
             });
             
-            setAnalysis(response.text);
+            setAnalysis(response.text || null);
 
         } catch (error) {
             console.error("Error generating AI analysis:", error);

@@ -31,7 +31,7 @@ const TalkCard: React.FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
             .sort((a,b) => new Date(b.visitDate).getTime() - new Date(a.visitDate).getTime());
     }, [visits, archivedVisits, talk.theme]);
 
-    const currentStatus = statusInfo[talk.status];
+    const currentStatus = statusInfo[talk.status as TalkStatus];
 
     return (
         <div className="bg-gray-50 dark:bg-card-dark rounded-lg transition-shadow hover:shadow-md">

@@ -709,7 +709,7 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
                 }
             });
     
-            const parsedSuggestions = JSON.parse(response.text.trim());
+            const parsedSuggestions = JSON.parse(response.text?.trim() || '[]');
             const matchedSuggestions = parsedSuggestions
                 .map((s: { hostName: string; reason: string }) => ({
                     host: hosts.find(h => h.nom === s.hostName),
@@ -739,7 +739,7 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
                     type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING }, completed: { type: Type.BOOLEAN } }, required: ["text", "completed"] }
                 }}
             });
-            const newItems = JSON.parse(response.text.trim());
+            const newItems = JSON.parse(response.text?.trim() || '[]');
             handleFormChange('checklist', [...formData.checklist, ...newItems]);
         } catch (error) { addToast("Erreur lors de la génération de la checklist.", 'error'); } finally { setIsGeneratingChecklist(false); }
     };
@@ -753,7 +753,7 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
             const ai = new GoogleGenAI({ apiKey });
             const prompt = `Génère des notes de préparation pour une visite d'un orateur. Orateur: ${speakerForVisit.nom} de ${speakerForVisit.congregation}. Préférences: ${speakerForVisit.notes || 'Aucune'}. Notes existantes: ${formData.notes || 'Aucune'}. Rédige quelques points clés.`;
             const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            const newNotes = formData.notes ? `${formData.notes}\n\n---\n${response.text}` : response.text;
+            const newNotes = formData.notes ? `${formData.notes}\n\n---\n${response.text || ''}` : (response.text || '');
             handleFormChange('notes', newNotes);
         } catch (error) { addToast("Erreur lors de la génération des notes.", 'error'); } finally { setIsGeneratingNotes(false); }
     };
@@ -780,7 +780,7 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
                     type: Type.ARRAY, items: { type: Type.OBJECT, properties: { speakerName: { type: Type.STRING }, reason: { type: Type.STRING } }, required: ["speakerName", "reason"] }
                 }}
             });
-            const parsed = JSON.parse(response.text.trim());
+            const parsed = JSON.parse(response.text?.trim() || '[]');
             const matched = parsed.map((s: { speakerName: string, reason: string }) => ({ speaker: allSpeakers.find(sp => sp.nom === s.speakerName), reason: s.reason })).filter((s: any) => s.speaker);
             setReplacementSuggestions(matched);
 
@@ -842,7 +842,7 @@ export const ScheduleVisitModal: React.FC<ScheduleVisitModalProps> = ({ isOpen, 
                 <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
                     {dateConflict && <div className="p-3 mx-6 mt-4 rounded-md bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-200 text-sm flex items-start space-x-3"><ExclamationTriangleIcon className="w-5 h-5 flex-shrink-0 mt-0.5"/><p><strong>Attention :</strong> Une autre visite est déjà programmée ce jour-là pour <strong>{dateConflict.nom}</strong>. Vous ne pouvez pas enregistrer.</p></div>}
                     {hostSuggestions && <div className="p-4 mx-6 mt-4 rounded-md bg-primary/10 dark:bg-primary/20 text-sm"><div className="flex justify-between items-center mb-2"><h3 className="font-bold text-primary dark:text-primary-light">Suggestions d'accueil (IA)</h3><button type="button" onClick={() => setHostSuggestions(null)}><XIcon className="w-5 h-5"/></button></div><div className="space-y-2">{hostSuggestions.map(({ host, reason }) => (<div key={host.nom} className="p-2 bg-white/50 dark:bg-card-dark/50 rounded-md"><div className="flex justify-between items-center"><p className="font-semibold">{host.nom}</p><button type="button" onClick={() => { handleFormChange('host', host.nom); addToast(`${host.nom} sélectionné.`, 'success'); }} className="px-3 py-1 bg-primary text-white rounded text-xs font-semibold">Choisir</button></div><p className="text-xs italic text-text-muted dark:text-text-muted-dark mt-1">"{reason}"</p></div>))}</div></div>}
-                    <VisitForm formData={formData} onFormChange={handleFormChange} speakerForVisit={speakerForVisit} hosts={hosts} isLocalSpeaker={isLocalSpeaker} onAddNewHost={handleAddNewHost} isGeneratingNotes={isGeneratingNotes} onGenerateNotes={handleGenerateNotes} isSuggestingHosts={isSuggestingHosts} onSuggestHosts={handleSuggestHosts} isGeneratingChecklist={isGeneratingChecklist} onGenerateChecklist={handleGenerateChecklist} repetitionWarning={repetitionWarning} specialDateWarning={specialDateWarning} apiKey={apiKey} isOnline={isOnline} isEditing={isEditing} />
+                    <VisitForm formData={formData} onFormChange={handleFormChange} speakerForVisit={speakerForVisit || null} hosts={hosts} isLocalSpeaker={isLocalSpeaker || false} onAddNewHost={handleAddNewHost} isGeneratingNotes={isGeneratingNotes} onGenerateNotes={handleGenerateNotes} isSuggestingHosts={isSuggestingHosts} onSuggestHosts={handleSuggestHosts} isGeneratingChecklist={isGeneratingChecklist} onGenerateChecklist={handleGenerateChecklist} repetitionWarning={repetitionWarning} specialDateWarning={specialDateWarning} apiKey={apiKey} isOnline={isOnline} isEditing={isEditing} />
                     
                     {isEditing && formData.status === 'cancelled' && (
                         <div className="px-6 pb-4">

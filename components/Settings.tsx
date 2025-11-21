@@ -681,11 +681,42 @@ const MaintenanceContent: React.FC = () => {
     );
 };
 
+const SafetyBackupBanner: React.FC<{ onExport: () => void }> = ({ onExport }) => (
+    <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 mb-6 rounded-r-lg shadow-sm">
+        <div className="flex items-start">
+            <div className="flex-shrink-0">
+                <ShieldCheckIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="ml-3 w-full">
+                <h3 className="text-lg font-medium text-blue-800 dark:text-blue-200">
+                    Sécurité des Données
+                </h3>
+                <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                    <p>
+                        Avant toute mise à jour majeure ou changement de design, il est fortement recommandé de créer une sauvegarde de sécurité de vos données.
+                    </p>
+                </div>
+                <div className="mt-4">
+                    <button
+                        type="button"
+                        onClick={onExport}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform active:scale-95"
+                    >
+                        <DownloadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                        Télécharger une sauvegarde maintenant
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+);
 
 export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImporting, onLeaveFeedback, archiveSectionRef }) => {
-    const { syncWithGoogleSheet, archivedVisits } = useData();
+    const { syncWithGoogleSheet, archivedVisits, exportData } = useData();
     return (
         <div className="space-y-6">
+            <SafetyBackupBanner onExport={exportData} />
+
             <SettingsSection title="Profil de la Congrégation" description="Personnalisez les informations de l'application." icon={PodiumIcon}>
                 <CongregationProfileContent />
             </SettingsSection>

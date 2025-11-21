@@ -197,7 +197,7 @@ export const SpeakerList: React.FC<SpeakerListProps> = ({ onSchedule, onAddSpeak
                 }
             });
 
-            const jsonStr = response.text.trim();
+            const jsonStr = response.text?.trim() || '[]';
             const aiSuggestions: { speakerName: string, reason: string }[] = JSON.parse(jsonStr);
 
             const matchedSuggestions = aiSuggestions.map(suggestion => {
