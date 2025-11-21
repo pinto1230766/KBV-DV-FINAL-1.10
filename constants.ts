@@ -772,7 +772,7 @@ export const initialSpecialDates: SpecialDate[] = speakersWithTalksRaw
             date: talk.date,
             name: event.nom,
             type: type,
-            description: talk.theme,
+            description: talk.theme ?? undefined,
         };
     });
 
@@ -1118,6 +1118,276 @@ Ku amor fraternu.
 {hospitalityOverseer}
 {hospitalityOverseerPhone}`
     }
+  },
+  en: {
+    confirmation: {
+      speaker: `Hello Brother {speakerName},{firstTimeIntroduction}
+
+We are happy to welcome you for your talk on {visitDate}.
+
+To better prepare for your visit, could you let us know if you have any special needs?
+- Do you need accommodation?
+- Would you be available for a meal?
+- Will you come by your own means or do you need someone to pick you up?
+
+Do not hesitate if you have any questions.
+Fraternally.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+      host: `Hello Brother {hostName},
+
+I hope you are well.
+Just a quick confirmation for hosting Brother *{speakerName}* on *{visitDate}*.
+
+Is everything in order on your side?
+
+Thanks for your hospitality!
+Fraternally.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`
+    },
+    preparation: {
+      speaker: `Hello Brother {speakerName},
+
+I hope you are well.
+
+We are happy to welcome you for your public talk scheduled for *{visitDate}* at *{visitTime}*.
+
+For organization, our brother *{hostName}* will be in charge of welcoming you. If you have any questions or specific needs (transport, accommodation, meals), do not hesitate to contact him.
+
+Here are his contact details:
+- Phone: {hostPhone}
+- Address: {hostAddress}
+
+We look forward to spending this time with you.
+
+Fraternally.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+      host: `Hello Brother {hostName},
+
+I hope you are well.
+
+I am contacting you regarding the hosting of our guest speaker, Brother *{speakerName}*, who will visit us on *{visitDate}* at *{visitTime}*.
+
+Thank you for volunteering. Can you contact him to coordinate the details of his visit (transport, meals, accommodation)? His number is {speakerPhone}.
+
+Let me know if you have any questions.
+
+Thank you for your hospitality.
+Fraternally.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`
+    },
+    'reminder-7': {
+      speaker: `Hello Brother {speakerName},
+
+This is a friendly little reminder for your public talk with us, scheduled in a week, on *{visitDate}* at *{visitTime}*.
+
+Brother {hostName} ({hostPhone}) is still your contact for organization.
+
+We look forward to welcoming you.
+See you very soon!
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+      host: `Hello Brother {hostName},
+
+Friendly little reminder regarding the hosting of Brother *{speakerName}*, scheduled in a week, on *{visitDate}* at *{visitTime}*.
+
+Do not hesitate if you have any questions.
+
+Thanks again for your precious help.
+Fraternally.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`
+    },
+    'reminder-2': {
+      speaker: `Hello Brother {speakerName},
+
+Last little reminder before your public talk scheduled this weekend, on *{visitDate}* at *{visitTime}*.
+
+We really look forward to listening to you. Have a safe trip if you have to travel.
+
+Fraternally.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+      host: `Hello Brother {hostName},
+
+Last little reminder for hosting Brother *{speakerName}* this weekend, on *{visitDate}* at *{visitTime}*.
+
+Is everything in order on your side?
+
+Thanks for everything.
+Fraternally.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`
+    },
+    thanks: {
+      speaker: `Hello Brother {speakerName},
+
+Just a little note to thank you again warmly for your excellent talk. We were all very encouraged.
+
+We hope you had a good time with us and that your return trip went well.
+
+Hope to see you again.
+Fraternally.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+      host: `Hello Brother {hostName},
+
+A big thank you for your wonderful hospitality towards Brother *{speakerName}* this weekend. It is thanks to brothers like you that our speakers feel so well welcomed.
+
+Your help was greatly appreciated.
+
+Fraternally.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`
+    }
+  },
+  es: {
+    confirmation: {
+      speaker: `Hola Hermano {speakerName},{firstTimeIntroduction}
+
+Nos alegra recibirte para tu discurso el {visitDate}.
+
+Para preparar mejor tu visita, ¿podrías indicarnos si tienes alguna necesidad especial?
+- ¿Necesitas alojamiento?
+- ¿Estarías disponible para una comida?
+- ¿Vendrás por tus propios medios o necesitas que alguien te vaya a buscar?
+
+No dudes si tienes alguna pregunta.
+Fraternalmente.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+      host: `Hola Hermano {hostName},
+
+Espero que estés bien.
+Solo una pequeña confirmación para el alojamiento del Hermano *{speakerName}* el *{visitDate}*.
+
+¿Está todo en orden por tu parte?
+
+¡Gracias por tu hospitalidad!
+Fraternalmente.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`
+    },
+    preparation: {
+      speaker: `Hola Hermano {speakerName},
+
+Espero que estés bien.
+
+Nos alegra recibirte para tu discurso público programado para el *{visitDate}* a las *{visitTime}*.
+
+Para la organización, nuestro hermano *{hostName}* se encargará de recibirte. Si tienes preguntas o necesidades específicas (transporte, alojamiento, comidas), no dudes en contactarlo.
+
+Aquí están sus datos de contacto:
+- Teléfono: {hostPhone}
+- Dirección: {hostAddress}
+
+Esperamos pasar este tiempo contigo.
+
+Fraternalmente.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+      host: `Hola Hermano {hostName},
+
+Espero que estés bien.
+
+Te contacto con respecto al alojamiento de nuestro orador invitado, el Hermano *{speakerName}*, que nos visitará el *{visitDate}* a las *{visitTime}*.
+
+Gracias por ofrecerte como voluntario. ¿Puedes contactarlo para coordinar los detalles de su visita (transporte, comidas, alojamiento)? Su número es {speakerPhone}.
+
+Avísame si tienes alguna pregunta.
+
+Gracias por tu hospitalidad.
+Fraternalmente.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`
+    },
+    'reminder-7': {
+      speaker: `Hola Hermano {speakerName},
+
+Este es un pequeño recordatorio amistoso para tu discurso público con nosotros, programado en una semana, el *{visitDate}* a las *{visitTime}*.
+
+El Hermano {hostName} ({hostPhone}) sigue siendo tu contacto para la organización.
+
+Esperamos recibirte.
+¡Hasta muy pronto!
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+      host: `Hola Hermano {hostName},
+
+Pequeño recordatorio amistoso con respecto al alojamiento del Hermano *{speakerName}*, programado en una semana, el *{visitDate}* a las *{visitTime}*.
+
+No dudes si tienes preguntas.
+
+Gracias de nuevo por tu valiosa ayuda.
+Fraternalmente.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`
+    },
+    'reminder-2': {
+      speaker: `Hola Hermano {speakerName},
+
+Último pequeño recordatorio antes de tu discurso público programado este fin de semana, el *{visitDate}* a las *{visitTime}*.
+
+Realmente esperamos escucharte. Ten un buen viaje si tienes que desplazarte.
+
+Fraternalmente.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+      host: `Hola Hermano {hostName},
+
+Último pequeño recordatorio para el alojamiento del Hermano *{speakerName}* este fin de semana, el *{visitDate}* a las *{visitTime}*.
+
+¿Está todo en orden por tu parte?
+
+Gracias por todo.
+Fraternalmente.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`
+    },
+    thanks: {
+      speaker: `Hola Hermano {speakerName},
+
+Solo una pequeña nota para agradecerte de nuevo calurosamente por tu excelente discurso. Todos fuimos muy animados.
+
+Esperamos que hayas pasado un buen momento con nosotros y que tu regreso haya ido bien.
+
+Esperamos verte de nuevo.
+Fraternalmente.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+      host: `Hola Hermano {hostName},
+
+Un gran agradecimiento por tu maravillosa hospitalidad hacia el Hermano *{speakerName}* este fin de semana. Es gracias a hermanos como tú que nuestros oradores se sienten tan bien recibidos.
+
+Tu ayuda fue muy apreciada.
+
+Fraternalmente.
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`
+    }
   }
 };
 
@@ -1153,9 +1423,40 @@ Nhos ospitalidadi é mutu apresiadu!
 « Ka nhos skese di ospitalidadi, pamodi é grasas a el ki alguns resebe anjus na ses kaza sen es sabe. » (Ebreus 13:2)
 
 {hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+  en: `Hello dear brothers and sisters, ☀️
+
+We are happy to welcome several visiting speakers soon. We are looking for hospitable families to host them.
+
+Here are the visits for which we need your help:
+
+{visitList}
+
+If you can help with any of these needs (accommodation, meals, or both), please reply specifying the speaker's name and what you can offer.
+
+Your hospitality is greatly appreciated!
+
+"Do not forget hospitality, for through it some have unknowingly entertained angels." (Hebrews 13:2)
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+  es: `Hola queridos hermanos y hermanas, ☀️
+
+Tenemos la alegría de recibir pronto a varios oradores visitantes. Buscamos familias hospitalarias para recibirlos.
+
+Aquí están las visitas para las cuales necesitamos su ayuda:
+
+{visitList}
+
+Si pueden ayudar con alguna de estas necesidades (alojamiento, comidas, o ambas), por favor respondan especificando el nombre del orador y lo que pueden ofrecer.
+
+¡Su hospitalidad es muy apreciada!
+
+"No olviden la hospitalidad, porque gracias a ella algunos, sin saberlo, hospedaron ángeles." (Hebreos 13:2)
+
+{hospitalityOverseer}
 {hospitalityOverseerPhone}`
 };
-
 
 export const initialPublicTalks: PublicTalk[] = [
     { number: 1, theme: "Comment la Bible peut vous aider à améliorer votre vie" },

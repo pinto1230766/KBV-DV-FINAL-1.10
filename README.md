@@ -1,70 +1,11 @@
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\ANDROID_SETUP.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\AUTORISATIONS_ANDROID.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\CORRECTIONS_APPLIQUEES.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\CORRECTIONS_MARKDOWN.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\DEPLOIEMENT_SAMSUNG_S10_ULTRA.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\ERREUR_MANIFEST_CORRIGEE.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\GUIDE_GIT_PUSH.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\INSTALLATION_COMPLETE.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\INTEGRATION_ICONES.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\PHOTOS_INTEGREES.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\PROBLEMES_IMAGES_RESOLUS.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\PROJET_PRET.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\PUSH_GITHUB_MAINTENANT.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\RAPPORT_VERIFICATION.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\README.md ---
-
 # KBV Lyon - Application de Gestion
 
 Cette application, développée avec React et Capacitor, permet la gestion des visites d'orateurs, des contacts, et la planification d'événements pour l'assemblée KBV Lyon.
 
 ## 📋 Sommaire
 
-- [Prérequis](#-prérequis)
-- [Installation](#-installation)
-- [Configuration de l'environnement](#-configuration-de-lenvironnement)
+- [Prérequis](#prérequis)
+- [Installation](#️-installation)
 - [Scripts disponibles](#-scripts-disponibles)
 - [Déploiement sur Android](#-déploiement-sur-android)
 - [Développement sans fil (WiFi)](#-développement-sans-fil-wifi)
@@ -234,6 +175,7 @@ npx @capacitor/assets generate --icon app-icon.png --splash splash.png --pwa
 ```
 
 Cette commande va :
+
 - Créer toutes les icônes nécessaires dans les dossiers `mipmap-xxx` de votre projet Android.
 - Créer les icônes pour les PWA dans `public/assets/icons/`.
 - Mettre à jour `index.html` et `manifest.json` pour référencer ces nouvelles icônes.
@@ -352,36 +294,4 @@ Cette erreur se produit souvent en cas de conflit entre le `AndroidManifest.xml`
 
 ---
 
-**Bon développement ! 🚀**
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\RESOUDRE_ERREUR_JAVA.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\RESUME_FINAL.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\SOLUTION_IMMEDIATE_JAVA.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\STATUT_FINAL.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\TELECHARGER_JAVA_21.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\TOUT_EST_PARFAIT.md ---
-
-
-
---- c:\Users\FP123\Downloads\Nouveau dossier\KBV-DV-FINAL-1.10\VERIFICATION_FINALE.md ---
-
-
-
-
---- End of content ---
+## Bon développement ! 🚀
