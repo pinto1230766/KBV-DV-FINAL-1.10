@@ -41,11 +41,11 @@
     <!-- AUTORISATIONS STOCKAGE -->
     <!-- ========================================== -->
     <!-- Pour Android 12 et inférieur (API 32 et inférieur) -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
                      android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
                      android:maxSdkVersion="32" />
-
+    
     <!-- Pour Android 13+ (API 33+) - Accès aux médias -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />

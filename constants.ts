@@ -1458,6 +1458,7 @@ Si pueden ayudar con alguna de estas necesidades (alojamiento, comidas, o ambas)
 {hospitalityOverseerPhone}`
 };
 
+
 export const initialPublicTalks: PublicTalk[] = [
     { number: 1, theme: "Comment la Bible peut vous aider à améliorer votre vie" },
     { number: 2, theme: "La Bible nous aide-t-elle à faire face aux problèmes d’aujourd’hui ?" },
