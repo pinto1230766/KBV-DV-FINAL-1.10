@@ -37,7 +37,7 @@ async function getKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
     return await window.crypto.subtle.deriveKey(
         {
             name: 'PBKDF2',
-            salt: salt,
+            salt: salt.buffer as BufferSource,
             iterations: PBKDF2_ITERATIONS,
             hash: 'SHA-256',
         },
