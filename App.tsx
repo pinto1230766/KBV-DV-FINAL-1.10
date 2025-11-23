@@ -24,7 +24,7 @@ import { HostDetailsModal } from './components/HostDetailsModal';
 import { HostList } from './components/HostList';
 import { PastVisitsManager } from './components/PastVisitsManager';
 import { TabButton } from './components/TabButton';
-import useVisitNotifications from './hooks/useVisitNotifications';
+import { useVisitNotifications } from './hooks/useVisitNotifications';
 import { Avatar } from './components/Avatar';
 import { HostRequestModal } from './components/HostRequestModal';
 import { TimelineView } from './components/TimelineView';
@@ -462,6 +462,7 @@ const App: React.FC = () => {
             case 'messaging':
                 return <MessagingCenter
                     onOpenMessageGenerator={handleOpenMessageGenerator}
+                    onOpenHostRequestModal={handleOpenHostRequestModal}
                 />;
             case 'talks':
                 return <TalksManager />;

@@ -6,12 +6,17 @@ import {
     CheckCircleIcon,
     ChevronLeftIcon,
     EnvelopeIcon,
+    HomeIcon,
 } from './Icons';
+import { UNASSIGNED_HOST } from '../constants';
 import { Avatar } from './Avatar';
+import { HostRequestSelectionModal } from './HostRequestSelectionModal';
+import { PlusIcon } from './Icons';
 
 // --- PROPS ---
 interface MessagingCenterProps {
     onOpenMessageGenerator: (visit: Visit, role: MessageRole, messageType?: MessageType, initialText?: string) => void;
+    onOpenHostRequestModal: (visits: Visit[]) => void;
 }
 
 // --- SUB-COMPONENTS ---
@@ -192,10 +197,11 @@ const ConversationDetailView: React.FC<{ visit: Visit, onOpenMessageGenerator: M
 };
 
 // --- MAIN COMPONENT ---
-export const MessagingCenter: React.FC<MessagingCenterProps> = ({ onOpenMessageGenerator }) => {
+export const MessagingCenter: React.FC<MessagingCenterProps> = ({ onOpenMessageGenerator, onOpenHostRequestModal }) => {
     const { upcomingVisits } = useData();
     const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
 
     const activeVisits = useMemo(() => 
         upcomingVisits
@@ -206,6 +212,16 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({ onOpenMessageG
     const selectedVisit = useMemo(() => 
         activeVisits.find(v => v.visitId === selectedVisitId)
     , [activeVisits, selectedVisitId]);
+
+    const visitsNeedingHost = useMemo(() =>
+        upcomingVisits.filter(v =>
+            v.host === UNASSIGNED_HOST &&
+            v.status !== 'cancelled' &&
+            v.locationType === 'physical' &&
+            !v.congregation.toLowerCase().includes('lyon')
+        ).sort((a,b) => new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime()),
+        [upcomingVisits]
+    );
 
     // Reset selection if the selected visit is filtered out
     useEffect(() => {
@@ -225,17 +241,29 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({ onOpenMessageG
         <div className="flex flex-col animate-fade-in h-full">
             <div className="p-4 sm:p-6 lg:p-8 h-full flex flex-col min-h-0">
                 <div className="flex-shrink-0">
-                    <div className="relative mb-4">
-                        <input
-                            type="text"
-                            placeholder="Rechercher une visite par nom..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary bg-card-light dark:bg-card-dark"
-                        />
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <SearchIcon className="w-5 h-5 text-gray-400" />
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="relative flex-grow">
+                            <input
+                                type="text"
+                                placeholder="Rechercher une visite par nom..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary bg-card-light dark:bg-card-dark"
+                            />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <SearchIcon className="w-5 h-5 text-gray-400" />
+                            </div>
                         </div>
+                        {visitsNeedingHost.length > 0 && (
+                            <button
+                                onClick={() => setIsSelectionModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-all active:scale-95 whitespace-nowrap shadow-md"
+                                title="Demande d'accueil groupée"
+                            >
+                                <PlusIcon className="w-5 h-5" />
+                                <span className="hidden sm:inline">Demande d'accueil</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -274,6 +302,14 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({ onOpenMessageG
                     </div>
                 </div>
             </div>
+
+            {/* Selection Modal */}
+            <HostRequestSelectionModal
+                isOpen={isSelectionModalOpen}
+                onClose={() => setIsSelectionModalOpen(false)}
+                onConfirm={onOpenHostRequestModal}
+                availableVisits={visitsNeedingHost}
+            />
         </div>
     );
 };

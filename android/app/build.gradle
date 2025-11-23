@@ -38,14 +38,20 @@ android {
                 storePassword project.RELEASE_STORE_PASSWORD
                 keyAlias project.RELEASE_KEY_ALIAS
                 keyPassword project.RELEASE_KEY_PASSWORD
-            } else {
-                throw new IllegalStateException("Release signing properties are missing. Define RELEASE_STORE_FILE, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, and RELEASE_KEY_PASSWORD.")
             }
+            // Si aucune propriété de signature n'est définie, on utilise la signature debug par défaut
         }
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            // Utiliser signingConfig release seulement si les propriétés sont définies
+            if (keystorePropertiesFile.exists() || 
+                (project.hasProperty('RELEASE_STORE_FILE') &&
+                 project.hasProperty('RELEASE_STORE_PASSWORD') &&
+                 project.hasProperty('RELEASE_KEY_ALIAS') &&
+                 project.hasProperty('RELEASE_KEY_PASSWORD'))) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

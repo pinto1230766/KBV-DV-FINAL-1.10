@@ -94,7 +94,8 @@ const useVisitNotifications = (
         // This hook runs when visits or notification permissions change.
     }, [visits, notificationPermission]);
 
-    // This hook is for side-effects only (scheduling notifications).
+// This hook is for side-effects only (scheduling notifications).
 };
 
-export default useVisitNotifications;
+export { useVisitNotifications };
+
