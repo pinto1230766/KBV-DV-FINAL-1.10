@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Visit, Language } from '../types';
-import { XIcon, CopyIcon, SparklesIcon, SpinnerIcon, ArrowUpOnSquareIcon, EditIcon, SaveIcon, ArrowUturnLeftIcon } from './Icons';
+import { XIcon, CopyIcon, SparklesIcon, SpinnerIcon, ArrowUpOnSquareIcon, EditIcon, SaveIcon, ArrowUturnLeftIcon, WhatsAppIcon } from './Icons';
 import { useToast } from '../contexts/ToastContext';
 import { useData } from '../contexts/DataContext';
 import { hostRequestMessageTemplates } from '../constants';
@@ -100,6 +100,12 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
         setTimeout(() => setCopied(false), 2000);
       });
     }
+  };
+
+  const handleWhatsAppShare = () => {
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleRefineWithAI = async (action: 'correct' | 'friendly' | 'formal') => {
@@ -220,7 +226,15 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
             </div>
           )}
         </div>
-        <div className="bg-gray-50 dark:bg-background-dark px-6 py-4 flex justify-end items-center border-t border-border-light dark:border-border-dark rounded-b-xl">
+        <div className="bg-gray-50 dark:bg-background-dark px-6 py-4 flex justify-end items-center gap-3 border-t border-border-light dark:border-border-dark rounded-b-xl">
+          <button 
+            onClick={handleWhatsAppShare} 
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-transform active:scale-95"
+            title="Envoyer via WhatsApp"
+          >
+            <WhatsAppIcon className="w-5 h-5" />
+            WhatsApp
+          </button>
           <button onClick={handleShare} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-transform active:scale-95">
             {Capacitor.isNativePlatform() ? <ArrowUpOnSquareIcon className="w-5 h-5" /> : <CopyIcon className="w-5 h-5" />}
             {Capacitor.isNativePlatform() ? 'Partager' : (copied ? 'Copié !' : 'Copier le message')}

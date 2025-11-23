@@ -17,16 +17,8 @@ export const HostRequestSelectionModal: React.FC<HostRequestSelectionModalProps>
   onConfirm,
   availableVisits
 }) => {
-  // Pré-sélectionner les visites "À définir"
-  const [selectedVisitIds, setSelectedVisitIds] = useState<Set<string>>(() => {
-    const preSelected = new Set<string>();
-    availableVisits.forEach(visit => {
-      if (visit.host === UNASSIGNED_HOST) {
-        preSelected.add(visit.visitId);
-      }
-    });
-    return preSelected;
-  });
+  // Pas de pré-sélection - l'utilisateur coche manuellement
+  const [selectedVisitIds, setSelectedVisitIds] = useState<Set<string>>(new Set());
 
   const toggleVisit = (visitId: string) => {
     setSelectedVisitIds(prev => {
