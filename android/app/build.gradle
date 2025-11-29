@@ -1,12 +1,5 @@
 apply plugin: 'com.android.application'
 
-// Charger les propriétés du keystore
-def keystorePropertiesFile = project.file("keystore.properties")
-def keystoreProperties = new Properties()
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-}
-
 android {
     namespace "com.kbv.lyon"
     compileSdk rootProject.ext.compileSdkVersion
@@ -23,42 +16,11 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    signingConfigs {
-        release {
-            if (keystorePropertiesFile.exists()) {
-                storeFile file(keystoreProperties['RELEASE_STORE_FILE'])
-                storePassword keystoreProperties['RELEASE_STORE_PASSWORD']
-                keyAlias keystoreProperties['RELEASE_KEY_ALIAS']
-                keyPassword keystoreProperties['RELEASE_KEY_PASSWORD']
-            } else if (project.hasProperty('RELEASE_STORE_FILE') &&
-                    project.hasProperty('RELEASE_STORE_PASSWORD') &&
-                    project.hasProperty('RELEASE_KEY_ALIAS') &&
-                    project.hasProperty('RELEASE_KEY_PASSWORD')) {
-                storeFile file(project.RELEASE_STORE_FILE)
-                storePassword project.RELEASE_STORE_PASSWORD
-                keyAlias project.RELEASE_KEY_ALIAS
-                keyPassword project.RELEASE_KEY_PASSWORD
-            }
-            // Si aucune propriété de signature n'est définie, on utilise la signature debug par défaut
-        }
-    }
     buildTypes {
         release {
-            // Utiliser signingConfig release seulement si les propriétés sont définies
-            if (keystorePropertiesFile.exists() || 
-                (project.hasProperty('RELEASE_STORE_FILE') &&
-                 project.hasProperty('RELEASE_STORE_PASSWORD') &&
-                 project.hasProperty('RELEASE_KEY_ALIAS') &&
-                 project.hasProperty('RELEASE_KEY_PASSWORD'))) {
-                signingConfig signingConfigs.release
-            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_21
-        targetCompatibility JavaVersion.VERSION_21
     }
 }
 
