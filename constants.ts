@@ -1,4 +1,4 @@
-import { Speaker, Host, Language, MessageType, MessageRole, Visit, SpeakerRaw, PublicTalk, SpecialDate, SpecialDateType } from './types';
+import { Speaker, Host, Language, MessageType, MessageRole, Visit, SpeakerRaw, PublicTalk, SpecialDate, SpecialDateType, HostRequestTemplate } from './types';
 import { generateUUID } from './utils/uuid';
 
 export const UNASSIGNED_HOST = 'À définir';
@@ -6,746 +6,818 @@ export const NO_HOST_NEEDED = 'Pas nécessaire';
 
 // Raw data for speakers and their scheduled talks (both past and future)
 const speakersWithTalksRaw: SpeakerRaw[] = [
+
     {
-        "id": "4",
-        "nom": "Alexis CARVALHO",
-        "congregation": "Lyon KBV",
-        "talkHistory": [
+        id: "4",
+        nom: "Alexis CARVALHO",
+        congregation: "Lyon KBV",
+        talkHistory: [
             {
-                "date": "2026-01-03",
-                "talkNo": null,
-                "theme": null
+                date: "2026-01-03",
+                talkNo: null,
+                theme: null
             }
         ],
-        "telephone": "33644556677"
+        telephone: "33644556677"
     },
     {
-        "id": "25",
-        "nom": "José DA SILVA",
-        "congregation": "Creil KBV",
-        "talkHistory": [
+        id: "25",
+        nom: "José DA SILVA",
+        congregation: "Creil KBV",
+        talkHistory: [
             {
-                "date": "2026-01-10",
-                "talkNo": "179",
-                "theme": "Nega iluzon di mundu, sforsa pa kes kuza di Reinu ki ta izisti di verdadi"
+                date: "2026-01-10",
+                talkNo: "179",
+                theme: "Nega iluzon di mundu, sforsa pa kes kuza di Reinu ki ta izisti di verdadi"
             }
         ],
-        "telephone": "33618772533"
+        telephone: "33618772533"
     },
     {
-        "id": "20",
-        "nom": "João CECCON",
-        "congregation": "Villiers KBV",
-        "talkHistory": [
+        id: "20",
+        nom: "João CECCON",
+        congregation: "Villiers KBV",
+        talkHistory: [
             {
-                "date": "2026-01-17",
-                "talkNo": "1",
-                "theme": "Bu konxe Deus dretu?"
+                date: "2026-01-17",
+                talkNo: "1",
+                theme: "Bu konxe Deus dretu?"
             }
         ],
-        "telephone": "33601234567"
+        telephone: "33601234567"
     },
     {
-        "id": "30",
-        "nom": "Marcelino DOS SANTOS",
-        "congregation": "Plaisir KBV",
-        "talkHistory": [
+        id: "30",
+        nom: "Marcelino DOS SANTOS",
+        congregation: "Plaisir KBV",
+        talkHistory: [
             {
-                "date": "2026-01-24",
-                "talkNo": "36",
-                "theme": "Vida é só kel-li?"
-            }
-        ],
-        "telephone": "33650015128"
-    },
-    {
-        "id": "9",
-        "nom": "David MOREIRA",
-        "congregation": "Steinsel KBV",
-        "talkHistory": [
-            {
-                "date": "2026-01-31",
-                "talkNo": "56",
-                "theme": "Na ki lider ki bu pode kunfia?"
-            }
-        ],
-        "telephone": "352621386797"
-    },
-    {
-        "id": "11",
-        "nom": "Eddy SILVA",
-        "congregation": "Steinsel KBV",
-        "talkHistory": [
-            {
-                "date": "2026-02-07",
-                "talkNo": "9",
-                "theme": "Obi i kunpri Palavra di Deus"
-            }
-        ],
-        "telephone": "352691574935"
-    },
-    {
-        "id": "37",
-        "nom": "Valdir DIOGO",
-        "congregation": "Porto KBV",
-        "talkHistory": [
-            {
-                "date": "2026-02-14",
-                "talkNo": "189",
-                "theme": "Anda ku Deus ta traze-nu bensons gosi i pa tudu témpu"
-            }
-        ],
-        "telephone": "33677788899"
-    },
-    {
-        "id": "23",
-        "nom": "Jorge GONÇALVES",
-        "congregation": "Porto KBV",
-        "talkHistory": [
-            {
-                "date": "2026-02-21",
-                "talkNo": "4",
-                "theme": "Ki próvas ten ma Deus ta izisti?"
-            }
-        ],
-        "telephone": "33633456789"
-    },
-    {
-        "id": "57",
-        "nom": "Jeje ou JP",
-        "congregation": "",
-        "talkHistory": [
-            {
-                "date": "2026-02-28",
-                "talkNo": null,
-                "theme": null
-            }
-        ],
-        "gender": "male"
-    },
-    {
-        "id": "18",
-        "nom": "Jefersen BOELJIN",
-        "congregation": "Rotterdam KBV",
-        "talkHistory": [
-            {
-                "date": "2026-03-07",
-                "talkNo": null,
-                "theme": null
-            }
-        ],
-        "telephone": "31618513034"
-    },
-    {
-        "id": "58",
-        "nom": "Dimitri GIVAC",
-        "congregation": "Marseille KBV",
-        "talkHistory": [
-            {
-                "date": "2026-03-14",
-                "talkNo": "3",
-                "theme": "Bu sta ta anda ku organizason unidu di Jeová?"
+                date: "2026-01-10",
+                talkNo: "100",
+                theme: "Modi ki nu pode faze bons amizadi"
             },
             {
-                "date": "2025-10-18",
-                "talkNo": null,
-                "theme": null
+                date: "2026-01-24",
+                talkNo: "36",
+                theme: "Vida é só kel-li?"
             }
         ],
-        "gender": "male"
+        telephone: "33650015128"
     },
     {
-        "id": "38",
-        "nom": "Jonatã ALVES",
-        "congregation": "Albufeira KBV Zoom",
-        "talkHistory": [
+        id: "9",
+        nom: "David MOREIRA",
+        congregation: "Steinsel KBV",
+        talkHistory: [
             {
-                "date": "2026-03-21",
-                "talkNo": "11",
-                "theme": "Sima Jizus, nu 'ka ta faze párti di mundu'"
+                date: "2026-01-31",
+                talkNo: "56",
+                theme: "Na ki lider ki bu pode kunfia?"
             }
         ],
-        "telephone": "",
-        "tags": ["zoom", "expérimenté"]
+        telephone: "352621386797"
     },
     {
-        "id": "event-59",
-        "nom": "Diskursu Spesial",
-        "congregation": "Événement spécial",
-        "talkHistory": [
+        id: "11",
+        nom: "Eddy SILVA",
+        congregation: "Steinsel KBV",
+        talkHistory: [
             {
-                "date": "2026-03-28",
-                "talkNo": "DS",
-                "theme": "Ken ki ta ben konpo téra?"
-            }
-        ]
-    },
-    {
-        "id": "6",
-        "nom": "Dany TAVARES",
-        "congregation": "Plaisir KBV",
-        "talkHistory": [
-            {
-                "date": "2025-05-03",
-                "talkNo": "32",
-                "theme": "Modi ki nu pode lida ku preokupasons di vida"
+                date: "2026-02-07",
+                talkNo: "9",
+                theme: "Obi i kunpri Palavra di Deus"
             },
             {
-                "date": "2025-09-20",
-                "talkNo": "102",
-                "theme": "Presta atenson na \"profesia\""
+                date: "2026-02-28",
+                talkNo: "9",
+                theme: "Obi i kunpri Palavra di Deus"
             }
         ],
-        "telephone": "33668121101"
+        telephone: "352691574935"
     },
     {
-        "id": "24",
-        "nom": "José BATALHA",
-        "congregation": "Marseille KBV",
-        "talkHistory": [
+        id: "37",
+        nom: "Valdir DIOGO",
+        congregation: "Porto KBV",
+        talkHistory: [
             {
-                "date": "2025-05-31",
-                "talkNo": "17",
-                "theme": "Da Deus glória ku tudu kel ki bu ten"
+                date: "2026-02-14",
+                talkNo: "189",
+                theme: "Anda ku Deus ta traze-nu bensons gosi i pa tudu témpu"
             }
         ],
-        "telephone": "33618505292"
+        telephone: "33677788899"
     },
     {
-        "id": "22",
-        "nom": "Joel CARDOSO",
-        "congregation": "Nice KBV",
-        "talkHistory": [
+        id: "23",
+        nom: "Jorge GONÇALVES",
+        congregation: "Porto KBV",
+        talkHistory: [
             {
-                "date": "2025-06-14",
-                "talkNo": "30",
-                "theme": "Modi ki familia pode pápia ku kunpanheru midjór"
+                date: "2026-02-21",
+                talkNo: "4",
+                theme: "Ki próvas ten ma Deus ta izisti?"
             }
         ],
-        "telephone": "33658943038"
+        telephone: "33633456789"
     },
     {
-        "id": "19",
-        "nom": "Jérémy TORRES",
-        "congregation": "Lyon KBV",
-        "talkHistory": [
+        id: "57",
+        nom: "Jeje ou JP",
+        congregation: "",
+        talkHistory: [
             {
-                "date": "2025-07-05",
-                "talkNo": "12",
-                "theme": "Deus kré pa bu ruspeta kes ki ren autoridadi"
+                date: "2026-02-28",
+                talkNo: null,
+                theme: null
             }
         ],
-        "telephone": "33690123456",
-        "notes": "Allergique aux chats.",
-        "tags": ["allergie-chat"],
-        "isVehiculed": false
+        gender: "male"
     },
     {
-        "id": "10",
-        "nom": "David VIEIRA",
-        "congregation": "Villiers KBV",
-        "talkHistory": [
+        id: "18",
+        nom: "Jefersen BOELJIN",
+        congregation: "Rotterdam KBV",
+        talkHistory: [
             {
-                "date": "2025-08-30",
-                "talkNo": "108",
-                "theme": "Bu pode kunfia ma nu ta ben ten un futuru sóbi!"
+                date: "2026-03-07",
+                talkNo: null,
+                theme: null
             }
         ],
-        "telephone": "33771670140"
+        telephone: "31618513034"
     },
     {
-        "id": "27",
-        "nom": "Luis CARDOSO",
-        "congregation": "Nice KBV",
-        "talkHistory": [
+        id: "58",
+        nom: "Dimitri GIVAC",
+        congregation: "Marseille KBV",
+        talkHistory: [
             {
-                "date": "2025-09-06",
-                "talkNo": "15",
-                "theme": "Mostra bondadi pa tudu algen"
+                date: "2025-10-18",
+                talkNo: null,
+                theme: null
+            },
+            {
+                date: "2026-03-14",
+                talkNo: "3",
+                theme: "Bu sta ta anda ku organizason unidu di Jeová?"
             }
         ],
-        "telephone": "33669519131"
+        gender: "male"
     },
     {
-        "id": "60",
-        "nom": "Paulo COSTA",
-        "congregation": "Streaming",
-        "talkHistory": [
+        id: "38",
+        nom: "Jonatã ALVES",
+        congregation: "Albufeira KBV Zoom",
+        talkHistory: [
             {
-                "date": "2025-09-13",
-                "talkNo": "43",
-                "theme": "Kel ki Deus ta fla sénpri é midjór pa nos"
+                date: "2026-03-21",
+                talkNo: "11",
+                theme: "Sima Jizus, nu 'ka ta faze párti di mundu'"
             }
         ],
-        "gender": "male"
+        telephone: "",
+        tags: [
+            "zoom",
+            "expérimenté"
+        ]
     },
     {
-        "id": "61",
-        "nom": "João Paulo BAPTISTA",
-        "congregation": "Lyon KBV",
-        "talkHistory": [
+        id: "event-59",
+        nom: "Diskursu Spesial",
+        congregation: "Événement spécial",
+        talkHistory: [
             {
-                "date": "2025-09-27",
-                "talkNo": "DS",
-                "theme": "Modi ki géra ta ben kaba ?"
-            }
-        ],
-        "gender": "male"
-    },
-    {
-        "id": "8",
-        "nom": "David LUCIO",
-        "congregation": "Porto KBV",
-        "talkHistory": [
-            {
-                "date": "2025-10-04",
-                "talkNo": "16",
-                "theme": "Kontinua ta bira bu amizadi ku Deus más fórti"
-            }
-        ],
-        "telephone": "351960413461"
-    },
-    {
-        "id": "33",
-        "nom": "Moises CALDES",
-        "congregation": "Cannes KBV",
-        "talkHistory": [
-            {
-                "date": "2025-10-11",
-                "talkNo": "183",
-                "theme": "Tra odju di kuzas ki ka ten valor!"
-            }
-        ],
-        "telephone": "33627826869"
-    },
-    {
-        "id": "31",
-        "nom": "Mario MIRANDA",
-        "congregation": "Cannes KBV Zoom",
-        "talkHistory": [
-            {
-                "date": "2025-10-25",
-                "talkNo": "100",
-                "theme": "Modi ki nu pode faze bons amizadi"
-            }
-        ],
-        "telephone": "33615879709"
-    },
-    {
-        "id": "15",
-        "nom": "Gilberto FERNANDES",
-        "congregation": "St Denis KBV",
-        "talkHistory": [
-            {
-                "date": "2025-11-01",
-                "talkNo": "2",
-                "theme": "Bu ta skapa na témpu di fin?"
-            }
-        ],
-        "telephone": "33769017274"
-    },
-    {
-        "id": "14",
-        "nom": "Gianni FARIA",
-        "congregation": "Plaisir KBV",
-        "talkHistory": [
-            {
-                "date": "2025-11-08",
-                "talkNo": "26",
-                "theme": "Abo é inportanti pa Deus?"
-            }
-        ],
-        "telephone": "33698657173"
-    },
-    {
-        "id": "event-62",
-        "nom": "Visita do Superintendente de Circuito",
-        "congregation": "Événement spécial",
-        "talkHistory": [
-            {
-                "date": "2025-11-15",
-                "talkNo": "Visita do Superintendente de Circuito",
-                "theme": "Visita do Superintendente de Circuito"
+                date: "2026-03-28",
+                talkNo: "DS",
+                theme: "Ken ki ta ben konpo téra?"
             }
         ]
     },
     {
-        "id": "event-63",
-        "nom": "Assembleia de Circuito com Representante da Filial",
-        "congregation": "Événement spécial",
-        "talkHistory": [
+        id: "6",
+        nom: "Dany TAVARES",
+        congregation: "Plaisir KBV",
+        talkHistory: [
             {
-                "date": "2025-11-22",
-                "talkNo": "Assembleia de Circuito com Representante da Filial",
-                "theme": "Assembleia de Circuito com Representante da Filial"
+                date: "2025-05-03",
+                talkNo: "32",
+                theme: "Modi ki nu pode lida ku preokupasons di vida"
+            },
+            {
+                date: "2025-09-20",
+                talkNo: "102",
+                theme: "Presta atenson na \"profesia\""
+            }
+        ],
+        telephone: "33668121101"
+    },
+    {
+        id: "24",
+        nom: "José BATALHA",
+        congregation: "Marseille KBV",
+        talkHistory: [
+            {
+                date: "2025-05-31",
+                talkNo: "17",
+                theme: "Da Deus glória ku tudu kel ki bu ten"
+            },
+            {
+                date: "2026-04-04",
+                talkNo: "18",
+                theme: "Faze Jeová bu fortaléza"
+            }
+        ],
+        telephone: "33618505292"
+    },
+    {
+        id: "22",
+        nom: "Joel CARDOSO",
+        congregation: "Nice KBV",
+        talkHistory: [
+            {
+                date: "2025-06-14",
+                talkNo: "30",
+                theme: "Modi ki familia pode pápia ku kunpanheru midjór"
+            }
+        ],
+        telephone: "33658943038"
+    },
+    {
+        id: "19",
+        nom: "Jérémy TORRES",
+        congregation: "Lyon KBV",
+        talkHistory: [
+            {
+                date: "2025-07-05",
+                talkNo: "12",
+                theme: "Deus kré pa bu ruspeta kes ki ren autoridadi"
+            },
+            {
+                date: "2026-02-07",
+                talkNo: "76",
+                theme: "Prinsípius di Bíblia pode djuda-nu lida ku prublémas di oji?"
+            }
+        ],
+        telephone: "33690123456",
+        notes: "Allergique aux chats.",
+        tags: [
+            "allergie-chat"
+        ],
+        isVehiculed: false
+    },
+    {
+        id: "10",
+        nom: "David VIEIRA",
+        congregation: "Villiers KBV",
+        talkHistory: [
+            {
+                date: "2024-05-26",
+                talkNo: "48",
+                theme: "Modi ki nu pode kontinua lial pa Deus óras ki nu ta pasa pa próva"
+            },
+            {
+                date: "2025-08-30",
+                talkNo: "108",
+                theme: "Bu pode kunfia ma nu ta ben ten un futuru sóbi!"
+            }
+        ],
+        telephone: "33771670140"
+    },
+    {
+        id: "27",
+        nom: "Luis CARDOSO",
+        congregation: "Nice KBV",
+        talkHistory: [
+            {
+                date: "2025-09-06",
+                talkNo: "15",
+                theme: "Mostra bondadi pa tudu algen"
+            }
+        ],
+        telephone: "33669519131"
+    },
+    {
+        id: "60",
+        nom: "Paulo COSTA",
+        congregation: "Streaming",
+        talkHistory: [
+            {
+                date: "2025-09-13",
+                talkNo: "43",
+                theme: "Kel ki Deus ta fla sénpri é midjór pa nos"
+            }
+        ],
+        gender: "male"
+    },
+    {
+        id: "61",
+        nom: "João Paulo BAPTISTA",
+        congregation: "Lyon KBV",
+        talkHistory: [
+            {
+                date: "2025-09-27",
+                talkNo: "DS",
+                theme: "Modi ki géra ta ben kaba ?"
+            }
+        ],
+        gender: "male"
+    },
+    {
+        id: "8",
+        nom: "David LUCIO",
+        congregation: "Porto KBV",
+        talkHistory: [
+            {
+                date: "2025-10-04",
+                talkNo: "16",
+                theme: "Kontinua ta bira bu amizadi ku Deus más fórti"
+            }
+        ],
+        telephone: "351960413461"
+    },
+    {
+        id: "33",
+        nom: "Moises CALDES",
+        congregation: "Cannes KBV",
+        talkHistory: [
+            {
+                date: "2024-11-17",
+                talkNo: "64",
+                theme: "Bu 'krê sô pasa sábi' ô bu ta 'ama Deus'?"
+            },
+            {
+                date: "2025-10-11",
+                talkNo: "183",
+                theme: "Tra odju di kuzas ki ka ten valor!"
+            },
+            {
+                date: "2026-03-07",
+                talkNo: "183",
+                theme: "Tra odju di kuzas ki ka ten valor!"
+            }
+        ],
+        telephone: "33627826869"
+    },
+    {
+        id: "31",
+        nom: "Mario MIRANDA",
+        congregation: "Cannes KBV Zoom",
+        talkHistory: [
+            {
+                date: "2025-10-25",
+                talkNo: "100",
+                theme: "Modi ki nu pode faze bons amizadi"
+            }
+        ],
+        telephone: "33615879709"
+    },
+    {
+        id: "15",
+        nom: "Gilberto FERNANDES",
+        congregation: "St Denis KBV",
+        talkHistory: [
+            {
+                date: "2025-11-01",
+                talkNo: "2",
+                theme: "Bu ta skapa na témpu di fin?"
+            }
+        ],
+        telephone: "33769017274"
+    },
+    {
+        id: "14",
+        nom: "Gianni FARIA",
+        congregation: "Plaisir KBV",
+        talkHistory: [
+            {
+                date: "2025-11-08",
+                talkNo: "26",
+                theme: "Abo é inportanti pa Deus?"
+            }
+        ],
+        telephone: "33698657173"
+    },
+    {
+        id: "event-62",
+        nom: "Visita do Superintendente de Circuito",
+        congregation: "Événement spécial",
+        talkHistory: [
+            {
+                date: "2025-11-15",
+                talkNo: "Visita do Superintendente de Circuito",
+                theme: "Visita do Superintendente de Circuito"
             }
         ]
     },
     {
-        "id": "36",
-        "nom": "Thomas FREITAS",
-        "congregation": "Lyon KBV",
-        "talkHistory": [
+        id: "event-63",
+        nom: "Assembleia de Circuito com Representante da Filial",
+        congregation: "Événement spécial",
+        talkHistory: [
             {
-                "date": "2025-11-29",
-                "talkNo": "70",
-                "theme": "Pamodi ki Deus merese nos kunfiansa?"
-            }
-        ],
-        "telephone": "33666677788"
-    },
-    {
-        "id": "32",
-        "nom": "Matthieu DHALENNE",
-        "congregation": "Steinsel KBV",
-        "talkHistory": [
-            {
-                "date": "2025-12-06",
-                "talkNo": "194",
-                "theme": "Modi ki sabedoria di Deus ta djuda-nu"
-            }
-        ],
-        "telephone": "33628253599"
-    },
-    {
-        "id": "12",
-        "nom": "François GIANNINO",
-        "congregation": "St Denis KBV",
-        "talkHistory": [
-            {
-                "date": "2025-12-13",
-                "talkNo": "7",
-                "theme": "Imita mizerikordia di Jeová"
-            }
-        ],
-        "telephone": "33633891566"
-    },
-    {
-        "id": "event-64",
-        "nom": "Asenbleia ku enkaregadu di grupu di kongregason",
-        "congregation": "Événement spécial",
-        "talkHistory": [
-            {
-                "date": "2025-12-20",
-                "talkNo": "Asenbleia ku enkaregadu di grupu di kongregason",
-                "theme": "Asenbleia ku enkaregadu di grupu di kongregason"
+                date: "2025-11-22",
+                talkNo: "Assembleia de Circuito com Representante da Filial",
+                theme: "Assembleia de Circuito com Representante da Filial"
             }
         ]
     },
     {
-        "id": "26",
-        "nom": "José FREITAS",
-        "congregation": "Lyon KBV",
-        "talkHistory": [
+        id: "36",
+        nom: "Thomas FREITAS",
+        congregation: "Lyon KBV",
+        talkHistory: [
             {
-                "date": "2025-12-27",
-                "talkNo": "55",
-                "theme": "Modi ki bu pode faze un bon nómi ki ta agrada Deus?"
+                date: "2025-11-29",
+                talkNo: "70",
+                theme: "Pamodi ki Deus merese nos kunfiansa?"
+            },
+            {
+                date: "2026-06-06",
+                talkNo: "31",
+                theme: "Bu ten konsénsia ma bu ten nisisidadi spritual?"
             }
         ],
-        "telephone": "33666789012"
+        telephone: "33666677788"
     },
     {
-        "id": "1",
-        "nom": "Ailton DIAS",
-        "congregation": "Villiers-sur-Marne",
-        "talkHistory": [],
-        "telephone": "33611223344",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "32",
+        nom: "Matthieu DHALENNE",
+        congregation: "Steinsel KBV",
+        talkHistory: [
+            {
+                date: "2025-12-06",
+                talkNo: "194",
+                theme: "Modi ki sabedoria di Deus ta djuda-nu"
+            }
+        ],
+        telephone: "33628253599"
     },
     {
-        "id": "2",
-        "nom": "Alain CURTIS",
-        "congregation": "Marseille KBV",
-        "talkHistory": [],
-        "telephone": "33606630000",
-        "notes": "Préfère un repas léger le soir. Pas d'hébergement nécessaire, a de la famille à proximité.",
-        "photoUrl": undefined,
-        "gender": "male",
-        "tags": ["sans escaliers", "calme"]
+        id: "12",
+        nom: "François GIANNINO",
+        congregation: "St Denis KBV",
+        talkHistory: [
+            {
+                date: "2025-12-13",
+                talkNo: "7",
+                theme: "Imita mizerikordia di Jeová"
+            }
+        ],
+        telephone: "33633891566"
     },
     {
-        "id": "3",
-        "nom": "Alexandre NOGUEIRA",
-        "congregation": "Creil",
-        "talkHistory": [],
-        "telephone": "33612526605",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "event-64",
+        nom: "Asenbleia ku enkaregadu di grupu di kongregason",
+        congregation: "Événement spécial",
+        talkHistory: [
+            {
+                date: "2025-12-20",
+                talkNo: "Asenbleia ku enkaregadu di grupu di kongregason",
+                theme: "Asenbleia ku enkaregadu di grupu di kongregason"
+            }
+        ]
     },
     {
-        "id": "5",
-        "nom": "Daniel FORTES",
-        "congregation": "Villiers-sur-Marne",
-        "talkHistory": [],
-        "telephone": "33655667788",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "26",
+        nom: "José FREITAS",
+        congregation: "Lyon KBV",
+        talkHistory: [
+            {
+                date: "2025-12-27",
+                talkNo: "55",
+                theme: "Modi ki bu pode faze un bon nómi ki ta agrada Deus?"
+            }
+        ],
+        telephone: "33666789012"
     },
     {
-        "id": "7",
-        "nom": "David DE FARIA",
-        "congregation": "Villiers-sur-Marne",
-        "talkHistory": [],
-        "telephone": "33677889900",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "1",
+        nom: "Ailton DIAS",
+        congregation: "Villiers-sur-Marne",
+        talkHistory: [],
+        telephone: "33611223344",
+        gender: "male"
     },
     {
-        "id": "13",
-        "nom": "Fred MARQUES",
-        "congregation": "Villiers-sur-Marne",
-        "talkHistory": [],
-        "telephone": "33634567890",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "2",
+        nom: "Alain CURTIS",
+        congregation: "Marseille KBV",
+        talkHistory: [],
+        telephone: "33606630000",
+        notes: "Préfère un repas léger le soir. Pas d'hébergement nécessaire, a de la famille à proximité.",
+        gender: "male",
+        tags: [
+            "sans escaliers",
+            "calme"
+        ]
     },
     {
-        "id": "16",
-        "nom": "Isaque PEREIRA",
-        "congregation": "St Denis KBV",
-        "talkHistory": [],
-        "telephone": "33652851904",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "3",
+        nom: "Alexandre NOGUEIRA",
+        congregation: "Creil",
+        talkHistory: [],
+        telephone: "33612526605",
+        gender: "male"
     },
     {
-        "id": "17",
-        "nom": "Jean-Paul BATISTA",
-        "congregation": "Lyon",
-        "talkHistory": [],
-        "telephone": "33678901234",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "5",
+        nom: "Daniel FORTES",
+        congregation: "Villiers-sur-Marne",
+        talkHistory: [],
+        telephone: "33655667788",
+        gender: "male"
     },
     {
-        "id": "21",
-        "nom": "João-Paulo BAPTISTA",
-        "congregation": "Lyon KBV",
-        "talkHistory": [],
-        "telephone": "33611234567",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "7",
+        nom: "David DE FARIA",
+        congregation: "Villiers-sur-Marne",
+        talkHistory: [],
+        telephone: "33677889900",
+        gender: "male"
     },
     {
-        "id": "28",
-        "nom": "Luis FARIA",
-        "congregation": "Plaisir",
-        "talkHistory": [],
-        "telephone": "33670748952",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "13",
+        nom: "Fred MARQUES",
+        congregation: "Villiers-sur-Marne",
+        talkHistory: [],
+        telephone: "33634567890",
+        gender: "male"
     },
     {
-        "id": "29",
-        "nom": "Manuel ANTUNES",
-        "congregation": "Villiers KBV",
-        "talkHistory": [],
-        "telephone": "33670872232",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "16",
+        nom: "Isaque PEREIRA",
+        congregation: "St Denis KBV",
+        talkHistory: [
+            {
+                date: "2024-02-18",
+                talkNo: "50",
+                theme: "Modi ki nu pode toma disizons ki ta djuda-nu ten bons rezultadu na vida"
+            }
+        ],
+        telephone: "33652851904",
+        gender: "male"
     },
     {
-        "id": "35",
-        "nom": "Santiago MONIZ",
-        "congregation": "Esch",
-        "talkHistory": [],
-        "telephone": "352691253068",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "17",
+        nom: "Jean-Paul BATISTA",
+        congregation: "Lyon",
+        talkHistory: [],
+        telephone: "33678901234",
+        gender: "male"
     },
     {
-        "id": "39",
-        "nom": "Lionel ALMEIDA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "33632461762",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "21",
+        nom: "João-Paulo BAPTISTA",
+        congregation: "Lyon KBV",
+        talkHistory: [],
+        telephone: "33611234567",
+        gender: "male"
     },
     {
-        "id": "40",
-        "nom": "Arthur FELICIANO",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "352621283777",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "28",
+        nom: "Luis FARIA",
+        congregation: "Plaisir",
+        talkHistory: [],
+        telephone: "33670748952",
+        gender: "male"
     },
     {
-        "id": "41",
-        "nom": "Andrea MENARA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "352691295018",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "29",
+        nom: "Manuel ANTUNES",
+        congregation: "Villiers KBV",
+        talkHistory: [
+            {
+                date: "2025-01-19",
+                talkNo: "77",
+                theme: "'Nhos mostra sénpri ma nhos sabe resebe algen dretu'"
+            }
+        ],
+        telephone: "33670872232",
+        gender: "male"
     },
     {
-        "id": "42",
-        "nom": "Victor RIBEIRO",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "352621625893",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "35",
+        nom: "Santiago MONIZ",
+        congregation: "Esch",
+        talkHistory: [],
+        telephone: "352691253068",
+        gender: "male"
     },
     {
-        "id": "43",
-        "nom": "Benvindo SILVA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "352691453468",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "39",
+        nom: "Lionel ALMEIDA",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "33632461762",
+        gender: "male"
     },
     {
-        "id": "44",
-        "nom": "Miguel SILVA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "352621651610",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "40",
+        nom: "Arthur FELICIANO",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "352621283777",
+        gender: "male"
     },
     {
-        "id": "45",
-        "nom": "José BARBOSA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "352661931153",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "41",
+        nom: "Andrea MENARA",
+        congregation: "À définir",
+        talkHistory: [
+            {
+                date: "2026-04-11",
+                talkNo: "103",
+                theme: "Modi ki bu pode xinti alegria di verdadi?"
+            }
+        ],
+        telephone: "352691295018",
+        gender: "male"
     },
     {
-        "id": "46",
-        "nom": "Yuri BRADA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "352691556138",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "42",
+        nom: "Victor RIBEIRO",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "352621625893",
+        gender: "male"
     },
     {
-        "id": "47",
-        "nom": "João CUSTEIRA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "41799014137",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "43",
+        nom: "Benvindo SILVA",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "352691453468",
+        gender: "male"
     },
     {
-        "id": "48",
-        "nom": "António GONGA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "352661230114",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "44",
+        nom: "Miguel SILVA",
+        congregation: "À définir",
+        talkHistory: [
+            {
+                date: "2026-06-13",
+                talkNo: "65",
+                theme: "Modi ki nu pode luta pa pas na un mundu xeiu di ódiu"
+            }
+        ],
+        telephone: "352621651610",
+        gender: "male"
     },
     {
-        "id": "49",
-        "nom": "Ashley RAMOS",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "33695564747",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "45",
+        nom: "José BARBOSA",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "352661931153",
+        gender: "male"
     },
     {
-        "id": "50",
-        "nom": "Júlio TAVARES",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "352621510176",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "46",
+        nom: "Yuri BRADA",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "352691556138",
+        gender: "male"
     },
     {
-        "id": "51",
-        "nom": "Paulo CORREIA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "33661712640",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "47",
+        nom: "João CUSTEIRA",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "41799014137",
+        gender: "male"
     },
     {
-        "id": "52",
-        "nom": "José FERNANDES",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "33661881589",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "48",
+        nom: "António GONGA",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "352661230114",
+        gender: "male"
     },
     {
-        "id": "53",
-        "nom": "António MELÍCIO",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "31610337402",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "49",
+        nom: "Ashley RAMOS",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "33695564747",
+        gender: "male"
     },
     {
-        "id": "54",
-        "nom": "Patrick SOUSA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "31640081710",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "50",
+        nom: "Júlio TAVARES",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "352621510176",
+        gender: "male"
     },
     {
-        "id": "55",
-        "nom": "Franck BHAGOOA",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "33782551793",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "51",
+        nom: "Paulo CORREIA",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "33661712640",
+        gender: "male"
     },
     {
-        "id": "56",
-        "nom": "Van'dredi DOMINGOS",
-        "congregation": "À définir",
-        "talkHistory": [],
-        "telephone": "33769111390",
-        "notes": undefined,
-        "photoUrl": undefined,
-        "gender": "male"
+        id: "52",
+        nom: "José FERNANDES",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "33661881589",
+        gender: "male"
+    },
+    {
+        id: "53",
+        nom: "António MELÍCIO",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "31610337402",
+        gender: "male"
+    },
+    {
+        id: "54",
+        nom: "Patrick SOUSA",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "31640081710",
+        gender: "male"
+    },
+    {
+        id: "55",
+        nom: "Franck BHAGOOA",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "33782551793",
+        gender: "male"
+    },
+    {
+        id: "56",
+        nom: "Van'dredi DOMINGOS",
+        congregation: "À définir",
+        talkHistory: [],
+        telephone: "33769111390",
+        gender: "male"
+    },
+    {
+        id: "62",
+        nom: "STREAM",
+        congregation: "À définir",
+        talkHistory: [
+            {
+                date: "2025-09-13",
+                talkNo: "43",
+                theme: "Kel ki Deus ta fla sénpri é midjór pa nos"
+            },
+            {
+                date: "2025-10-11",
+                talkNo: "5",
+                theme: "Kuzê ki ta djuda bu família ser filís?"
+            }
+        ],
+        telephone: ""
+    },
+    {
+        id: "63",
+        nom: "Rémy CAPELA",
+        congregation: "À définir",
+        talkHistory: [
+            {
+                date: "2023-12-18",
+                talkNo: "26",
+                theme: "Abo é inportanti pa Deus?"
+            }
+        ],
+        telephone: ""
+    },
+    {
+        id: "64",
+        nom: "JP BAPTISTA",
+        congregation: "À définir",
+        talkHistory: [
+            {
+                date: "2026-05-09",
+                talkNo: "61",
+                theme: "Na promésas di kenha ki bu ta kunfia?"
+            }
+        ],
+        telephone: ""
+    },
+    {
+        id: "65",
+        nom: "Octávio PEREIRA",
+        congregation: "À définir",
+        talkHistory: [
+            {
+                date: "2026-04-25",
+                talkNo: "186",
+                theme: "Faze vontadi di Deus djuntu ku se povu filís"
+            }
+        ],
+        telephone: ""
     }
+
 ];
 
 // Filter out special events from the raw speaker data
@@ -1391,8 +1463,25 @@ Fraternalmente.
   }
 };
 
-export const hostRequestMessageTemplates: Record<Language, string> = {
-  fr: `Bonjour chers frères et sœurs, ☀️
+export const hostRequestMessageTemplates: Record<Language, HostRequestTemplate> = {
+  fr: {
+    singular: `Bonjour chers frères et sœurs, ☀️
+
+Nous avons la joie d'accueillir prochainement un orateur visiteur. Nous recherchons une famille hospitalière pour le recevoir.
+
+Voici la visite pour laquelle nous avons besoin de votre aide :
+
+{visitList}
+
+Si vous pouvez aider pour l'hébergement, un repas, ou les deux, merci de répondre en précisant ce que vous pouvez proposer.
+
+Votre hospitalité est grandement appréciée !
+
+« N’oubliez pas l’hospitalité, car grâce à elle certains ont sans le savoir logé des anges. » (Hébreux 13:2)
+
+{hospitalityOverseer}
+{hospitalityOverseerPhone}`,
+    plural: `Bonjour chers frères et sœurs, ☀️
 
 Nous avons la joie d'accueillir prochainement plusieurs orateurs visiteurs. Nous recherchons des familles hospitalières pour les recevoir.
 
@@ -1407,8 +1496,26 @@ Votre hospitalité est grandement appréciée !
 « N’oubliez pas l’hospitalité, car grâce à elle certains ont sans le savoir logé des anges. » (Hébreux 13:2)
 
 {hospitalityOverseer}
+{hospitalityOverseerPhone}`
+  },
+  cv: {
+      singular: `Olá, keridus irmons i irmãs, ☀️
+
+Nu ten alegria di resebe un orador vizitanti na futuru prósimu. Nu sta buska un família ospitalera pa resebe-l.
+
+Es li é a vizita ki nu mesti di nhos ajuda pa akolhimentu:
+
+{visitList}
+
+Si nhos pode djuda ku alojamentu, un kumida, ô es dôs, favor responde ku kuzê ki nhos pode oferese.
+
+Nhos ospitalidadi é mutu apresiadu!
+
+« Ka nhos skese di ospitalidadi, pamodi é grasas a el ki alguns resebe anjus na ses kaza sen es sabe. » (Ebreus 13:2)
+
+{hospitalityOverseer}
 {hospitalityOverseerPhone}`,
-  cv: `Olá, keridus irmons i irmãs, ☀️
+      plural: `Olá, keridus irmons i irmãs, ☀️
 
 Nu ten alegria di resebe alguns oradoris vizitanti na futuru prósimu. Nu sta buska famílias ospitaleras pa resebe-s.
 
@@ -1423,8 +1530,26 @@ Nhos ospitalidadi é mutu apresiadu!
 « Ka nhos skese di ospitalidadi, pamodi é grasas a el ki alguns resebe anjus na ses kaza sen es sabe. » (Ebreus 13:2)
 
 {hospitalityOverseer}
+{hospitalityOverseerPhone}`
+  },
+  en: {
+    singular: `Hello dear brothers and sisters, ☀️
+
+We are happy to welcome a visiting speaker soon. We are looking for a hospitable family to host him.
+
+Here is the visit for which we need your help:
+
+{visitList}
+
+If you can help with accommodation, a meal, or both, please reply specifying what you can offer.
+
+Your hospitality is greatly appreciated!
+
+"Do not forget hospitality, for through it some have unknowingly entertained angels." (Hebrews 13:2)
+
+{hospitalityOverseer}
 {hospitalityOverseerPhone}`,
-  en: `Hello dear brothers and sisters, ☀️
+    plural: `Hello dear brothers and sisters, ☀️
 
 We are happy to welcome several visiting speakers soon. We are looking for hospitable families to host them.
 
@@ -1439,8 +1564,26 @@ Your hospitality is greatly appreciated!
 "Do not forget hospitality, for through it some have unknowingly entertained angels." (Hebrews 13:2)
 
 {hospitalityOverseer}
+{hospitalityOverseerPhone}`
+  },
+  es: {
+    singular: `Hola queridos hermanos y hermanas, ☀️
+
+Tenemos la alegría de recibir pronto a un orador visitante. Buscamos una familia hospitalaria para recibirlo.
+
+Aquí está la visita para la cual necesitamos su ayuda:
+
+{visitList}
+
+Si pueden ayudar con alojamiento, una comida, o ambos, por favor respondan especificando lo que pueden ofrecer.
+
+¡Su hospitalidad es muy apreciada!
+
+"No olviden la hospitalidad, porque gracias a ella algunos, sin saberlo, hospedaron ángeles." (Hebreos 13:2)
+
+{hospitalityOverseer}
 {hospitalityOverseerPhone}`,
-  es: `Hola queridos hermanos y hermanas, ☀️
+    plural: `Hola queridos hermanos y hermanas, ☀️
 
 Tenemos la alegría de recibir pronto a varios oradores visitantes. Buscamos familias hospitalarias para recibirlos.
 
@@ -1448,7 +1591,7 @@ Aquí están las visitas para las cuales necesitamos su ayuda:
 
 {visitList}
 
-Si pueden ayudar con alguna de estas necesidades (alojamiento, comidas, o ambas), por favor respondan especificando el nombre del orador y lo que pueden ofrecer.
+Si pueden ayudar con alguna de estas necesidades (alojamiento, comidas, o ambas), por favor respondan especificando el nombre del orador y lo que pueden ofrecen.
 
 ¡Su hospitalidad es muy apreciada!
 
@@ -1456,202 +1599,204 @@ Si pueden ayudar con alguna de estas necesidades (alojamiento, comidas, o ambas)
 
 {hospitalityOverseer}
 {hospitalityOverseerPhone}`
+  }
 };
 
 
 export const initialPublicTalks: PublicTalk[] = [
-    { number: 1, theme: "Comment la Bible peut vous aider à améliorer votre vie" },
-    { number: 2, theme: "La Bible nous aide-t-elle à faire face aux problèmes d’aujourd’hui ?" },
-    { number: 3, theme: "La Bible : un livre digne de confiance" },
-    { number: 4, theme: "Ce que la Bible prédit pour notre époque" },
-    { number: 5, theme: "Le Royaume de Dieu est-il une réalité ?" },
-    { number: 6, theme: "Comment le Royaume de Dieu nous sera bénéfique" },
-    { number: 7, theme: "Vivre en accord avec la prière modèle" },
-    { number: 8, theme: "Servez Jéhovah d’un cœur complet" },
-    { number: 9, theme: "La voie de Dieu est la meilleure" },
-    { number: 10, theme: "Appréciez-vous les dons que Dieu vous a faits ?" },
-    { number: 11, theme: "Ce qui se cache derrière l’esprit de rébellion" },
-    { number: 12, theme: "Respectons l’autorité divine" },
-    { number: 13, theme: "Une bonne nouvelle dans un monde violent" },
-    { number: 14, theme: "Menez une vie de famille qui honore Dieu" },
-    { number: 15, theme: "Qui est votre Dieu ?" },
-    { number: 16, theme: "Avons-nous des raisons de croire en Dieu ?" },
-    { number: 17, theme: "Honorez Dieu dans tout ce que vous faites" },
-    { number: 18, theme: "Les principes bibliques peuvent-ils nous aider à affronter les problèmes actuels ?" },
-    { number: 19, theme: "La vie a-t-elle un sens ?" },
-    { number: 20, theme: "Le Créateur : comprenez-le, aimez-le" },
-    { number: 21, theme: "Le monde actuel survivra-t-il ?" },
-    { number: 22, theme: "L’avenir de la religion" },
-    { number: 23, theme: "Le jour du jugement : une raison d’avoir peur ou d’espérer ?" },
-    { number: 24, theme: "Un seul vrai Dieu, une seule vraie foi : est-ce possible ?" },
-    { number: 25, theme: "Pourquoi les chrétiens doivent-ils être différents ?" },
-    { number: 26, theme: "Vous pouvez vivre éternellement sur la terre. Le croyez-vous ?" },
-    { number: 27, theme: "Une terre purifiée sera-t-elle un jour une réalité ?" },
-    { number: 28, theme: "De bonnes relations avec les autres : comment est-ce possible ?" },
-    { number: 29, theme: "Comment faire face aux inquiétudes de la vie" },
-    { number: 30, theme: "Comment bâtir un mariage solide et heureux" },
-    { number: 31, theme: "Parents, bâtissez avec sagesse" },
-    { number: 32, theme: "Comment améliorer la communication au sein de la famille" },
-    { number: 33, theme: "L’alcool : quel est le point de vue équilibré ?" },
-    { number: 34, theme: "Faites confiance au Dieu de tout réconfort" },
-    { number: 35, theme: "Comment trouver la sécurité dans un monde dangereux" },
-    { number: 36, theme: "Est-ce plus tard que vous ne le pensez ?" },
-    { number: 37, theme: "Dieu se soucie-t-il vraiment de vous ?" },
-    { number: 38, theme: "Comment pouvez-vous survivre à la fin du monde ?" },
-    { number: 39, theme: "Les décisions que vous prenez ont une influence sur votre avenir" },
-    { number: 40, theme: "Ce que signifie aimer son prochain" },
-    { number: 41, theme: "Agissez avec sagesse à l’approche de la fin" },
-    { number: 42, theme: "Comment l’amour et la foi peuvent vaincre le monde" },
-    { number: 43, theme: "Le chemin qui mène à la vie est-il trop difficile ?" },
-    { number: 44, theme: "Ayez confiance dans le pouvoir de la Parole de Dieu" },
-    { number: 45, theme: "Suivez l’exemple du plus grand homme qui ait vécu" },
-    { number: 46, theme: "Jésus Christ : qui est-il vraiment ?" },
-    { number: 47, theme: "« Soyez saints parce que je suis saint »" },
-    { number: 48, theme: "Rejetons les raisonnements qui sont contre la connaissance de Dieu" },
-    { number: 49, theme: "Le seul remède à la défaillance des humains" },
-    { number: 50, theme: "Qui est qualifié pour diriger l’humanité ?" },
-    { number: 51, theme: "La présence du Christ : que signifie-t-elle pour vous ?" },
-    { number: 52, theme: "Dieu et votre foi : quel lien ?" },
-    { number: 53, theme: "Une fraternité mondiale sauvée de la destruction" },
-    { number: 54, theme: "Le règne millénaire de paix de Dieu est proche" },
-    { number: 55, theme: "La paix et la sécurité véritables : quand ?" },
-    { number: 56, theme: "Où trouver de l’aide en temps de détresse ?" },
-    { number: 57, theme: "Dans les difficultés, où trouver du réconfort ?" },
-    { number: 58, theme: "Qui peut être sauvé ?" },
-    { number: 59, theme: "Vous serez libérés !" },
-    { number: 60, theme: "Comment la sagesse divine nous est bénéfique" },
-    { number: 61, theme: "Qui sont les vrais disciples du Christ ?" },
-    { number: 62, theme: "Le rôle de la religion dans les affaires du monde" },
-    { number: 63, theme: "Ne vous laissez pas tromper" },
-    { number: 64, theme: "Qui est le seul à pouvoir nous guider ?" },
-    { number: 65, theme: "L’heure de rendre des comptes à Dieu est proche" },
-    { number: 66, theme: "Quand Dieu va-t-il commencer à diriger le monde ?" },
-    { number: 67, theme: "Pourquoi se réfugier en Jéhovah ?" },
-    { number: 68, theme: "Quel est le fondement de votre espérance ?" },
-    { number: 69, theme: "La résurrection : une victoire sur la mort !" },
-    { number: 70, theme: "Que deviendront les morts ?" },
-    { number: 71, theme: "Restez spirituellement éveillés" },
-    { number: 72, theme: "L’amour : la qualité qui distingue les vrais chrétiens" },
-    { number: 73, theme: "Comment se faire un bon nom auprès de Dieu" },
-    { number: 74, theme: "Comment avoir une bonne conscience" },
-    { number: 75, theme: "Combien de temps vous reste-t-il ?" },
-    { number: 76, theme: "La paix véritable viendra-t-elle un jour ?" },
-    { number: 77, theme: "Dans quel genre de personnes Dieu trouve-t-il son plaisir ?" },
-    { number: 78, theme: "Dieu se souvient de vous. Et vous ?" },
-    { number: 79, theme: "L’amitié avec Dieu ou l’amitié avec le monde : laquelle choisirez-vous ?" },
-    { number: 80, theme: "Pourquoi vous pouvez avoir confiance en la Bible" },
-    { number: 81, theme: "Ce que notre Créateur attend de nous" },
-    { number: 82, theme: "Jéhovah et Christ : sont-ils égaux ?" },
-    { number: 83, theme: "Vous pouvez connaître le bonheur dès maintenant !" },
-    { number: 84, theme: "Peut-on aimer la justice et haïr l’injustice ?" },
-    { number: 85, theme: "Bonne nouvelle pour toutes les nations" },
-    { number: 86, theme: "Changements sur la terre : quel avenir ?" },
-    { number: 87, theme: "Qui sont les ministres de Dieu aujourd’hui ?" },
-    { number: 88, theme: "« Tenez-vous prêts » !" },
-    { number: 89, theme: "Pourquoi les humains ont besoin de Dieu" },
-    { number: 90, theme: "La vie dans le nouveau monde de Dieu" },
-    { number: 91, theme: "Pourquoi vivre selon les normes de la Bible ?" },
-    { number: 92, theme: "Le culte qui plaît à Dieu" },
-    { number: 93, theme: "Des prières qui sont exaucées" },
-    { number: 94, theme: "Dieu condamne-t-il toutes les religions ?" },
-    { number: 95, theme: "Que se passe-t-il après la mort ?" },
-    { number: 96, theme: "La science a-t-elle rendu la Bible inutile ?" },
-    { number: 97, theme: "Comment trouver la joie de vivre" },
-    { number: 98, theme: "Qui est le Diable ? Est-il réel ?" },
-    { number: 99, theme: "La résurrection : pourquoi cette espérance est sûre" },
-    { number: 100, theme: "Comment surmonter le mal par le bien" },
-    { number: 101, theme: "Jéhovah : le Grand Potier" },
-    { number: 102, theme: "Choisissez la vie !" },
-    { number: 103, theme: "Vous pouvez être aussi justes que Dieu" },
-    { number: 104, theme: "Parents, êtes-vous un bon exemple ?" },
-    { number: 105, theme: "Enfants, quelle est votre place dans les dispositions de Dieu ?" },
-    { number: 106, theme: "Comment l’esprit saint agit sur nous" },
-    { number: 107, theme: "Soumettons-nous à la domination de Dieu dès maintenant" },
-    { number: 108, theme: "La scène de ce monde est en train de changer" },
-    { number: 109, theme: "L’hospitalité : une marque du christianisme" },
-    { number: 110, theme: "Dieu vient en aide à ceux qui l’aiment" },
-    { number: 111, theme: "La confiance en l’organisation de Jéhovah" },
-    { number: 112, theme: "Comment montrer du respect pour nos lieux de culte" },
-    { number: 113, theme: "Comment affronter l’avenir avec foi et courage" },
-    { number: 114, theme: "Appréciez votre place dans l’assemblée" },
-    { number: 115, theme: "Comment vous protéger du piège du Diable : le spiritisme" },
-    { number: 116, theme: "Le mariage : son origine et son but" },
-    { number: 117, theme: "Comment faire pour que votre mariage soit une réussite durable" },
-    { number: 118, theme: "Imitez le Dieu de vérité" },
-    { number: 119, theme: "La jalousie : comment la maîtriser ?" },
-    { number: 120, theme: "Comment trouver le bonheur en faisant des dons" },
-    { number: 121, theme: "Un peuple pur et droit aux yeux de Jéhovah" },
-    { number: 122, theme: "Le contentement favorise la piété" },
-    { number: 123, theme: "Pourquoi les chrétiens doivent être des porteurs de lumière" },
-    { number: 124, theme: "Résistez à la tendance à vous plaindre" },
-    { number: 125, theme: "Marcher avec Dieu apporte des bienfaits, aujourd’hui et pour toujours" },
-    { number: 126, theme: "Continuez de grandir en spiritualité" },
-    { number: 127, theme: "Comment rester spirituellement fort" },
-    { number: 128, theme: "Votre avenir : comment l’assurer ?" },
-    { number: 129, theme: "Restez intègres dans un monde méchant" },
-    { number: 130, theme: "Les principes bibliques : pouvons-nous vivre en les appliquant ?" },
-    { number: 131, theme: "Comment endurer la persécution" },
-    { number: 132, theme: "Comment garder son zèle pour le vrai culte" },
-    { number: 133, theme: "Qui sèmera le vent récoltera la tempête" },
-    { number: 134, theme: "Un monde sans préjugés : quand ?" },
-    { number: 135, theme: "Comment garder une vision positive de la vie" },
-    { number: 136, theme: "La vraie liberté : où la trouver ?" },
-    { number: 137, theme: "Ce que Dieu a fait pour vous" },
-    { number: 138, theme: "Êtes-vous conscient de vos besoins spirituels ?" },
-    { number: 139, theme: "La miséricorde : une facette dominante de la personnalité de Dieu" },
-    { number: 140, theme: "Vivez une vie qui a un but" },
-    { number: 141, theme: "Gardez l’esprit de sacrifice" },
-    { number: 142, theme: "Regardez le mariage du point de vue de Dieu" },
-    { number: 143, theme: "Appréciez-vous le rôle du Christ dans le projet de Dieu ?" },
-    { number: 144, theme: "Quel genre de nom vous faites-vous ?" },
-    { number: 145, theme: "Qu’est-ce que le Royaume de Dieu ?" },
-    { number: 146, theme: "Utilisez l’éducation pour louer Jéhovah" },
-    { number: 147, theme: "Trouvez du plaisir dans la justice de Jéhovah" },
-    { number: 148, theme: "La création révèle le Dieu vivant" },
-    { number: 149, theme: "Amis de la paix, réjouissez-vous !" },
-    { number: 150, theme: "Êtes-vous sur le chemin de la vie éternelle ?" },
-    { number: 151, theme: "Jéhovah est un refuge pour son peuple" },
-    { number: 152, theme: "L’homme qui a ruiné la réputation de Dieu" },
-    { number: 153, theme: "Qui est comme Jéhovah notre Dieu ?" },
-    { number: 154, theme: "Les anges : quelle est leur influence sur notre vie ?" },
-    { number: 155, theme: "Fin des ténèbres, un monde de lumière" },
-    { number: 156, theme: "« Un temps pour tout »" },
-    { number: 157, theme: "Le point de vue de Dieu sur les relations sexuelles et le mariage" },
-    { number: 158, theme: "Restons sans tache dans un monde dépravé" },
-    { number: 159, theme: "Regardons les jeunes d’un œil positif" },
-    { number: 160, theme: "Comment vous pouvez vous approcher de Dieu" },
-    { number: 161, theme: "Pourquoi Jésus a-t-il souffert et est-il mort ?" },
-    { number: 162, theme: "Sommes-nous en train de gagner le combat pour la pureté de la pensée et de la conduite ?" },
-    { number: 163, theme: "Pourquoi craindre le vrai Dieu ?" },
-    { number: 164, theme: "Dieu est-il responsable de nos malheurs ?" },
-    { number: 165, theme: "La domination de l’homme est à son point de rupture" },
-    { number: 166, theme: "Appréciez la vie en abondance dès maintenant !" },
-    { number: 167, theme: "Ce que la proximité d’Armaguédon signifie pour vous" },
-    { number: 168, theme: "Rendez à Dieu ce qui est à Dieu" },
-    { number: 169, theme: "Pourquoi Jésus est le seul sauveur de l’humanité" },
-    { number: 170, theme: "Soyez courageux et ayez confiance en Jéhovah" },
-    { number: 171, theme: "Le gouvernement mondial de Dieu : une réalité" },
-    { number: 172, theme: "Quel espoir pour nos chers disparus ?" },
-    { number: 173, theme: "Le plus grand miracle de tous les temps" },
-    { number: 174, theme: "Le seul vrai Dieu" },
-    { number: 175, theme: "Quelles sont les références des vrais chrétiens ?" },
-    { number: 176, theme: "Bienvenue dans la seule communauté internationale qui soit unie" },
-    { number: 177, theme: "Quel est votre point de vue sur l’autorité ?" },
-    { number: 178, theme: "Comment le Royaume de Dieu nous touche-t-il aujourd’hui ?" },
-    { number: 179, theme: "Une bonne nouvelle pour tous les peuples" },
-    { number: 180, theme: "La Bible et votre avenir" },
-    { number: 181, theme: "Un monde nouveau et juste est proche" },
-    { number: 182, theme: "Les jeunes peuvent-ils rendre Dieu heureux ?" },
-    { number: 183, theme: "La mort n’est pas la fin de tout !" },
-    { number: 184, theme: "La fin des fausses religions est proche" },
-    { number: 185, theme: "Que se passe-t-il quand on meurt ?" },
-    { number: 186, theme: "Une prière qui sera exaucée" },
-    { number: 187, theme: "Comment être un bon père" },
-    { number: 188, theme: "Ce que l’avenir nous réserve" },
-    { number: 189, theme: "Pourquoi se faire baptiser ?" },
-    { number: 190, theme: "Qui est ton Dieu ?" },
-    { number: 191, theme: "Comment faire face à l’avenir en toute confiance" },
-    { number: 192, theme: "Comment surmonter l’inquiétude" },
-    { number: 193, theme: "Comment trouver la paix intérieure" },
-    { number: 194, theme: "Comment renforcer votre confiance en Dieu" },
+    { number: 1, theme: "Bu konxe Deus dretu?" },
+    { number: 2, theme: "Bu ta skapa na ténpu di fin?" },
+    { number: 3, theme: "Bu sta ta anda ku organizason unidu di Jeová?" },
+    { number: 4, theme: "Ki próvas ten ma Deus ta izisti?" },
+    { number: 5, theme: "Kuzê ki ta djuda bu família ser filís?" },
+    { number: 6, theme: "Kuzê ki nu pode prende di dilúviu di ténpu di Nué?" },
+    { number: 7, theme: "Imita mizerikórdia di Jeová" },
+    { number: 8, theme: "Vive pa faze vontadi di Deus" },
+    { number: 9, theme: "Obi i kunpri Palavra di Deus" },
+    { number: 10, theme: "Ser onéstu na tudu kuza ki bu ta fla i ki bu ta faze" },
+    { number: 11, theme: "Sima Jizus, nu 'ka ta faze párti di mundu'" },
+    { number: 12, theme: "Deus krê pa bu ruspeta kes ki ten autoridadi" },
+    { number: 13, theme: "Kuzê ki Deus ta pensa sobri séksu i kazamentu" },
+    { number: 14, theme: "Pamodi ki povu di Deus debe ser linpu?" },
+    { number: 15, theme: "Mostra bondadi pa tudu algen" },
+    { number: 16, theme: "Kontinua ta bira bu amizadi ku Deus más fórti" },
+    { number: 17, theme: "Da Deus glória ku tudu kel ki bu ten" },
+    { number: 18, theme: "Faze Jeová bu fortaléza" },
+    { number: 19, theme: "Modi ki bu pode sabe bu futuru?" },
+    { number: 20, theme: "Dja txiga ténpu di Deus governa mundu?" },
+    { number: 21, theme: "Da valor pa bu lugar na Reinu di Deus" },
+    { number: 22, theme: "Bu sta pruveta dretu kes kuza ki Jeová ta da-u?" },
+    { number: 23, theme: "Pamodi ki Deus faze-nu?" },
+    { number: 24, theme: "Dja bu atxa un 'jóia di txeu valor'?" },
+    { number: 25, theme: "Luta kóntra spritu di mundu!" },
+    { number: 26, theme: "Abo é inportanti pa Deus?" },
+    { number: 27, theme: "Modi ki bu pode kumesa bu kazamentu dretu" },
+    { number: 28, theme: "Mostra amor i ruspetu na bu kazamentu" },
+    { number: 29, theme: "Responsabilidadis i bensons pa pai ku mai" },
+    { number: 30, theme: "Modi ki família pode pâpia ku kunpanheru midjór" },
+    { number: 31, theme: "Bu ten konsénsia ma bu ten nisisidadi spritual?" },
+    { number: 32, theme: "Modi ki nu pode lida ku preokupasons di vida" },
+    { number: 33, theme: "Algun dia nu ta ben ten justisa di verdadi?" },
+    { number: 34, theme: "Bu ta ser markadu pa salvason?" },
+    { number: 35, theme: "Bu ta kridita ma bu pode ben vive pa tudu ténpu?" },
+    { number: 36, theme: "Vida é sô kel-li?" },
+    { number: 37, theme: "Bale péna sigi kaminhus di Deus?" },
+    { number: 38, theme: "Modi ki bu pode salva óras ki es mundu ben distruídu?" },
+    { number: 39, theme: "Modi i na ki ténpu ki Jizus ta ben vense mundu?" },
+    { number: 40, theme: "Kuzê ki sta ben kontise na futuru?" },
+    { number: 41, theme: "'Fika paradu i odja salvason ki ta ben di Jeová'" },
+    { number: 42, theme: "Amor ta vense ódiu" },
+    { number: 43, theme: "Kel ki Deus ta fla sénpri é midjór pa nos" },
+    { number: 44, theme: "Modi ki kuzas ki Jizus inxina ta djuda-nu?" },
+    { number: 45, theme: "Sigi kaminhu di vida" },
+    { number: 46, theme: "Nu mante nos kunfiansa firmi ti fin" },
+    { number: 47, theme: "(Pa ka uza)" },
+    { number: 48, theme: "Modi ki nu pode kontinua lial pa Deus óras ki nu ta pasa pa próva" },
+    { number: 49, theme: "Algun dia Téra ta ben fika linpu?" },
+    { number: 50, theme: "Modi ki nu pode toma disizons ki ta djuda-nu ten bons rezultadu na vida" },
+    { number: 51, theme: "Verdadi sta ta muda bu vida?" },
+    { number: 52, theme: "Kenha ki é bu Deus?" },
+    { number: 53, theme: "Bu ta pensa sima Deus?" },
+    { number: 54, theme: "Bira bu fé na Deus i na se promésas más fórti" },
+    { number: 55, theme: "Modi ki bu pode faze un bon nómi ki ta agrada Deus?" },
+    { number: 56, theme: "Na ki líder ki bu pode kunfia?" },
+    { number: 57, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 58, theme: "Ken ki é kristons verdaderu?" },
+    { number: 59, theme: "(Pa ka uza)" },
+    { number: 60, theme: "Kal ki é bu obijetivu na vida?" },
+    { number: 61, theme: "Na promésas di kenha ki bu ta kunfia?" },
+    { number: 62, theme: "Na undi ki nu pode atxa un speransa sértu?" },
+    { number: 63, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 64, theme: "Bu 'krê sô pasa sábi' ô bu ta 'ama Deus'?" },
+    { number: 65, theme: "Modi ki nu pode luta pa pas na un mundu xeiu di ódiu" },
+    { number: 66, theme: "Bu ta ben partisipa na kodjéta?" },
+    { number: 67, theme: "Midita na Bíblia i na kuzas ki Jeová kria" },
+    { number: 68, theme: "'Nhos kontinua ta púrdua kunpanheru di korason'" },
+    { number: 69, theme: "Pamodi ki nu debe faze sakrifisiu pa otus ku amor?" },
+    { number: 70, theme: "Pamodi ki Deus merese nos kunfiansa?" },
+    { number: 71, theme: "Modi i pamodi ki nu debe 'mante sienti'?" },
+    { number: 72, theme: "Amor ta mostra ken ki é sigidoris di Jizus di verdadi" },
+    { number: 73, theme: "Sforsa pa 'ten un korason ki ten sabedoria'" },
+    { number: 74, theme: "Jeová ta odja kuzê ki nu ta faze" },
+    { number: 75, theme: "Mostra na bu vida ma bu ta apoia direitu ki Jeová ten di governa" },
+    { number: 76, theme: "Prinsípius di Bíblia pode djuda-nu lida ku prublémas di oji?" },
+    { number: 77, theme: "'Nhos mostra sénpri ma nhos sabe resebe algen dretu'" },
+    { number: 78, theme: "Sirbi Jeová ku alegria" },
+    { number: 79, theme: "Amizadi di kenha ki bu ta skodje?" },
+    { number: 80, theme: "Bu speransa sta na siênsia ô na Bíblia?" },
+    { number: 81, theme: "Ken ki sta kualifikadu pa faze disiplus?" },
+    { number: 82, theme: "(Pa ka uza)" },
+    { number: 83, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 84, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 85, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 86, theme: "Orasons ki Deus ta obi" },
+    { number: 87, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 88, theme: "Pamodi ki nu debe vive di akordu ku prinsípius di Bíblia?" },
+    { number: 89, theme: "Nhos ben, nhos ki tene sedi di verdadi!" },
+    { number: 90, theme: "Faze tudu ki bu pode pa bu ten kel vida di verdadi" },
+    { number: 91, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 92, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 93, theme: "Ki ténpu ki dizastris na naturéza ta ben kaba?" },
+    { number: 94, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 95, theme: "Ka bu dexa fitisaria ô bruxaria ingana-u!" },
+    { number: 96, theme: "Kuzê ki ta ben kontise ku relijion?" },
+    { number: 97, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 98, theme: "'Séna di es mundu sta ta muda'" },
+    { number: 99, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 100, theme: "Modi ki nu pode faze bons amizadi" },
+    { number: 101, theme: "Jeová é kel 'Grandiozu Kriador'" },
+    { number: 102, theme: "Presta atenson na \"profesia\"" },
+    { number: 103, theme: "Modi ki bu pode xinti alegria di verdadi?" },
+    { number: 104, theme: "Pai ku mai — Nhos sta ta konstrui ku material ki ka ta kema?" },
+    { number: 105, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 106, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 107, theme: "Ten un konsénsia trenadu sta ta djuda-u?" },
+    { number: 108, theme: "Bu pode kunfia ma nu ta ben ten un futuru sábi!" },
+    { number: 109, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 110, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 111, theme: "Modi ki pesoas ta ben kuradu?" },
+    { number: 112, theme: "(Pa ka uza)" },
+    { number: 113, theme: "Modi ki jóvens pode ten bon rezultadu na vida i ser filís?" },
+    { number: 114, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 115, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 116, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 117, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 118, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 119, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 120, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 121, theme: "Un família di irmons na mundu interu ta ben salva" },
+    { number: 122, theme: "(Pa ka uza)" },
+    { number: 123, theme: "(Pa ka uza)" },
+    { number: 124, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 125, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 126, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 127, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 128, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 129, theme: "Trindadi é un ensinu di Bíblia?" },
+    { number: 130, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 131, theme: "(Pa ka uza)" },
+    { number: 132, theme: "Resureison ta ben vense mórti!" },
+    { number: 133, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 134, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 135, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 136, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 137, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 138, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 139, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 140, theme: "Ken ki é Jizus Kristu?" },
+    { number: 141, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 142, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 143, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 144, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 145, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 146, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 147, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 148, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 149, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 150, theme: "Es mundu sta kondenadu pa distruison?" },
+    { number: 151, theme: "Jeová é 'un proteson suguru' pa se povu" },
+    { number: 152, theme: "Ki ténpu ki Armajedon ta ben i pamodi?" },
+    { number: 153, theme: "Vive ku xintidu na 'terível dia di Jeová'!" },
+    { number: 154, theme: "Govérnu di ómi dja pezadu na balansa" },
+    { number: 155, theme: "Dja txiga óra di Babilónia julgadu?" },
+    { number: 156, theme: "(Ka sta disponível na Kabuverdianu)" },
+    { number: 157, theme: "Modi ki kristons verdaderu ta faze ensinu di Jeová fika más bunitu" },
+    { number: 158, theme: "Mostra koraji i kunfia na Jeová" },
+    { number: 159, theme: "Modi ki nu ta atxa suguransa na es mundu prigozu" },
+    { number: 160, theme: "Nu lenbra sénpri ma nos é kriston" },
+    { number: 161, theme: "Pamodi ki Jizus sufri i el móre?" },
+    { number: 162, theme: "Sai di es mundu ki sta sen lus di verdadi di Deus" },
+    { number: 163, theme: "Pamodi ki nu debe ten grandi ruspetu pa Deus verdaderu?" },
+    { number: 164, theme: "Deus ti inda sta ta kontrola asuntus ki ten aver ku Téra?" },
+    { number: 165, theme: "Orientason di kenha ki bu ta sigi?" },
+    { number: 166, theme: "Modi ki bu pode odja pa futuru ku fé i koraji?" },
+    { number: 167, theme: "Nu konporta ku juís na un mundu sen juís" },
+    { number: 168, theme: "Bu pode xinti suguru na es mundu xeiu di prubléma!" },
+    { number: 169, theme: "Pamodi ki nu debe dexa Bíblia gia-nu?" },
+    { number: 170, theme: "Ken ki sta priparadu pa governa Téra?" },
+    { number: 171, theme: "Bu pode vive na pas gósi i pa tudu ténpu?" },
+    { number: 172, theme: "Kuzê ki Deus ta pensa di bo?" },
+    { number: 173, theme: "Pa Deus – Ten sô un relijion verdaderu?" },
+    { number: 174, theme: "Mundu novu di Deus – Ken ki sta priparadu pa ba vive la?" },
+    { number: 175, theme: "Kuzê ki ta mostra ma kel ki sta na Bíblia é verdadi?" },
+    { number: 176, theme: "Ki ténpu ki nu ta ben vive sen medu i ku pas di verdadi?" },
+    { number: 177, theme: "Undi nu ta atxa ajuda óras ki nu sta frontadu?" },
+    { number: 178, theme: "Ser un algen lial ku Deus" },
+    { number: 179, theme: "Nega iluzon di mundu, sforsa pa kes kuza di Reinu ki ta izisti di verdadi" },
+    { number: 180, theme: "Pamodi ki resureison debe ser un speransa sértu pa bo?" },
+    { number: 181, theme: "Fin ta ben más sédu di ki kel ki bu ta spera?" },
+    { number: 182, theme: "Kuzê ki Reinu di Deus sta ta faze pa nos gósi?" },
+    { number: 183, theme: "Tra odju di kuzas ki ka ten valor!" },
+    { number: 184, theme: "Óras ki algen móre tudu dja kaba?" },
+    { number: 185, theme: "Verdadi sta ta djuda-u ten un vida midjór?" },
+    { number: 186, theme: "Faze vontadi di Deus djuntu ku se povu filís" },
+    { number: 187, theme: "Pamodi ki un Deus di amor ta dexa sufrimentu kontise?" },
+    { number: 188, theme: "Bu ta kunfia na Jeová?" },
+    { number: 189, theme: "Anda ku Deus ta traze-nu bensons gósi i pa tudu ténpu" },
+    { number: 190, theme: "Modi ki ta ben kunpri kel promésa di filisidadi perfeitu na família" },
+    { number: 191, theme: "Modi ki amor i fé ta vense mundu?" },
+    { number: 192, theme: "Bu sta ta anda na kaminhu pa vida itérnu?" },
+    { number: 193, theme: "Prublémas di oji ka ta ben ten más" },
+    { number: 194, theme: "Modi ki sabedoria di Deus ta djuda-nu" },
+
 ];

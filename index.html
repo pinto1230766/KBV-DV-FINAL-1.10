@@ -98,62 +98,6 @@
         },
       }
     </script>
-    <style>
-      html {
-        height: 100%;
-      }
-      body, #root {
-        height: 100vh;
-        overflow: hidden !important;
-        margin: 0;
-        padding: 0;
-      }
-
-      .header-safe-area {
-        padding-top: env(safe-area-inset-top);
-      }
-      .mobile-nav-safe-area {
-        padding-bottom: env(safe-area-inset-bottom);
-      }
-
-      /* Hide scrollbar for elements with this class */
-      .hide-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .hide-scrollbar {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
-      }
-      
-      .print-only { display: none; }
-      @media print {
-        body, #root {
-          height: auto;
-          min-height: 0;
-          overflow: visible;
-          background: white !important; /* Remove background for printing */
-        }
-        .no-print {
-          display: none !important;
-        }
-        .print-only {
-          display: block;
-        }
-        .print-page-break {
-          page-break-before: always;
-        }
-        main {
-          padding: 0 !important;
-          overflow: visible !important;
-        }
-        /* Ensure background colors are printed */
-        * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-      }
-
-    </style>
     <script>
       // Applique le thème et le logo au chargement initial pour éviter le FOUC (Flash Of Unstyled Content)
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;

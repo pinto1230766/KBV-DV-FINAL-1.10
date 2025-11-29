@@ -20,6 +20,14 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
         }
       },
+      build: {
+        cssCodeSplit: false,
+        rollupOptions: {
+          output: {
+            inlineDynamicImports: false
+          }
+        }
+      },
       test: {
         globals: true,
         environment: 'jsdom',

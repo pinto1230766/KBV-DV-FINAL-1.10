@@ -80,8 +80,8 @@ interface DataContextType {
   deleteHost: (hostName: string) => void;
   saveCustomTemplate: (language: Language, messageType: MessageType, role: MessageRole, text: string) => void;
   deleteCustomTemplate: (language: Language, messageType: MessageType, role: MessageRole) => void;
-  saveCustomHostRequestTemplate: (language: Language, text: string) => void;
-  deleteCustomHostRequestTemplate: (language: Language) => void;
+  saveCustomHostRequestTemplate: (language: Language, type: 'singular' | 'plural', text: string) => void;
+  deleteCustomHostRequestTemplate: (language: Language, type: 'singular' | 'plural') => void;
   logCommunication: (visitId: string, messageType: MessageType, role: MessageRole) => void;
   updateCongregationProfile: (profile: CongregationProfile) => void;
   
@@ -622,15 +622,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setTimeout(() => addToast("Modèle par défaut restauré.", 'info'), 0);
     };
 
-    const saveCustomHostRequestTemplate = (language: Language, text: string) => {
-        updateAppData(prev => ({ ...prev, customHostRequestTemplates: { ...prev.customHostRequestTemplates, [language]: text } }));
+    const saveCustomHostRequestTemplate = (language: Language, type: 'singular' | 'plural', text: string) => {
+        updateAppData(prev => {
+            const newTemplates = JSON.parse(JSON.stringify(prev.customHostRequestTemplates));
+            if (!newTemplates[language]) {
+                newTemplates[language] = {};
+            }
+            newTemplates[language][type] = text;
+            return { ...prev, customHostRequestTemplates: newTemplates };
+        });
         setTimeout(() => addToast("Modèle de message de demande d'accueil sauvegardé !", 'success'), 0);
     };
 
-    const deleteCustomHostRequestTemplate = (language: Language) => {
+    const deleteCustomHostRequestTemplate = (language: Language, type: 'singular' | 'plural') => {
         updateAppData(prev => {
-            const newTemplates = { ...prev.customHostRequestTemplates };
-            delete newTemplates[language];
+            const newTemplates = JSON.parse(JSON.stringify(prev.customHostRequestTemplates));
+            if (newTemplates[language]?.[type]) {
+                delete newTemplates[language][type];
+                if (Object.keys(newTemplates[language]).length === 0) {
+                    delete newTemplates[language];
+                }
+            }
             return { ...prev, customHostRequestTemplates: newTemplates };
         });
         setTimeout(() => addToast("Modèle par défaut restauré pour la demande d'accueil.", 'info'), 0);

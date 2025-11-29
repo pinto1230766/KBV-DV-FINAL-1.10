@@ -149,8 +149,13 @@ export type CustomMessageTemplates = Partial<{
 }>;
 
 export type CustomHostRequestTemplates = Partial<{
-  [lang in Language]: string;
+  [lang in Language]: Partial<HostRequestTemplate>;
 }>;
+
+export interface HostRequestTemplate {
+  singular: string;
+  plural: string;
+}
 
 export interface Holiday {
   date: string; // MM-DD

@@ -18,8 +18,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["vitest/globals"]
   },
-  "include": ["src", "components", "types", "*.tsx", "*.ts"],
+  "include": ["src", "components", "types", "utils", "*.tsx", "*.ts"],
   "exclude": ["node_modules", ".next", "out"]
 }

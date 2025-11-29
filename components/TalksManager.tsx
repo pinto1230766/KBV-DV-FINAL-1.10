@@ -9,10 +9,10 @@ type SortOption = 'number' | 'theme' | 'lastVisit';
 type TalkStatus = 'Scheduled' | 'Recent' | 'Available' | 'New';
 
 const statusInfo: { [key in TalkStatus]: { text: string; color: string } } = {
-    Scheduled: { text: 'Programmé', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300' },
-    Recent: { text: 'Récent', color: 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' },
-    Available: { text: 'Disponible', color: 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300' },
-    New: { text: 'Nouveau', color: 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300' },
+    Scheduled: { text: 'Programadu', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300' },
+    Recent: { text: 'Resenti', color: 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' },
+    Available: { text: 'Disponível', color: 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300' },
+    New: { text: 'Novu', color: 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300' },
 };
 
 interface TalkCardProps {
@@ -44,15 +44,15 @@ const TalkCard: React.FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
                     <div className="flex items-center gap-4 text-xs text-text-muted dark:text-text-muted-dark mt-1">
                         <span className={`px-2 py-0.5 font-semibold rounded-full ${currentStatus.color}`}>{currentStatus.text}</span>
                         {talk.nextVisit ? (
-                            <span>Prochaine fois: <strong>{talk.nextVisit.date}</strong> par <strong>{talk.nextVisit.speaker}</strong></span>
+                            <span>Prósimu bes: <strong>{talk.nextVisit.date}</strong> pa <strong>{talk.nextVisit.speaker}</strong></span>
                         ) : talk.lastPresented ? (
-                            <span>Dernière fois: <strong>{talk.lastPresented.date}</strong> par <strong>{talk.lastPresented.speaker}</strong></span>
+                            <span>Últimu bes: <strong>{talk.lastPresented.date}</strong> pa <strong>{talk.lastPresented.speaker}</strong></span>
                         ) : null}
                     </div>
                 </div>
                 <div className="flex items-center flex-shrink-0">
                     <button onClick={(e) => { e.stopPropagation(); onAssign(talk); }} className="hidden sm:flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary dark:text-primary-light text-sm font-semibold rounded-md hover:bg-primary/20 transition-transform active:scale-95">
-                        <PlusIcon className="w-4 h-4" /> Attribuer
+                        <PlusIcon className="w-4 h-4" /> Atribui
                     </button>
                     <button onClick={(e) => { e.stopPropagation(); onEdit(talk); }} className="p-2 text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-primary-light rounded-full transition-colors active:scale-90" aria-label={`Modifier le discours ${talk.number}`} title="Modifier">
                         <EditIcon className="w-5 h-5" />
@@ -65,16 +65,16 @@ const TalkCard: React.FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
                 <div className="px-3 pb-3 animate-fade-in">
                     <div className="border-t border-border-light dark:border-border-dark pt-3">
                          <button onClick={(e) => { e.stopPropagation(); onAssign(talk); }} className="sm:hidden w-full flex items-center justify-center gap-2 mb-3 px-3 py-2 bg-primary/10 text-primary dark:text-primary-light text-sm font-semibold rounded-md hover:bg-primary/20 transition-transform active:scale-95">
-                            <PlusIcon className="w-4 h-4" /> Attribuer ce discours
+                            <PlusIcon className="w-4 h-4" /> Atribui es diskursu
                         </button>
-                        <h5 className="font-bold text-sm mb-2 px-2">Historique des présentations</h5>
+                        <h5 className="font-bold text-sm mb-2 px-2">Istóriku di prizentasons</h5>
                         {fullHistory.length > 0 ? (
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="text-left text-xs text-text-muted dark:text-text-muted-dark">
-                                        <th className="p-2">Date</th>
-                                        <th className="p-2">Orateur</th>
-                                        <th className="p-2">Statut</th>
+                                        <th className="p-2">Data</th>
+                                        <th className="p-2">Orador</th>
+                                        <th className="p-2">Statu</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -82,13 +82,13 @@ const TalkCard: React.FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
                                         <tr key={visit.visitId} className="border-t border-border-light dark:border-border-dark">
                                             <td className="p-2">{new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR')}</td>
                                             <td className="p-2 font-semibold">{visit.nom}</td>
-                                            <td className="p-2">{visits.some(v => v.visitId === visit.visitId) ? 'Programmé' : 'Archivé'}</td>
+                                            <td className="p-2">{visits.some(v => v.visitId === visit.visitId) ? 'Programadu' : 'Arkivadu'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         ) : (
-                            <p className="text-center text-sm text-text-muted dark:text-text-muted-dark py-4">Ce discours n'a jamais été présenté.</p>
+                            <p className="text-center text-sm text-text-muted dark:text-text-muted-dark py-4">Es diskursu nunka foi prizentadu.</p>
                         )}
                     </div>
                 </div>
@@ -202,17 +202,17 @@ export const TalksManager: React.FC = () => {
         <div className="bg-card-light dark:bg-card-dark rounded-xl shadow-lg p-6 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
-                    <h2 className="text-3xl font-bold text-primary dark:text-white">Gestion des Discours</h2>
-                    <p className="text-text-muted dark:text-text-muted-dark mt-1">Consultez, ajoutez ou modifiez les discours publics.</p>
+                    <h2 className="text-3xl font-bold text-primary dark:text-white">Jeston di Diskursus</h2>
+                    <p className="text-text-muted dark:text-text-muted-dark mt-1">Konsulta, djunta ô mudifica diskursus públikus.</p>
                 </div>
                  <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                     <button onClick={() => setIsUpdateModalOpen(true)} className="flex-shrink-0 w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary dark:text-text-main-dark font-semibold rounded-lg transition-transform active:scale-95">
                         <ArrowUpOnSquareIcon className="w-5 h-5 mr-2" />
-                        Mettre à jour la liste
+                        Atualiza lista
                     </button>
                     <button onClick={handleAddTalk} className="flex-shrink-0 w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-transform active:scale-95">
                         <PlusIcon className="w-5 h-5 mr-2" />
-                        Ajouter un discours
+                        Djunta un diskursu
                     </button>
                 </div>
             </div>
@@ -220,7 +220,7 @@ export const TalksManager: React.FC = () => {
                 <div className="relative w-full flex-grow">
                     <input
                         type="text"
-                        placeholder="Rechercher par thème, n° ou orateur..."
+                        placeholder="Buska pa tema, n° ô orador..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary bg-card-light dark:bg-card-dark text-text-main dark:text-text-main-dark dark:placeholder-text-muted-dark"
@@ -237,7 +237,7 @@ export const TalksManager: React.FC = () => {
                         className="w-full pl-3 pr-10 py-2 border border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary appearance-none bg-card-light dark:bg-card-dark text-text-main dark:text-text-main-dark"
                         aria-label="Filtrer par statut"
                     >
-                        <option value="all">Tous les statuts</option>
+                        <option value="all">Tudu status</option>
                         {Object.entries(statusInfo).map(([key, value]) => (
                             <option key={key} value={key}>{value.text}</option>
                         ))}
@@ -253,9 +253,9 @@ export const TalksManager: React.FC = () => {
                         className="w-full pl-3 pr-10 py-2 border border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary appearance-none bg-card-light dark:bg-card-dark text-text-main dark:text-text-main-dark"
                         aria-label="Trier les discours par"
                     >
-                        <option value="number">Trier par Numéro</option>
-                        <option value="theme">Trier par Thème</option>
-                        <option value="lastVisit">Trier par Récence</option>
+                        <option value="number">Ordena pa Númeru</option>
+                        <option value="theme">Ordena pa Tema</option>
+                        <option value="lastVisit">Ordena pa Resensia</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <ChevronDownIcon className="w-5 h-5 text-gray-400" />
@@ -273,8 +273,8 @@ export const TalksManager: React.FC = () => {
             ) : (
                 <div className="text-center py-12 px-6">
                     <PodiumIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600" />
-                    <h3 className="mt-4 text-xl font-semibold text-text-main dark:text-text-main-dark">Aucun discours trouvé</h3>
-                    <p className="mt-1 text-text-muted dark:text-text-muted-dark">Essayez de modifier votre recherche ou ajoutez un nouveau discours.</p>
+                    <h3 className="mt-4 text-xl font-semibold text-text-main dark:text-text-main-dark">Ninhun diskursu atxadu</h3>
+                    <p className="mt-1 text-text-muted dark:text-text-muted-dark">Tenta mudifica bu buska ô djunta un diskursu novu.</p>
                 </div>
             )}
             

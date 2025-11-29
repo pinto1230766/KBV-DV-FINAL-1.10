@@ -29,12 +29,25 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
 
   const [isEditingTemplate, setIsEditingTemplate] = useState(false);
   const [editedTemplateText, setEditedTemplateText] = useState('');
+  const [editingTemplateType, setEditingTemplateType] = useState<'singular' | 'plural'>('plural');
   const [isCustom, setIsCustom] = useState(false);
 
-  const getTemplate = useCallback((lang: Language) => {
+  const getTemplate = useCallback((lang: Language, type: 'singular' | 'plural') => {
     const custom = customHostRequestTemplates[lang];
-    const defaultTpl = hostRequestMessageTemplates[lang] || 'Modèle non disponible.';
-    return { template: custom || defaultTpl, isCustom: !!custom };
+    // Data migration: if custom is a string, treat it as the plural template
+    if (typeof custom === 'string') {
+        const defaultPlural = hostRequestMessageTemplates[lang]?.plural || '';
+        const defaultSingular = hostRequestMessageTemplates[lang]?.singular || '';
+        if (type === 'plural') {
+            return { template: custom, isCustom: true };
+        } else {
+            return { template: defaultSingular, isCustom: false };
+        }
+    }
+
+    const customTpl = custom?.[type];
+    const defaultTpl = hostRequestMessageTemplates[lang]?.[type] || 'Modèle non disponible.';
+    return { template: customTpl || defaultTpl, isCustom: !!customTpl };
   }, [customHostRequestTemplates]);
 
   const generateMessage = useCallback((templateText: string) => {
@@ -49,7 +62,9 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
 
   const loadMessage = useCallback(() => {
     if (visits.length > 0) {
-      const { template, isCustom: custom } = getTemplate(language);
+      const type = visits.length > 1 ? 'plural' : 'singular';
+      setEditingTemplateType(type);
+      const { template, isCustom: custom } = getTemplate(language, type);
       setMessage(generateMessage(template));
       setEditedTemplateText(template);
       setIsCustom(custom);
@@ -70,12 +85,12 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
   }, [language, loadMessage, isOpen]);
 
   const handleSaveTemplate = () => {
-    saveCustomHostRequestTemplate(language, editedTemplateText);
+    saveCustomHostRequestTemplate(language, editingTemplateType, editedTemplateText);
     setIsEditingTemplate(false);
   };
 
   const handleRestoreDefault = () => {
-    deleteCustomHostRequestTemplate(language);
+    deleteCustomHostRequestTemplate(language, editingTemplateType);
     setIsEditingTemplate(false);
   };
 

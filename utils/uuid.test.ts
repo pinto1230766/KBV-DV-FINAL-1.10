@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+/// <reference types="vitest" />
 import { generateUUID, generateShortId } from './uuid';
 
 describe('UUID Utils', () => {

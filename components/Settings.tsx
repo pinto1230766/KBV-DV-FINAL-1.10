@@ -259,10 +259,17 @@ const TemplateEditorContent: React.FC = () => {
         return { template: custom || defaultTpl, isCustom: !!custom };
     }, [customTemplates, language]);
 
-    const getHostRequestTemplate = useCallback((): { template: string, isCustom: boolean } => {
+    const getHostRequestTemplate = useCallback((type: 'singular' | 'plural'): { template: string, isCustom: boolean } => {
         const custom = customHostRequestTemplates[language];
-        const defaultTpl = hostRequestMessageTemplates[language] || "";
-        return { template: custom || defaultTpl, isCustom: !!custom };
+        // Data migration: if custom is a string, treat it as the plural template
+        if (typeof custom === 'string') {
+            const defaultTpl = hostRequestMessageTemplates[language]?.plural || "";
+            return { template: type === 'plural' ? custom : (hostRequestMessageTemplates[language]?.singular || ""), isCustom: type === 'plural' };
+        }
+        
+        const customTpl = custom?.[type];
+        const defaultTpl = hostRequestMessageTemplates[language]?.[type] || "";
+        return { template: customTpl || defaultTpl, isCustom: !!customTpl };
     }, [customHostRequestTemplates, language]);
 
     const visitMessageTypes: { type: MessageType, label: string }[] = [
@@ -308,13 +315,22 @@ const TemplateEditorContent: React.FC = () => {
 
             <div className="pt-6 border-t border-border-light dark:border-border-dark">
                 <h3 className="text-lg font-bold font-display text-primary dark:text-white mb-3">Demande d'accueil groupée</h3>
-                <TemplateItem
-                    title="Modèle pour la demande groupée"
-                    template={getHostRequestTemplate().template}
-                    isCustom={getHostRequestTemplate().isCustom}
-                    onSave={(text) => saveCustomHostRequestTemplate(language, text)}
-                    onRestore={() => deleteCustomHostRequestTemplate(language)}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <TemplateItem
+                        title="Modèle pour une seule personne"
+                        template={getHostRequestTemplate('singular').template}
+                        isCustom={getHostRequestTemplate('singular').isCustom}
+                        onSave={(text) => saveCustomHostRequestTemplate(language, 'singular', text)}
+                        onRestore={() => deleteCustomHostRequestTemplate(language, 'singular')}
+                    />
+                    <TemplateItem
+                        title="Modèle pour plusieurs personnes"
+                        template={getHostRequestTemplate('plural').template}
+                        isCustom={getHostRequestTemplate('plural').isCustom}
+                        onSave={(text) => saveCustomHostRequestTemplate(language, 'plural', text)}
+                        onRestore={() => deleteCustomHostRequestTemplate(language, 'plural')}
+                    />
+                </div>
             </div>
         </div>
     );
