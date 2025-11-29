@@ -1093,7 +1093,28 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const resetData = () => {
-        updateAppData(prev => ({...prev, ...initialData}));
+        const emptyData: AppData = {
+            speakers: [],
+            visits: [],
+            hosts: [],
+            archivedVisits: [],
+            customTemplates: {},
+            customHostRequestTemplates: {},
+            congregationProfile: {
+                name: "KBV DV LYON .FP",
+                subtitle: "Gestion des Orateurs Visiteurs",
+                defaultTime: "14:30",
+                hospitalityOverseer: "Pinto Francisco",
+                hospitalityOverseerPhone: "+33777388914",
+                backupPhoneNumber: "",
+                latitude: null,
+                longitude: null,
+            },
+            publicTalks: [],
+            savedViews: [],
+            specialDates: [],
+        };
+        setAppData(emptyData);
         setTimeout(() => addToast("Toutes les données ont été réinitialisées.", 'success'), 0);
     };
 
