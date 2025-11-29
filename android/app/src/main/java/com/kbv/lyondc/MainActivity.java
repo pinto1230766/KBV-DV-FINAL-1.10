@@ -1,4 +1,4 @@
-package com.kbv.lyon;
+package com.kbv.lyondc;
 
 import com.getcapacitor.BridgeActivity;
 

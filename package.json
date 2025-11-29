@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "kbv-dv-lyon-final",
+  "name": "kbv-lyon-dc",
   "private": true,
   "version": "1.0.0",
   "type": "module",

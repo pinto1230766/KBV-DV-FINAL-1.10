@@ -1,4 +1,4 @@
-package com.getcapacitor.myapp;
+package com.kbv.lyondc;
 
 import static org.junit.Assert.*;
 
