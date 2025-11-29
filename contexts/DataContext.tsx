@@ -74,6 +74,7 @@ interface DataContextType {
   deleteArchivedVisit: (visitId: string) => void;
   removeDuplicateArchivedVisits: () => void;
   removeDuplicateVisits: () => void;
+  cleanDuplicateVisitsByDate: () => void;
   getMultipleVisitsSameDate: () => Map<string, Visit[]>;
   addHost: (hostData: Host) => boolean;
   updateHost: (hostName: string, updatedData: Partial<Host>) => void;
@@ -508,6 +509,50 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     new Date(a.visitDate + 'T00:00:00').getTime() - new Date(b.visitDate + 'T00:00:00').getTime()
                 )
             };
+        });
+    };
+
+    const cleanDuplicateVisitsByDate = (): void => {
+        updateAppData(prev => {
+            const visitsByDate = new Map<string, Visit[]>();
+            
+            // Grouper les visites par date
+            prev.visits.forEach(visit => {
+                const date = visit.visitDate;
+                if (!visitsByDate.has(date)) {
+                    visitsByDate.set(date, []);
+                }
+                visitsByDate.get(date)!.push(visit);
+            });
+
+            // Nettoyer les doublons par date (garder seulement la première visite pour chaque date)
+            const cleanedVisits: Visit[] = [];
+            let removedCount = 0;
+            const removedVisits: string[] = [];
+            
+            visitsByDate.forEach((visits, date) => {
+                if (visits.length > 1) {
+                    console.warn(`Plusieurs visites trouvées pour la date ${date}:`, visits.map(v => v.nom));
+                    // Garder la première visite
+                    cleanedVisits.push(visits[0]);
+                    // Les autres sont supprimées
+                    const removed = visits.slice(1);
+                    removedCount += removed.length;
+                    removedVisits.push(...removed.map(v => `${v.nom} (${date})`));
+                } else {
+                    cleanedVisits.push(visits[0]);
+                }
+            });
+
+            if (removedCount > 0) {
+                setTimeout(() => addToast(`${removedCount} visite(s) en double supprimée(s) par date:\n${removedVisits.join('\n')}`, 'success', 10000), 0);
+            } else {
+                setTimeout(() => addToast("Aucun doublon de date trouvé.", 'info'), 0);
+            }
+
+            return { ...prev, visits: cleanedVisits.sort((a, b) => 
+                new Date(a.visitDate + 'T00:00:00').getTime() - new Date(b.visitDate + 'T00:00:00').getTime()
+            )};
         });
     };
 
@@ -1355,7 +1400,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logoUrl,
         updateLogo,
         addSpeaker, updateSpeaker, deleteSpeaker,
-        addVisit, updateVisit, deleteVisit, completeVisit, addFeedbackToVisit, deleteArchivedVisit, removeDuplicateArchivedVisits, removeDuplicateVisits, getMultipleVisitsSameDate,
+        addVisit, updateVisit, deleteVisit, completeVisit, addFeedbackToVisit, deleteArchivedVisit, removeDuplicateArchivedVisits, removeDuplicateVisits, cleanDuplicateVisitsByDate, getMultipleVisitsSameDate,
         addHost, updateHost, deleteHost,
         saveCustomTemplate, deleteCustomTemplate, saveCustomHostRequestTemplate, deleteCustomHostRequestTemplate,
         logCommunication, exportData, importData, resetData,

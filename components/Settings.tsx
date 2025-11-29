@@ -643,7 +643,16 @@ const UsefulLinksContent: React.FC = () => {
 
 const MaintenanceContent: React.FC = () => {
     const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
-    const { removeDuplicateArchivedVisits, removeDuplicateVisits } = useData();
+    const { removeDuplicateArchivedVisits, removeDuplicateVisits, cleanDuplicateVisitsByDate } = useData();
+
+    const handleCleanPlanning = () => {
+        // D'abord nettoyer les doublons par date (problème Google Sheets)
+        cleanDuplicateVisitsByDate();
+        // Ensuite nettoyer les doublons traditionnels (nom + date)
+        setTimeout(() => {
+            removeDuplicateVisits();
+        }, 1000); // Attendre 1 seconde entre les deux nettoyages
+    };
 
     return (
         <div className="space-y-6">
@@ -678,10 +687,10 @@ const MaintenanceContent: React.FC = () => {
                     <div>
                        <p className="font-semibold text-text-main dark:text-text-main-dark">Supprimer les doublons du planning</p>
                        <p className="text-sm text-text-muted dark:text-text-muted-dark mt-1 max-w-md">
-                            Si vous voyez des visites en double dans le planning, utilisez ce bouton pour les supprimer automatiquement.
+                            Nettoie tous les types de doublons : visites multiples par date (problème Google Sheets) et doublons traditionnels (même orateur, même date).
                        </p>
                     </div>
-                    <button onClick={removeDuplicateVisits} className="flex-shrink-0 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-transform active:scale-95">
+                    <button onClick={handleCleanPlanning} className="flex-shrink-0 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-transform active:scale-95">
                         Nettoyer le planning
                     </button>
                 </div>
