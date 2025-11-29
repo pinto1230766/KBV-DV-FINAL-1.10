@@ -1133,7 +1133,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const dateIndex = headers.findIndex((h: string) => h.includes('data'));
             const speakerIndex = headers.findIndex((h: string) => h.includes('orador'));
             const congIndex = headers.findIndex((h: string) => h.includes('kongregason'));
-            const talkNoIndex = headers.findIndex((h: string) => h.includes('n'));
+            const talkNoIndex = headers.findIndex((h: string) => h === 'n' || h === 'no');
             const themeIndex = headers.findIndex((h: string) => h.includes('tema'));
 
             if ([dateIndex, speakerIndex, congIndex].some(i => i === -1)) {
