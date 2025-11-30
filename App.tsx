@@ -31,6 +31,7 @@ import { TimelineView } from './components/TimelineView';
 import { FeedbackModal } from './components/FeedbackModal';
 import { WeekView } from './components/WeekView';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { StatusBar } from '@capacitor/status-bar';
 import { FAB } from './components/FAB';
 import { PrintPreviewModal } from './components/PrintPreviewModal';
 import { DashboardPrintLayout } from './components/DashboardPrintLayout';
@@ -135,13 +136,11 @@ const App: React.FC = () => {
 
                 const notificationPromptDismissed = localStorage.getItem('notificationPromptDismissed');
                 if (result.display === 'prompt' && !notificationPromptDismissed) {
-                    const timer = setTimeout(() => {
-                        setShowNotificationBanner(true);
-                    }, 3000);
-                    return () => clearTimeout(timer);
+                    setShowNotificationBanner(true);
                 }
-            } catch (e) {
-                console.warn("Could not check local notification permissions.", e);
+            } catch (error) {
+                console.error('Error checking notification permissions:', error);
+                setNotificationPermission('denied');
             }
         };
 

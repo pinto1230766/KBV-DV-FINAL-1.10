@@ -19,6 +19,10 @@ const config: CapacitorConfig = {
       androidSpinnerStyle: 'large',
       spinnerColor: '#ffffff'
     },
+    StatusBar: {
+      style: 'LIGHT',
+      backgroundColor: '#3880ff'
+    },
     LocalNotifications: {
       smallIcon: 'ic_stat_icon_config_sample',
       iconColor: '#3880ff',
@@ -31,7 +35,8 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    webContentsDebuggingEnabled: true,
+    backgroundColor: '#ffffff'
   }
 };
 

@@ -38,7 +38,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     onOpenPrint
 }) => {
     return (
-        <div className={`flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-background dark:bg-background-dark`}>
+        <div className={`flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-background dark:bg-background-dark`}
+             style={{
+                 height: '100vh',
+                 maxHeight: '100vh',
+                 paddingTop: 'env(safe-area-inset-top)',
+                 paddingBottom: 'env(safe-area-inset-bottom)',
+                 paddingLeft: 'env(safe-area-inset-left)',
+                 paddingRight: 'env(safe-area-inset-right)'
+             }}>
             {showNotificationBanner && (
                 <NotificationPermissionBanner
                     onEnable={onEnableNotifications}
