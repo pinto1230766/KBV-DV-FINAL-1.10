@@ -503,8 +503,8 @@ const SecurityContent: React.FC = () => {
     );
 };
 
-const StorageManagerContent: React.FC = () => {
-    const { appData } = useData();
+const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'archiveSectionRef'>> = ({ onImport, onResetData, isImporting }) => {
+    const { exportData, appData } = useData();
     const [usage, setUsage] = useState({ bytes: 0, percent: 0 });
     const QUOTA = 50 * 1024 * 1024; // 50MB
 
@@ -530,42 +530,41 @@ const StorageManagerContent: React.FC = () => {
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center font-semibold">
-                <span>Espace utilisé</span>
-                <span>{usageMB} Mo / {quotaMB} Mo</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-primary-light/20 rounded-full h-2.5">
-                <div className={`${progressBarColor} h-2.5 rounded-full`} style={{ width: `${Math.min(usage.percent, 100)}%` }}></div>
-            </div>
-            {usage.percent > 75 && (
-                <div className={`p-3 rounded-md text-sm flex items-start space-x-3 ${usage.percent > 90 ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}`}>
-                    <ExclamationTriangleIcon className="w-6 h-6 flex-shrink-0 mt-0.5" />
-                    <p>
-                        <strong>Attention :</strong> L'espace de stockage est presque plein.
-                        Si le stockage est plein, vos nouvelles données ne seront pas sauvegardées.
-                    </p>
-                </div>
-            )}
-            <div>
-                <h3 className="font-semibold mt-4">Comment libérer de l'espace ?</h3>
-                <ul className="list-disc pl-5 mt-2 text-sm text-text-muted dark:text-text-muted-dark space-y-1">
-                    <li>Supprimez les photos des orateurs et contacts d'accueil qui ne sont plus nécessaires.</li>
-                    <li>Dans les visites programmées, supprimez les pièces jointes (PDF) qui ne sont plus utiles.</li>
-                    <li>Archivez les visites terminées pour alléger la liste active.</li>
-                    <li>Supprimez définitivement les visites très anciennes depuis l'archive.</li>
-                </ul>
-            </div>
-        </div>
-    );
-};
-
-const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'archiveSectionRef'>> = ({ onImport, onResetData, isImporting }) => {
-    const { exportData } = useData();
-
-    return (
         <div className="space-y-6">
-             <div>
+            {/* Espace de stockage */}
+            <div>
+                <h3 className="text-lg font-semibold text-text-main dark:text-text-main-dark mb-2">Espace de stockage</h3>
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center font-semibold">
+                        <span>Espace utilisé</span>
+                        <span>{usageMB} Mo / {quotaMB} Mo</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-primary-light/20 rounded-full h-2.5">
+                        <div className={`${progressBarColor} h-2.5 rounded-full`} style={{ width: `${Math.min(usage.percent, 100)}%` }}></div>
+                    </div>
+                    {usage.percent > 75 && (
+                        <div className={`p-3 rounded-md text-sm flex items-start space-x-3 ${usage.percent > 90 ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}`}>
+                            <ExclamationTriangleIcon className="w-6 h-6 flex-shrink-0 mt-0.5" />
+                            <p>
+                                <strong>Attention :</strong> L'espace de stockage est presque plein.
+                                Si le stockage est plein, vos nouvelles données ne seront pas sauvegardées.
+                            </p>
+                        </div>
+                    )}
+                    <div>
+                        <h4 className="font-semibold mt-4">Comment libérer de l'espace ?</h4>
+                        <ul className="list-disc pl-5 mt-2 text-sm text-text-muted dark:text-text-muted-dark space-y-1">
+                            <li>Supprimez les photos des orateurs et contacts d'accueil qui ne sont plus nécessaires.</li>
+                            <li>Dans les visites programmées, supprimez les pièces jointes (PDF) qui ne sont plus utiles.</li>
+                            <li>Archivez les visites terminées pour alléger la liste active.</li>
+                            <li>Supprimez définitivement les visites très anciennes depuis l'archive.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            {/* Sauvegarde et Restauration */}
+            <div>
                 <h3 className="text-lg font-semibold text-text-main dark:text-text-main-dark mb-2">Sauvegarde et Restauration</h3>
                 <p className="text-sm text-text-muted dark:text-text-muted-dark mb-4">
                     Il est recommandé de faire des sauvegardes régulières. Le fichier sera enregistré dans votre dossier de téléchargements.
@@ -594,6 +593,7 @@ const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'a
                 </div>
              </div>
 
+            {/* Zone de Danger */}
             <div>
                 <h3 className="text-lg font-semibold text-red-600 dark:text-red-400">Zone de Danger</h3>
                 <div className="mt-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -706,42 +706,10 @@ const MaintenanceContent: React.FC = () => {
     );
 };
 
-const SafetyBackupBanner: React.FC<{ onExport: () => void }> = ({ onExport }) => (
-    <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 mb-6 rounded-r-lg shadow-sm">
-        <div className="flex items-start">
-            <div className="flex-shrink-0">
-                <ShieldCheckIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="ml-3 w-full">
-                <h3 className="text-lg font-medium text-blue-800 dark:text-blue-200">
-                    Sécurité des Données
-                </h3>
-                <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
-                    <p>
-                        Avant toute mise à jour majeure ou changement de design, il est fortement recommandé de créer une sauvegarde de sécurité de vos données.
-                    </p>
-                </div>
-                <div className="mt-4">
-                    <button
-                        type="button"
-                        onClick={onExport}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform active:scale-95"
-                    >
-                        <DownloadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                        Télécharger une sauvegarde maintenant
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-);
-
 export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImporting, onLeaveFeedback, archiveSectionRef }) => {
-    const { syncWithGoogleSheet, archivedVisits, exportData } = useData();
+    const { syncWithGoogleSheet, archivedVisits } = useData();
     return (
         <div className="space-y-6">
-            <SafetyBackupBanner onExport={exportData} />
-
             <SettingsSection title="Profil de la Congrégation" description="Personnalisez les informations de l'application." icon={PodiumIcon}>
                 <CongregationProfileContent />
             </SettingsSection>
@@ -756,10 +724,6 @@ export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImp
 
             <SettingsSection title="Sécurité et Confidentialité" description="Protégez vos données avec un mot de passe." icon={ShieldCheckIcon}>
                 <SecurityContent />
-            </SettingsSection>
-
-            <SettingsSection title="Gestion du Stockage" description="Gérez l'espace utilisé par l'application sur votre appareil." icon={ServerStackIcon}>
-                <StorageManagerContent />
             </SettingsSection>
 
             <SettingsSection title="Maintenance" description="Outils pour maintenir la qualité des données." icon={SparklesIcon}>
