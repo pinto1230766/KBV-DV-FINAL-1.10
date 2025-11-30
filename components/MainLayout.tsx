@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Tab } from '../types';
 import { CongregationProfile } from '../types';
 import { 
@@ -37,6 +37,38 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     onOpenSearch,
     onOpenPrint
 }) => {
+    // Hybrid solution for Samsung S10 Ultra and S25 Ultra
+    const [useSafeAreas, setUseSafeAreas] = useState(false);
+    
+    useEffect(() => {
+        // Detect if safe-area CSS variables are supported (Android 16/One UI 8.0)
+        const testElement = document.createElement('div');
+        testElement.style.paddingTop = 'env(safe-area-inset-top)';
+        document.body.appendChild(testElement);
+        
+        const computedStyle = window.getComputedStyle(testElement);
+        const hasSafeAreaSupport = computedStyle.paddingTop !== '0px';
+        
+        document.body.removeChild(testElement);
+        setUseSafeAreas(hasSafeAreaSupport);
+    }, []);
+
+    // Dynamic padding based on device capabilities
+    const getHeaderPadding = () => {
+        if (useSafeAreas) {
+            return 'env(safe-area-inset-top)'; // Android 16/One UI 8.0 (S25 Ultra)
+        } else {
+            return '2px'; // Android 15 and below (S10 Ultra) - réduit de 4px à 2px (minimum)
+        }
+    };
+    
+    const getMainPadding = () => {
+        if (useSafeAreas) {
+            return 'env(safe-area-inset-bottom)'; // Android 16/One UI 8.0 (S25 Ultra)
+        } else {
+            return '8px'; // Android 15 and below (S10 Ultra) - réduit de 12px à 8px (minimum)
+        }
+    };
     return (
         <div className={`flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-background dark:bg-background-dark`}>
             {showNotificationBanner && (
@@ -45,7 +77,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     onDismiss={onDismissNotificationBanner}
                 />
             )}
-            <div className="header-safe-area backdrop-blur-lg flex-shrink-0 z-40 no-print" style={{ paddingTop: '24px' }}>
+            <div className="header-safe-area backdrop-blur-lg flex-shrink-0 z-40 no-print" style={{ paddingTop: getHeaderPadding() }}>
                 <header className="bg-background/95 dark:bg-background-dark/95 border-b border-white/20 dark:border-white/10">
                     <div className="px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center py-2 sm:py-4">
@@ -89,7 +121,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 </nav>
             </div>
 
-            <main className="flex-grow min-h-0 mobile-nav-safe-area" style={{ paddingBottom: '60px' }}>
+            <main className="flex-grow min-h-0 mobile-nav-safe-area" style={{ paddingBottom: getMainPadding() }}>
                 {children}
             </main>
         </div>
