@@ -96,8 +96,6 @@ const App: React.FC = () => {
     const [notificationPermission, setNotificationPermission] = useState<'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'>('prompt');
     const [showNotificationBanner, setShowNotificationBanner] = useState(false);
 
-    useVisitNotifications(upcomingVisits, notificationPermission);
-
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const stored = localStorage.getItem('is-dark-mode');
         if (stored !== null) {
@@ -111,6 +109,9 @@ const App: React.FC = () => {
     const speakerListRef = useRef<HTMLDivElement>(null);
     const hostListRef = useRef<HTMLDivElement>(null);
     const archiveSectionRef = useRef<HTMLDivElement>(null);
+
+    // Move the hook call after all state and refs are initialized
+    useVisitNotifications(upcomingVisits, notificationPermission);
     
     useEffect(() => {
         const root = window.document.documentElement;
@@ -129,7 +130,11 @@ const App: React.FC = () => {
         const checkPermissions = async () => {
             try {
                 // On non-native platforms, this might throw.
-                if (typeof LocalNotifications === 'undefined') return;
+                if (typeof LocalNotifications === 'undefined') {
+                    console.log('LocalNotifications not available on this platform');
+                    setNotificationPermission('denied');
+                    return;
+                }
 
                 const result = await LocalNotifications.checkPermissions();
                 setNotificationPermission(result.display);
@@ -496,10 +501,7 @@ const App: React.FC = () => {
                 onOpenPrint={() => setIsPrintModalOpen(true)}
             >
                 <React.Suspense fallback={<PageLoader />}>
-                    {activeTab === 'messaging' ? (
-                        renderContent()
-                    ) : (
-                        <div className="h-full overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+                    <div className="h-full overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                                 {activeTab === 'planning' && (
                                 <div className="flex flex-col sm:flex-row justify-end items-center mb-4 gap-4 pt-4 sm:pt-0 no-print">
                                         <div className="flex items-center rounded-lg p-1 bg-gray-200 dark:bg-primary-light/20 overflow-x-auto hide-scrollbar">
@@ -523,7 +525,6 @@ const App: React.FC = () => {
                             )}
                             {renderContent()}
                         </div>
-                    )}
                 </React.Suspense>
             </MainLayout>
 

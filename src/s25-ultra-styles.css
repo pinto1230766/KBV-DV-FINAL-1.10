@@ -1,0 +1,205 @@
+/* Samsung S25 Ultra (6.9" - 1440x3120) - Optimized Styles */
+
+/* Detection pour S25 Ultra uniquement */
+@media only screen and (min-device-width: 380px) and (max-device-width: 430px) and (orientation: portrait) and (-webkit-min-device-pixel-ratio: 3) {
+  
+  /* Classes utilitaires pour le S25 Ultra */
+  .s25-ultra-compact {
+    transform: scale(0.85);
+    transform-origin: top left;
+  }
+  
+  /* Grilles plus compactes */
+  .s25-ultra-compact .grid {
+    gap: 0.5rem !important;
+  }
+  
+  /* Cartes et conteneurs */
+  .s25-ultra-compact .p-4 {
+    padding: 0.75rem !important;
+  }
+  
+  .s25-ultra-compact .p-6 {
+    padding: 1rem !important;
+  }
+  
+  .s25-ultra-compact .space-y-4 > * + * {
+    margin-top: 0.75rem !important;
+  }
+  
+  .s25-ultra-compact .space-y-6 > * + * {
+    margin-top: 1rem !important;
+  }
+  
+  .s25-ultra-compact .space-y-8 > * + * {
+    margin-top: 1.25rem !important;
+  }
+  
+  /* Typographie optimisée */
+  .s25-ultra-compact .text-2xl {
+    font-size: 1.25rem !important;
+    line-height: 1.4rem !important;
+  }
+  
+  .s25-ultra-compact .text-xl {
+    font-size: 1.125rem !important;
+    line-height: 1.25rem !important;
+  }
+  
+  .s25-ultra-compact .text-lg {
+    font-size: 1rem !important;
+    line-height: 1.2rem !important;
+  }
+  
+  .s25-ultra-compact .text-base {
+    font-size: 0.875rem !important;
+    line-height: 1.1rem !important;
+  }
+  
+  .s25-ultra-compact .text-sm {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+  
+  .s25-ultra-compact .text-xs {
+    font-size: 0.6875rem !important;
+    line-height: 0.875rem !important;
+  }
+  
+  /* Icônes plus compactes */
+  .s25-ultra-compact .w-8,
+  .s25-ultra-compact .h-8 {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+  
+  .s25-ultra-compact .w-6,
+  .s25-ultra-compact .h-6 {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+  
+  .s25-ultra-compact .w-5,
+  .s25-ultra-compact .h-5 {
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+  }
+  
+  /* Padding et margin optimisés */
+  .s25-ultra-compact .p-3 {
+    padding: 0.5rem !important;
+  }
+  
+  .s25-ultra-compact .p-2 {
+    padding: 0.375rem !important;
+  }
+  
+  .s25-ultra-compact .gap-4 {
+    gap: 0.75rem !important;
+  }
+  
+  .s25-ultra-compact .gap-3 {
+    gap: 0.5rem !important;
+  }
+  
+  .s25-ultra-compact .gap-2 {
+    gap: 0.375rem !important;
+  }
+  
+  /* Navigation optimisée */
+  .s25-ultra-compact nav {
+    padding: 0.25rem 0 !important;
+  }
+  
+  .s25-ultra-compact .tab-button {
+    padding: 0.375rem 0.5rem !important;
+  }
+  
+  /* Header compact */
+  .s25-ultra-compact header {
+    padding: 0.5rem 0 !important;
+  }
+  
+  .s25-ultra-compact .header-safe-area {
+    padding-top: 0.125rem !important;
+  }
+  
+  /* Grilles pour dashboard */
+  .s25-ultra-compact .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  .s25-ultra-compact .grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  
+  .s25-ultra-compact .grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+  
+  /* Cartes statistiques optimisées */
+  .s25-ultra-compact .quick-stat-card {
+    min-height: 3.5rem !important;
+  }
+  
+  .s25-ultra-compact .quick-stat-card .text-3xl {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Boutons optimisés */
+  .s25-ultra-compact button {
+    min-height: 2rem !important;
+  }
+  
+  .s25-ultra-compact .px-6 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  
+  .s25-ultra-compact .py-3 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Modales et popups */
+  .s25-ultra-compact .modal {
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+  }
+  
+  /* Listes et tableaux */
+  .s25-ultra-compact .list-item {
+    padding: 0.5rem !important;
+    min-height: 2.5rem !important;
+  }
+  
+  /* Formulaires */
+  .s25-ultra-compact input,
+  .s25-ultra-compact select,
+  .s25-ultra-compact textarea {
+    padding: 0.375rem 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* Badges et étiquettes */
+  .s25-ultra-compact .badge {
+    padding: 0.125rem 0.375rem !important;
+    font-size: 0.6875rem !important;
+  }
+}
+
+/* Détecteur plus spécifique pour S25 Ultra basé sur le ratio d'aspect */
+@media only screen and (device-aspect-ratio: 19.5/9) and (orientation: portrait) and (min-resolution: 400dpi) {
+  .s25-ultra-compact {
+    transform: scale(0.88);
+    transform-origin: top left;
+  }
+}
+
+/* Alternative pour les écrans haute densité */
+@media only screen and (min-width: 380px) and (max-width: 430px) and (orientation: portrait) and (min-resolution: 3dppx) {
+  .s25-ultra-compact {
+    transform: scale(0.87);
+    transform-origin: top left;
+  }
+}

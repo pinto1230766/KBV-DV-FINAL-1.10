@@ -37,6 +37,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     onOpenSearch,
     onOpenPrint
 }) => {
+    // Defensive check to ensure React is properly initialized
+    if (typeof React === 'undefined' || !React.useState) {
+        console.error('React is not properly initialized in MainLayout component');
+        return null;
+    }
+
     // Hybrid solution for Samsung S10 Ultra and S25 Ultra
     const [useSafeAreas, setUseSafeAreas] = useState(false);
     

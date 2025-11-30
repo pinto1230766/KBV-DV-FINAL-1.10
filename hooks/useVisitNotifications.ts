@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Visit } from '../types';
 import { LocalNotifications, LocalNotificationSchema } from '@capacitor/local-notifications';
 
@@ -29,9 +29,21 @@ const useVisitNotifications = (
     // FIX: Capacitor's PermissionState can include 'prompt-with-rationale'. Widening the type to handle all possible states.
     notificationPermission: 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'
 ): void => {
+    // Defensive check to ensure React is properly initialized
+    if (typeof React === 'undefined' || !React.useEffect) {
+        console.error('React is not properly initialized in useVisitNotifications hook');
+        return;
+    }
+
     useEffect(() => {
         const syncNotifications = async () => {
             try {
+                // Check if LocalNotifications is available (non-native platforms)
+                if (typeof LocalNotifications === 'undefined') {
+                    console.log('LocalNotifications not available on this platform');
+                    return;
+                }
+
                 // 1. Check for permissions. If not granted, we can't do anything.
                 if (notificationPermission !== 'granted') {
                     // As a cleanup, cancel any pending notifications if permissions are revoked or denied.

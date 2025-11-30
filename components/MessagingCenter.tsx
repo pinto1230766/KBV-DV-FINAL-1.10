@@ -292,7 +292,7 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({ onOpenMessageG
                                 <p className="text-center py-8 text-text-muted dark:text-text-muted-dark">Aucune visite à venir.</p>
                             )}
                         </div>
-                        <div className="hidden md:block md:col-span-2 lg:col-span-3 h-full overflow-y-auto">
+                        <div className="hidden md:block md:col-span-2 lg:col-span-3 h-full">
                             {selectedVisit ? (
                                 <ConversationDetailView visit={selectedVisit} onOpenMessageGenerator={onOpenMessageGenerator} onBack={() => {}} isMobile={false} />
                             ) : (
