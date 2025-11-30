@@ -528,7 +528,7 @@ const App: React.FC = () => {
                 </React.Suspense>
             </MainLayout>
 
-            {(activeTab === 'dashboard' || activeTab === 'planning') && (
+            {activeTab === 'planning' && (
                 <FAB actions={fabActions} />
             )}
             
