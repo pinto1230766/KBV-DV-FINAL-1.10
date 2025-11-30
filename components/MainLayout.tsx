@@ -38,22 +38,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     onOpenPrint
 }) => {
     return (
-        <div className={`flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-background dark:bg-background-dark`}
-             style={{
-                 height: '100vh',
-                 maxHeight: '100vh',
-                 paddingTop: 'env(safe-area-inset-top)',
-                 paddingBottom: 'env(safe-area-inset-bottom)',
-                 paddingLeft: 'env(safe-area-inset-left)',
-                 paddingRight: 'env(safe-area-inset-right)'
-             }}>
+        <div className={`flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-background dark:bg-background-dark`}>
             {showNotificationBanner && (
                 <NotificationPermissionBanner
                     onEnable={onEnableNotifications}
                     onDismiss={onDismissNotificationBanner}
                 />
             )}
-            <div className="header-safe-area backdrop-blur-lg flex-shrink-0 z-40 no-print">
+            <div className="header-safe-area backdrop-blur-lg flex-shrink-0 z-40 no-print" style={{ paddingTop: '24px' }}>
                 <header className="bg-background/95 dark:bg-background-dark/95 border-b border-white/20 dark:border-white/10">
                     <div className="px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center py-2 sm:py-4">
@@ -97,7 +89,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 </nav>
             </div>
 
-            <main className="flex-grow min-h-0 mobile-nav-safe-area">
+            <main className="flex-grow min-h-0 mobile-nav-safe-area" style={{ paddingBottom: '60px' }}>
                 {children}
             </main>
         </div>
