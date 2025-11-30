@@ -197,6 +197,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         onEditVisitClick={onEditVisitClick}
                         onLeaveFeedback={onLeaveFeedback}
                         onScheduleVisitClick={onScheduleVisitClick}
+                        setActiveTab={setActiveTab}
                     />
                 </div>
                  <div className="space-y-8 animate-fade-in-up opacity-0" style={{ animationDelay: '400ms' }}>

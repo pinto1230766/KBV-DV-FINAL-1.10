@@ -12,6 +12,7 @@ interface ProactiveAssistantProps {
   onEditVisitClick: (visit: Visit) => void;
   onLeaveFeedback: (visit: Visit) => void;
   onScheduleVisitClick: () => void;
+  setActiveTab: (tab: 'planning' | 'messaging' | 'talks' | 'settings') => void;
 }
 
 const daysSince = (dateStr: string) => {
@@ -241,7 +242,7 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
                                 {visitsNeedingHost.length} visite{visitsNeedingHost.length > 1 ? 's' : ''} sans accueil
                             </h3>
                             {visitsNeedingHost.length > 1 && (
-                                <button onClick={() => props.onOpenHostRequestModal(visitsNeedingHost)} className="text-sm font-semibold text-primary dark:text-primary-light hover:underline">
+                                <button onClick={() => props.setActiveTab('messaging')} className="text-sm font-semibold text-primary dark:text-primary-light hover:underline">
                                     Demande groupée
                                 </button>
                             )}
