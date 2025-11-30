@@ -239,7 +239,7 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({ onOpenMessageG
 
     return (
         <div className="flex flex-col animate-fade-in h-full">
-            <div className="p-4 sm:p-6 lg:p-8 h-full flex flex-col min-h-0">
+            <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
                 <div className="flex-shrink-0">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="relative flex-grow">
@@ -267,38 +267,40 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({ onOpenMessageG
                     </div>
                 </div>
 
-                <div className="md:grid md:grid-cols-3 lg:grid-cols-4 gap-6 flex-grow min-h-0">
-                    {/* Mobile View */}
-                    <div className="md:hidden h-full overflow-y-auto">
-                        {selectedVisit ? (
-                            <ConversationDetailView visit={selectedVisit} onOpenMessageGenerator={onOpenMessageGenerator} onBack={() => setSelectedVisitId(null)} isMobile={true} />
-                        ) : (
-                            <div className="space-y-2">
-                                {activeVisits.length > 0 ? activeVisits.map(visit => (
-                                    <ConversationListItem key={visit.visitId} visit={visit} isSelected={false} onSelect={() => setSelectedVisitId(visit.visitId)} />
-                                )) : (
-                                    <p className="text-center py-8 text-text-muted dark:text-text-muted-dark">Aucune visite à venir ne correspond à votre recherche.</p>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                <div className="flex-grow min-h-0">
+                    <div className="md:grid md:grid-cols-3 lg:grid-cols-4 gap-6 h-full">
+                        {/* Mobile View */}
+                        <div className="md:hidden h-full overflow-y-auto">
+                            {selectedVisit ? (
+                                <ConversationDetailView visit={selectedVisit} onOpenMessageGenerator={onOpenMessageGenerator} onBack={() => setSelectedVisitId(null)} isMobile={true} />
+                            ) : (
+                                <div className="space-y-2">
+                                    {activeVisits.length > 0 ? activeVisits.map(visit => (
+                                        <ConversationListItem key={visit.visitId} visit={visit} isSelected={false} onSelect={() => setSelectedVisitId(visit.visitId)} />
+                                    )) : (
+                                        <p className="text-center py-8 text-text-muted dark:text-text-muted-dark">Aucune visite à venir ne correspond à votre recherche.</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Desktop View */}
-                    <div className="hidden md:block md:col-span-1 lg:col-span-1 pr-2 space-y-2 h-full overflow-y-auto">
-                        {activeVisits.length > 0 ? activeVisits.map(visit => (
-                            <ConversationListItem key={visit.visitId} visit={visit} isSelected={visit.visitId === selectedVisitId} onSelect={() => setSelectedVisitId(visit.visitId)} />
-                        )) : (
-                            <p className="text-center py-8 text-text-muted dark:text-text-muted-dark">Aucune visite à venir.</p>
-                        )}
-                    </div>
-                    <div className="hidden md:block md:col-span-2 lg:col-span-3 h-full overflow-y-auto">
-                        {selectedVisit ? (
-                            <ConversationDetailView visit={selectedVisit} onOpenMessageGenerator={onOpenMessageGenerator} onBack={() => {}} isMobile={false} />
-                        ) : (
-                            <div className="flex items-center justify-center h-full bg-gray-50/50 dark:bg-card-dark/20 rounded-xl">
-                                <p className="text-text-muted dark:text-text-muted-dark">{activeVisits.length > 0 ? "Sélectionnez une conversation" : "Aucune visite à afficher"}</p>
-                            </div>
-                        )}
+                        {/* Desktop View */}
+                        <div className="hidden md:block md:col-span-1 lg:col-span-1 pr-2 space-y-2 h-full overflow-y-auto">
+                            {activeVisits.length > 0 ? activeVisits.map(visit => (
+                                <ConversationListItem key={visit.visitId} visit={visit} isSelected={visit.visitId === selectedVisitId} onSelect={() => setSelectedVisitId(visit.visitId)} />
+                            )) : (
+                                <p className="text-center py-8 text-text-muted dark:text-text-muted-dark">Aucune visite à venir.</p>
+                            )}
+                        </div>
+                        <div className="hidden md:block md:col-span-2 lg:col-span-3 h-full overflow-y-auto">
+                            {selectedVisit ? (
+                                <ConversationDetailView visit={selectedVisit} onOpenMessageGenerator={onOpenMessageGenerator} onBack={() => {}} isMobile={false} />
+                            ) : (
+                                <div className="flex items-center justify-center h-full bg-gray-50/50 dark:bg-card-dark/20 rounded-xl">
+                                    <p className="text-text-muted dark:text-text-muted-dark">{activeVisits.length > 0 ? "Sélectionnez une conversation" : "Aucune visite à afficher"}</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
