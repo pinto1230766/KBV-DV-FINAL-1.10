@@ -9,9 +9,13 @@ async function reopenDB(): Promise<IDBDatabase> {
   if (dbPromise) {
     try {
       const db = await dbPromise;
-      // Check if database is still valid by attempting a simple operation
+      // Close the existing connection if it's still open
       if (db) {
-        return db;
+        try {
+          db.close();
+        } catch (e) {
+          console.warn('Error closing database connection:', e);
+        }
       }
     } catch (error) {
       console.warn('Database connection issue, reopening:', error);
@@ -30,10 +34,20 @@ function getDB(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onerror = () => {
         console.error('IndexedDB error:', request.error);
+        dbPromise = null; // Reset on error
         reject(request.error);
     };
     request.onsuccess = () => {
-        resolve(request.result);
+        const db = request.result;
+        // Handle database connection close events
+        db.onclose = () => {
+          console.warn('Database connection closed unexpectedly');
+          dbPromise = null;
+        };
+        db.onerror = (event) => {
+          console.error('Database error:', event);
+        };
+        resolve(db);
     };
     request.onupgradeneeded = () => {
       request.result.createObjectStore(STORE_NAME);
@@ -49,6 +63,7 @@ export async function get<T>(key: IDBValidKey): Promise<T | undefined> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const db = await getDB();
+      
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readonly');
         const store = transaction.objectStore(STORE_NAME);
@@ -71,11 +86,34 @@ export async function get<T>(key: IDBValidKey): Promise<T | undefined> {
       lastError = error as Error;
       console.warn(`Attempt ${attempt + 1} failed in get():`, error);
       
+      // Check for specific database connection errors
+      const isConnectionError = lastError instanceof DOMException && 
+        (lastError.name === 'InvalidStateError' || 
+         lastError.message.includes('database connection is closing') ||
+         lastError.message.includes('Database connection is closed'));
+      
       if (attempt < maxRetries - 1) {
         // Wait with exponential backoff
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
         // Try to reopen the database connection
         await reopenDB();
+      } else if (isConnectionError) {
+        // For connection errors, try one more immediate reconnect
+        try {
+          await reopenDB();
+          const db = await getDB();
+          return new Promise((resolve, reject) => {
+            const transaction = db.transaction(STORE_NAME, 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.get(key);
+            transaction.onerror = () => reject(transaction.error);
+            transaction.onabort = () => reject(new Error('Transaction aborted'));
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result as T | undefined);
+          });
+        } catch (finalError) {
+          console.error('Final retry attempt failed:', finalError);
+        }
       }
     }
   }
@@ -91,6 +129,7 @@ export async function set(key: IDBValidKey, value: any): Promise<void> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const db = await getDB();
+      
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');
         const store = transaction.objectStore(STORE_NAME);
@@ -119,11 +158,35 @@ export async function set(key: IDBValidKey, value: any): Promise<void> {
       lastError = error as Error;
       console.warn(`Attempt ${attempt + 1} failed in set():`, error);
       
+      // Check for specific database connection errors
+      const isConnectionError = lastError instanceof DOMException && 
+        (lastError.name === 'InvalidStateError' || 
+         lastError.message.includes('database connection is closing') ||
+         lastError.message.includes('Database connection is closed'));
+      
       if (attempt < maxRetries - 1) {
         // Wait with exponential backoff
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
         // Try to reopen the database connection
         await reopenDB();
+      } else if (isConnectionError) {
+        // For connection errors, try one more immediate reconnect
+        try {
+          await reopenDB();
+          const db = await getDB();
+          return new Promise((resolve, reject) => {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.put(value, key);
+            transaction.onerror = () => reject(transaction.error);
+            transaction.onabort = () => reject(new Error('Transaction aborted'));
+            transaction.oncomplete = () => resolve();
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {};
+          });
+        } catch (finalError) {
+          console.error('Final retry attempt failed:', finalError);
+        }
       }
     }
   }
@@ -139,6 +202,7 @@ export async function del(key: IDBValidKey): Promise<void> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const db = await getDB();
+      
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');
         const store = transaction.objectStore(STORE_NAME);
@@ -167,11 +231,35 @@ export async function del(key: IDBValidKey): Promise<void> {
       lastError = error as Error;
       console.warn(`Attempt ${attempt + 1} failed in del():`, error);
       
+      // Check for specific database connection errors
+      const isConnectionError = lastError instanceof DOMException && 
+        (lastError.name === 'InvalidStateError' || 
+         lastError.message.includes('database connection is closing') ||
+         lastError.message.includes('Database connection is closed'));
+      
       if (attempt < maxRetries - 1) {
         // Wait with exponential backoff
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
         // Try to reopen the database connection
         await reopenDB();
+      } else if (isConnectionError) {
+        // For connection errors, try one more immediate reconnect
+        try {
+          await reopenDB();
+          const db = await getDB();
+          return new Promise((resolve, reject) => {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.delete(key);
+            transaction.onerror = () => reject(transaction.error);
+            transaction.onabort = () => reject(new Error('Transaction aborted'));
+            transaction.oncomplete = () => resolve();
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {};
+          });
+        } catch (finalError) {
+          console.error('Final retry attempt failed:', finalError);
+        }
       }
     }
   }

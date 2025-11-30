@@ -232,6 +232,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     let userMessage = "Erreur critique de sauvegarde. Vos derniers changements pourraient ne pas être enregistrés.";
                     if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'QUOTA_EXCEEDED_ERR')) {
                         userMessage = "Erreur de sauvegarde : le stockage de votre appareil est plein. Essayez de supprimer des photos ou des pièces jointes.";
+                    } else if (error instanceof DOMException && (error.name === 'InvalidStateError' || error.message.includes('database connection is closing'))) {
+                        userMessage = "Erreur de connexion à la base de données. Veuillez réessayer. L'application tentera de récupérer automatiquement.";
                     } else if (error instanceof Error) {
                         userMessage += `\n${error.name}: ${error.message}`;
                     }
