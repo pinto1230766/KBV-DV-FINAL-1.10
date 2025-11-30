@@ -528,10 +528,7 @@ const App: React.FC = () => {
                 </React.Suspense>
             </MainLayout>
 
-            {activeTab === 'planning' && (
-                <FAB actions={fabActions} />
-            )}
-            
+                        
             {/* Modals are rendered here, outside of the main layout div to ensure they are on top of everything */}
             {isScheduleModalOpen && (
                 <ScheduleVisitModal 
