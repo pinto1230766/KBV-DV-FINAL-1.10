@@ -1,41 +1,74 @@
 import React, { useMemo, useState } from 'react';
-import { useData } from '../contexts/DataContext';
-import { ChartBarIcon, UserIcon, HomeIcon, SparklesIcon, SpinnerIcon, ExclamationTriangleIcon, ReceiptIcon } from './Icons';
+import { 
+    ChartBarIcon, 
+    ReceiptIcon, 
+    UserIcon, 
+    HomeIcon,
+    SparklesIcon
+} from './Icons';
 import { GoogleGenAI } from '@google/genai';
+import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
 
-const StatCard: React.FC<{ title: string; value: string | number; icon: React.FC<any>; children?: React.ReactNode }> = ({ title, value, icon: Icon, children }) => (
-    <div className="bg-card-light dark:bg-card-dark p-6 rounded-xl shadow-soft-lg">
-        <div className="flex items-center gap-4">
-            <Icon className="w-8 h-8 text-secondary" />
-            <div>
-                <p className="text-sm font-semibold text-text-muted dark:text-text-muted-dark">{title}</p>
-                <p className="text-2xl font-bold text-text-main dark:text-text-main-dark">{value}</p>
+// Types
+interface DataPoint {
+    label: string;
+    value: number;
+}
+
+// Spinner Component
+const SpinnerIcon = ({ className }: { className?: string }) => (
+    <svg className={`animate-spin ${className}`} fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
+// StatCard Component
+const StatCard: React.FC<{
+    title: string;
+    value: string | number;
+    icon: React.ComponentType<{ className?: string }>;
+    children?: React.ReactNode;
+}> = ({ title, value, icon: Icon, children }) => (
+    <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+                <Icon className="w-3 h-3 text-secondary" />
+                <span className="text-xs font-semibold text-text-main dark:text-text-main-dark">{title}</span>
             </div>
         </div>
-        {children && <div className="mt-4">{children}</div>}
+        <div className="mt-0.5">
+            <div className="text-sm font-bold text-text-main dark:text-text-main-dark">{value}</div>
+            {children}
+        </div>
     </div>
 );
 
-const HorizontalBarChart: React.FC<{ data: { label: string; value: number }[], title: string, isCurrency?: boolean }> = ({ data, title, isCurrency = false }) => {
-    const maxValue = useMemo(() => Math.max(...data.map(d => d.value), 0), [data]);
+// HorizontalBarChart Component
+const HorizontalBarChart: React.FC<{
+    data: DataPoint[];
+    title: string;
+    isCurrency?: boolean;
+}> = ({ data, title, isCurrency = false }) => {
+    const maxValue = Math.max(...data.map(d => d.value), 1);
     
     return (
-        <div className="bg-card-light dark:bg-card-dark p-6 rounded-xl shadow-soft-lg">
-            <h3 className="text-lg font-bold text-text-main dark:text-text-main-dark mb-4">{title}</h3>
-            <div className="space-y-3">
-                {data.map(({ label, value }) => (
-                    <div key={label} className="grid grid-cols-4 gap-2 items-center">
-                        <span className="text-sm font-medium text-text-muted dark:text-text-muted-dark truncate col-span-1" title={label}>{label}</span>
-                        <div className="col-span-3 flex items-center gap-2">
-                             <div className="w-full bg-gray-200 dark:bg-primary-light/20 rounded-full h-4">
-                                <div
-                                    className="bg-secondary rounded-full h-4"
-                                    style={{ width: `${maxValue > 0 ? (value / maxValue) * 100 : 0}%` }}
-                                ></div>
-                            </div>
-                            <span className="font-bold text-sm w-16 text-right">{isCurrency ? `${value.toFixed(2)} €` : value}</span>
+        <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+            <h3 className="text-xs font-bold mb-0.5">{title}</h3>
+            <div className="space-y-0.25">
+                {data.slice(0, 3).map((item) => (
+                    <div key={item.label} className="flex items-center gap-1">
+                        <span className="text-xs truncate flex-1">{item.label}</span>
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1 relative">
+                            <div 
+                                className="bg-primary dark:bg-primary-light h-1 rounded-full" 
+                                style={{ width: `${(item.value / maxValue) * 100}%` }}
+                            ></div>
                         </div>
+                        <span className="text-xs font-bold w-10 text-right">
+                            {isCurrency ? `${item.value.toFixed(0)}€` : item.value}
+                        </span>
                     </div>
                 ))}
             </div>
@@ -43,101 +76,23 @@ const HorizontalBarChart: React.FC<{ data: { label: string; value: number }[], t
     );
 };
 
-const VisitsOverTimeChart: React.FC<{ visits: any[] }> = ({ visits }) => {
-    const chartData = useMemo(() => {
-        const now = new Date();
-        const monthLabels: { month: string; year: number; key: string }[] = [];
-        for (let i = 11; i >= 0; i--) {
-            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            monthLabels.push({
-                month: date.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', ''),
-                year: date.getFullYear(),
-                key: `${date.getFullYear()}-${date.getMonth()}`
-            });
-        }
-
-        const counts = new Map<string, number>();
-        visits.forEach(v => {
-            const visitDate = new Date(v.visitDate + 'T00:00:00');
-            const key = `${visitDate.getFullYear()}-${visitDate.getMonth()}`;
-            counts.set(key, (counts.get(key) || 0) + 1);
-        });
-        
-        const dataPoints = monthLabels.map(label => ({
-            month: label.month,
-            count: counts.get(label.key) || 0
-        }));
-
-        const maxCount = Math.max(...dataPoints.map(d => d.count), 5);
-
-        return { dataPoints, maxCount };
-    }, [visits]);
-
-    const { dataPoints, maxCount } = chartData;
-
-    return (
-        <div className="bg-card-light dark:bg-card-dark p-6 rounded-xl shadow-soft-lg h-80 flex flex-col">
-             <h3 className="text-lg font-bold text-text-main dark:text-text-main-dark mb-4 flex-shrink-0">Visites par mois (12 derniers mois)</h3>
-            <div className="w-full flex-grow flex items-end">
-                <svg width="100%" height="90%" className="text-xs">
-                    <g className="chart-grid">
-                        {[...Array(5)].map((_, i) => {
-                            const y = (i / 4) * 100;
-                            const value = Math.round(maxCount - (i * maxCount / 4));
-                            return (
-                                <g key={i}>
-                                    <line x1="25" x2="100%" y1={`${y}%`} y2={`${y}%`} className="stroke-current text-gray-200 dark:text-gray-700" strokeWidth="1" />
-                                    <text x="0" y={`${y}%`} dy="4" className="fill-current text-text-muted dark:text-text-muted-dark">{value}</text>
-                                </g>
-                            )
-                        })}
-                    </g>
-                    <svg x="30" width="calc(100% - 30px)" height="100%" className="chart-bars" overflow="visible">
-                        {dataPoints.map((data, i) => {
-                            const barHeight = data.count > 0 ? (data.count / maxCount) * 100 : 0;
-                            const barWidth = 100 / (dataPoints.length * 2);
-                            const x = i * (100 / dataPoints.length) + (barWidth / 2);
-
-                            return (
-                                <g key={data.month + i}>
-                                    <rect 
-                                        x={`${x}%`} 
-                                        y={`${100 - barHeight}%`} 
-                                        width={`${barWidth}%`} 
-                                        height={`${barHeight}%`} 
-                                        className="fill-current text-primary dark:text-primary-light" 
-                                        rx="2"
-                                    >
-                                        <title>{`${data.month}: ${data.count} visite(s)`}</title>
-                                    </rect>
-                                    <text x={`${x + barWidth / 2}%`} y="105%" textAnchor="middle" className="fill-current text-text-muted dark:text-text-muted-dark font-semibold capitalize">{data.month}</text>
-                                </g>
-                            )
-                        })}
-                    </svg>
-                </svg>
-            </div>
-        </div>
-    );
-};
-
+// RenderAnalysis Component
 const RenderAnalysis: React.FC<{ text: string }> = ({ text }) => {
     const lines = text.split('\n').filter(line => line.trim() !== '');
     return (
         <div className="prose prose-sm dark:prose-invert max-w-none text-text-main dark:text-text-main-dark">
             {lines.map((line, index) => {
                 if (line.startsWith('**') && line.endsWith('**')) {
-                    return <h4 key={index} className="font-bold text-base mt-4 mb-2">{line.replace(/\*\*/g, '')}</h4>;
+                    return <h4 key={index} className="font-bold text-xs mt-2 mb-1">{line.replace(/\*\*/g, '')}</h4>;
                 }
                 if (line.startsWith('- ') || line.startsWith('* ')) {
-                    return <p key={index} className="ml-4 flex"><span className="mr-2 text-secondary">•</span><span>{line.substring(2)}</span></p>;
+                    return <p key={index} className="ml-2 flex text-xs"><span className="mr-1 text-secondary">•</span><span>{line.substring(2)}</span></p>;
                 }
-                return <p key={index}>{line}</p>;
+                return <p key={index} className="text-xs">{line}</p>;
             })}
         </div>
     );
 };
-
 
 export const Statistics: React.FC = () => {
     const { speakers, hosts, upcomingVisits, archivedVisits, apiKey, isOnline } = useData();
@@ -198,7 +153,7 @@ export const Statistics: React.FC = () => {
         return Array.from(counts.entries())
             .map(([label, value]) => ({ label, value }))
             .sort((a, b) => b.value - a.value)
-            .slice(0, 10); // Top 10 hosts
+            .slice(0, 10);
     }, [allVisits]);
 
     const congregationDistributionData = useMemo(() => {
@@ -241,7 +196,6 @@ export const Statistics: React.FC = () => {
             .map(([label, value]) => ({ label: label.charAt(0).toUpperCase() + label.slice(1), value }))
             .sort((a,b) => b.value - a.value);
     }, [allVisits]);
-
 
     const handleGenerateAnalysis = async () => {
         if (!isOnline) {
@@ -289,6 +243,9 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
+                config: {
+                    responseMimeType: "text/plain",
+                }
             });
             
             setAnalysis(response.text || null);
@@ -306,66 +263,235 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
     };
 
     return (
-        <div className="space-y-8 animate-fade-in">
-            <div className="bg-card-light dark:bg-card-dark p-6 rounded-xl shadow-soft-lg">
-                <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-                    <div className="flex items-center gap-4">
-                        <SparklesIcon className="w-8 h-8 text-secondary flex-shrink-0" />
+        <div className="flex flex-col h-full overflow-hidden animate-fade-in">
+            {/* Ligne 1: KPIs principaux */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-0.5 p-1">
+                <StatCard title="Visites" value={generalStats.totalVisits} icon={ChartBarIcon} />
+                <StatCard title="Frais" value={`${generalStats.totalExpenses.toFixed(0)} €`} icon={ReceiptIcon} />
+                <StatCard title="Orateur top" value={generalStats.mostFrequentSpeaker.name} icon={UserIcon}>
+                    <p className="text-xs -mt-1">{generalStats.mostFrequentSpeaker.count}x</p>
+                </StatCard>
+                <StatCard title="Accueil top" value={generalStats.mostHospitableHost.name} icon={HomeIcon}>
+                    <p className="text-xs -mt-1">{generalStats.mostHospitableHost.count}x</p>
+                </StatCard>
+            </div>
+
+            {/* Ligne 2: Analyse IA + Statistiques avancées */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-0.5 p-1 flex-1">
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <div className="flex items-center gap-0.5 mb-0.5">
+                        <SparklesIcon className="w-2 h-2 text-secondary" />
+                        <h3 className="text-xs font-bold">Analyse IA</h3>
+                    </div>
+                    <button onClick={handleGenerateAnalysis} disabled={isGeneratingAnalysis || !apiKey || !isOnline} className="w-full flex items-center justify-center gap-0.5 px-0.5 py-0.5 bg-primary hover:bg-primary-light text-white font-semibold rounded text-xs mb-0.5">
+                        {isGeneratingAnalysis ? <SpinnerIcon className="w-2 h-2" /> : <SparklesIcon className="w-2 h-2" />}
+                        {isGeneratingAnalysis ? '...' : 'AI'}
+                    </button>
+                    <div className="min-h-[1rem] text-xs">
+                        {isGeneratingAnalysis && <div className="h-1 bg-gray-200 rounded animate-pulse"></div>}
+                        {!isGeneratingAnalysis && !analysis && <p className="text-text-muted">Cliquez</p>}
+                        {analysis && <p className="truncate">{analysis.substring(0, 25)}...</p>}
+                    </div>
+                </div>
+
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Satisfaction</h3>
+                    <div className="text-center">
+                        <div className="text-base font-bold text-secondary">{(() => {
+                            const feedbacks = allVisits.filter(v => v.feedback);
+                            return feedbacks.length > 0 ? (feedbacks.reduce((sum, v) => sum + (v.feedback?.rating || 0), 0) / feedbacks.length).toFixed(1) : 'N/A';
+                        })()}/5</div>
+                        <div className="text-xs text-text-muted">{allVisits.filter(v => v.feedback).length} avis</div>
+                    </div>
+                </div>
+
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">KPIs</h3>
+                    <div className="grid grid-cols-2 gap-0.5 text-xs">
                         <div>
-                            <h3 className="text-lg font-bold text-text-main dark:text-text-main-dark">Analyse Intelligente</h3>
-                            <p className="text-sm text-text-muted dark:text-text-muted-dark">Laissez l'IA vous donner des aperçus sur vos données.</p>
+                            <span className="text-text-muted">Ratio:</span>
+                            <span className="font-bold ml-0.5">{speakers.length > 0 ? (allVisits.length / speakers.length).toFixed(1) : '0'}</span>
+                        </div>
+                        <div>
+                            <span className="text-text-muted">Moy/visite:</span>
+                            <span className="font-bold ml-0.5">{allVisits.length > 0 ? (generalStats.totalExpenses / allVisits.length).toFixed(0) : '0'}€</span>
                         </div>
                     </div>
-                    <button onClick={handleGenerateAnalysis} disabled={isGeneratingAnalysis || !apiKey || !isOnline} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" title={!apiKey ? "Veuillez configurer votre clé API" : !isOnline ? "Connexion Internet requise" : ""}>
-                        {isGeneratingAnalysis ? <SpinnerIcon className="w-5 h-5" /> : <SparklesIcon className="w-5 h-5" />}
-                        {isGeneratingAnalysis ? 'Analyse en cours...' : (analysis ? "Rafraîchir l'analyse" : "Générer l'analyse")}
-                    </button>
-                </div>
-                <div className="mt-4 pt-4 border-t border-border-light dark:border-border-dark min-h-[6rem] flex items-center justify-center">
-                    {isGeneratingAnalysis && (
-                        <div className="space-y-3 w-full">
-                            <div className="h-4 bg-gray-200 dark:bg-primary-light/10 rounded w-3/4 animate-pulse"></div>
-                            <div className="h-4 bg-gray-200 dark:bg-primary-light/10 rounded w-1/2 animate-pulse"></div>
-                            <div className="h-4 bg-gray-200 dark:bg-primary-light/10 rounded w-5/6 animate-pulse"></div>
-                        </div>
-                    )}
-                    {analysisError && (
-                        <div className="text-center text-red-600 dark:text-red-400">
-                            <ExclamationTriangleIcon className="w-8 h-8 mx-auto mb-2" />
-                            <p className="font-semibold">Erreur d'analyse</p>
-                            <p className="text-sm">{analysisError}</p>
-                        </div>
-                    )}
-                    {!isGeneratingAnalysis && !analysisError && analysis && (
-                        <RenderAnalysis text={analysis} />
-                    )}
-                    {!isGeneratingAnalysis && !analysisError && !analysis && (
-                        <p className="text-center text-text-muted dark:text-text-muted-dark">Cliquez sur le bouton pour obtenir des observations et suggestions sur vos données.</p>
-                    )}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total des visites" value={generalStats.totalVisits} icon={ChartBarIcon} />
-                <StatCard title="Total des Frais de Visite" value={`${generalStats.totalExpenses.toFixed(2)} €`} icon={ReceiptIcon} />
-                <StatCard title="Orateur le plus fréquent" value={generalStats.mostFrequentSpeaker.name} icon={UserIcon}>
-                    <p className="text-sm text-text-muted dark:text-text-muted-dark -mt-2">{generalStats.mostFrequentSpeaker.count} visites</p>
-                </StatCard>
-                 <StatCard title="Accueil le plus sollicité" value={generalStats.mostHospitableHost.name} icon={HomeIcon}>
-                    <p className="text-sm text-text-muted dark:text-text-muted-dark -mt-2">{generalStats.mostHospitableHost.count} accueils</p>
-                </StatCard>
+            {/* Ligne 3: Top 5 en colonnes */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-0.5 p-1 flex-1">
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Top Accueils</h3>
+                    <div className="space-y-0.25 text-xs">
+                        {hostParticipationData.slice(0, 3).map((item) => (
+                            <div key={item.label} className="flex justify-between">
+                                <span className="truncate">{item.label}</span>
+                                <span className="font-bold">{item.value}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Top Congrégations</h3>
+                    <div className="space-y-0.25 text-xs">
+                        {congregationDistributionData.slice(0, 3).map((item) => (
+                            <div key={item.label} className="flex justify-between">
+                                <span className="truncate">{item.label}</span>
+                                <span className="font-bold">{item.value}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Top Discours</h3>
+                    <div className="space-y-0.25 text-xs">
+                        {talkPopularityData.slice(0, 3).map((item) => (
+                            <div key={item.label} className="flex justify-between">
+                                <span className="truncate">{item.label}</span>
+                                <span className="font-bold">{item.value}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
-            
-            <VisitsOverTimeChart visits={allVisits} />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <HorizontalBarChart data={hostParticipationData} title="Top 10 Participation des Accueils" />
-                <HorizontalBarChart data={congregationDistributionData} title="Top 10 Congrégations d'Orateurs" />
+
+            {/* Ligne 4: Répartitions */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-0.5 p-1 flex-1">
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Statut</h3>
+                    <div className="text-xs space-y-0.25">
+                        <div className="flex justify-between">
+                            <span>✓ Confirmé</span>
+                            <span className="font-bold">{allVisits.filter(v => v.status === 'confirmed').length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>⏳ En attente</span>
+                            <span className="font-bold">{allVisits.filter(v => v.status === 'pending').length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>✅ Complété</span>
+                            <span className="font-bold">{allVisits.filter(v => v.status === 'completed').length}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Location</h3>
+                    <div className="text-xs space-y-0.25">
+                        <div className="flex justify-between">
+                            <span>🏠 Physique</span>
+                            <span className="font-bold">{allVisits.filter(v => v.locationType === 'physical').length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>💻 Zoom</span>
+                            <span className="font-bold">{allVisits.filter(v => v.locationType === 'zoom').length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>📺 Streaming</span>
+                            <span className="font-bold">{allVisits.filter(v => v.locationType === 'streaming').length}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Orateurs</h3>
+                    <div className="text-xs space-y-0.25">
+                        <div className="flex justify-between">
+                            <span>👨 Hommes</span>
+                            <span className="font-bold">{speakers.filter(s => s.gender === 'male').length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>👩 Femmes</span>
+                            <span className="font-bold">{speakers.filter(s => s.gender === 'female').length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>🚗 Véhiculés</span>
+                            <span className="font-bold">{speakers.filter(s => s.isVehiculed).length}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Tags Orateurs</h3>
+                    <div className="text-xs space-y-0.25">
+                        {(() => {
+                            const speakerTags = new Map<string, number>();
+                            speakers.forEach(speaker => {
+                                (speaker.tags || []).forEach(tag => {
+                                    speakerTags.set(tag, (speakerTags.get(tag) || 0) + 1);
+                                });
+                            });
+                            return Array.from(speakerTags.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3);
+                        })().map(([tag, count]) => (
+                            <div key={tag} className="flex justify-between">
+                                <span className="truncate">{tag}</span>
+                                <span className="font-bold">{count}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
-            
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <HorizontalBarChart data={talkPopularityData} title="Top 10 des Discours les Plus Présentés" />
-                <HorizontalBarChart data={expenseByCategoryData} title="Répartition des Frais par Catégorie" isCurrency={true} />
+
+            {/* Ligne 5: Graphiques compactes */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-0.5 p-1 flex-1">
+                <HorizontalBarChart data={expenseByCategoryData} title="Frais par Catégorie" isCurrency={true} />
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Tendance 6 mois</h3>
+                    <div className="h-16 flex items-end justify-between text-xs">
+                        {(() => {
+                            const monthlyTrend = new Map<string, number>();
+                            const now = new Date();
+                            for (let i = 5; i >= 0; i--) {
+                                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                                const key = `${date.getFullYear()}-${date.getMonth()}`;
+                                monthlyTrend.set(key, 0);
+                            }
+                            
+                            allVisits.forEach(v => {
+                                const visitDate = new Date(v.visitDate + 'T00:00:00');
+                                const key = `${visitDate.getFullYear()}-${visitDate.getMonth()}`;
+                                if (monthlyTrend.has(key)) {
+                                    monthlyTrend.set(key, (monthlyTrend.get(key) || 0) + 1);
+                                }
+                            });
+
+                            const maxCount = Math.max(...Array.from(monthlyTrend.values()), 1);
+                            return Array.from(monthlyTrend.entries()).map(([key, count], index) => {
+                                const height = (count / maxCount) * 100;
+                                return (
+                                    <div key={key} className="flex-1 flex flex-col items-center">
+                                        <div className="w-full bg-primary rounded-t" style={{ height: `${height}%` }}></div>
+                                        <span className="text-xs mt-0.25">{new Date(key + '-01').toLocaleDateString('fr-FR', { month: 'short' })}</span>
+                                    </div>
+                                );
+                            });
+                        })()}
+                    </div>
+                </div>
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Feedback Tags</h3>
+                    <div className="text-xs space-y-0.25">
+                        {(() => {
+                            const feedbacks = allVisits.filter(v => v.feedback);
+                            const feedbackTags = new Map<string, number>();
+                            feedbacks.forEach(v => {
+                                (v.feedback?.tags || []).forEach(tag => {
+                                    feedbackTags.set(tag, (feedbackTags.get(tag) || 0) + 1);
+                                });
+                            });
+                            return Array.from(feedbackTags.entries()).sort((a, b) => b[1] - a[1]).slice(0, 4);
+                        })().map(([tag, count]) => (
+                            <div key={tag} className="flex justify-between">
+                                <span className="truncate">{tag}</span>
+                                <span className="font-bold">{count}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
         </div>
