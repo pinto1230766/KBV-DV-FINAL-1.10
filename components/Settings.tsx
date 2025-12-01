@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     UploadIcon, SpinnerIcon, ExclamationTriangleIcon,
-    ExternalLinkIcon, ShieldCheckIcon, PodiumIcon, BookOpenIcon, ServerStackIcon, LockClosedIcon, LockOpenIcon, CloudArrowDownIcon, InformationCircleIcon, SparklesIcon, DownloadIcon, ChevronDownIcon, ClockIcon, SunIcon, MoonIcon, ComputerDesktopIcon, PaintBrushIcon, EnvelopeIcon, SaveIcon, ArrowUturnLeftIcon, MapPinIcon, EyeIcon, EyeSlashIcon
+    ExternalLinkIcon, ShieldCheckIcon, PodiumIcon, BookOpenIcon, ServerStackIcon, LockClosedIcon, LockOpenIcon, CloudArrowDownIcon, InformationCircleIcon, SparklesIcon, DownloadIcon, ChevronDownIcon, ClockIcon, SunIcon, MoonIcon, ComputerDesktopIcon, PaintBrushIcon, EnvelopeIcon, SaveIcon, ArrowUturnLeftIcon, MapPinIcon, EyeIcon, EyeSlashIcon, BellIcon, CogIcon, ChartBarIcon, WifiIcon, UserGroupIcon, GlobeAltIcon, AdjustmentsHorizontalIcon
 } from './Icons';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
@@ -741,6 +741,465 @@ export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImp
             <SettingsSection containerRef={archiveSectionRef} title="Archive des visites" description={`Consultez l'historique des visites terminées (${archivedVisits.length}).`} icon={ClockIcon}>
                 <ArchivedVisits onLeaveFeedback={onLeaveFeedback} />
             </SettingsSection>
+
+            {/* Nouvelles sections */}
+            <SettingsSection title="Personnalisation de l'interface" description="Configurez l'apparence et le comportement de l'application." icon={PaintBrushIcon}>
+                <InterfaceCustomizationContent />
+            </SettingsSection>
+
+            <SettingsSection title="Notifications et Rappels" description="Gérez les alertes et les rappels automatiques." icon={BellIcon}>
+                <NotificationSettingsContent />
+            </SettingsSection>
+
+            <SettingsSection title="Paramètres avancés" description="Options techniques pour les utilisateurs expérimentés." icon={CogIcon}>
+                <AdvancedSettingsContent />
+            </SettingsSection>
+
+            <SettingsSection title="Tableau de bord et Statistiques" description="Personnalisez l'affichage des données et des rapports." icon={ChartBarIcon}>
+                <DashboardSettingsContent />
+            </SettingsSection>
+
+            <SettingsSection title="Configuration IA et Automatisation" description="Gérez les fonctionnalités d'intelligence artificielle." icon={SparklesIcon}>
+                <AISettingsContent />
+            </SettingsSection>
+
+            <SettingsSection title="Connectivité et Réseau" description="Paramètres de synchronisation et de gestion réseau." icon={WifiIcon}>
+                <ConnectivitySettingsContent />
+            </SettingsSection>
+
+            <SettingsSection title="Communication avancée" description="Configuration avancée des messages et communications." icon={EnvelopeIcon}>
+                <AdvancedCommunicationContent />
+            </SettingsSection>
+        </div>
+    );
+};
+
+// Composants pour les nouvelles sections
+const InterfaceCustomizationContent: React.FC = () => {
+    const { addToast } = useToast();
+    const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
+    const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
+    const [language, setLanguage] = useState<'fr' | 'en'>('fr');
+    const [animations, setAnimations] = useState(true);
+    const [compactMode, setCompactMode] = useState(false);
+
+    const handleSave = () => {
+        localStorage.setItem('interfaceSettings', JSON.stringify({
+            theme, fontSize, language, animations, compactMode
+        }));
+        addToast("Paramètres d'interface sauvegardés", 'success');
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Thème visuel</label>
+                    <select value={theme} onChange={(e) => setTheme(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
+                        <option value="light">Clair</option>
+                        <option value="dark">Sombre</option>
+                        <option value="auto">Automatique</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Taille du texte</label>
+                    <select value={fontSize} onChange={(e) => setFontSize(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
+                        <option value="small">Petit</option>
+                        <option value="medium">Moyen</option>
+                        <option value="large">Grand</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Langue</label>
+                    <select value={language} onChange={(e) => setLanguage(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
+                        <option value="fr">Français</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Mode d'affichage</label>
+                    <select value={compactMode ? 'compact' : 'normal'} onChange={(e) => setCompactMode(e.target.value === 'compact')} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
+                        <option value="normal">Normal</option>
+                        <option value="compact">Compact</option>
+                    </select>
+                </div>
+            </div>
+            <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={animations} onChange={(e) => setAnimations(e.target.checked)} className="rounded" />
+                    <span className="text-sm">Activer les animations</span>
+                </label>
+                <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
+                    Appliquer
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const NotificationSettingsContent: React.FC = () => {
+    const { addToast } = useToast();
+    const [notifications, setNotifications] = useState({
+        reminder7: true,
+        reminder2: true,
+        confirmation: true,
+        thanks: false,
+        email: false,
+        push: true
+    });
+    const [notificationTime, setNotificationTime] = useState('09:00');
+    const [quietHours, setQuietHours] = useState({ enabled: false, start: '22:00', end: '08:00' });
+
+    const handleSave = () => {
+        localStorage.setItem('notificationSettings', JSON.stringify({
+            ...notifications, notificationTime, quietHours
+        }));
+        addToast("Paramètres de notification sauvegardés", 'success');
+    };
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h3 className="text-lg font-semibold mb-4">Types de notifications</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries({
+                        reminder7: 'Rappel J-7',
+                        reminder2: 'Rappel J-2',
+                        confirmation: 'Confirmation de visite',
+                        thanks: 'Remerciements',
+                        email: 'Notifications par email',
+                        push: 'Notifications push'
+                    }).map(([key, label]) => (
+                        <label key={key} className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={(notifications as any)[key]}
+                                onChange={(e) => setNotifications({...notifications, [key]: e.target.checked})}
+                                className="rounded"
+                            />
+                            <span className="text-sm">{label}</span>
+                        </label>
+                    ))}
+                </div>
+            </div>
+            <div>
+                <h3 className="text-lg font-semibold mb-4">Horaires</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Heure par défaut</label>
+                        <input type="time" value={notificationTime} onChange={(e) => setNotificationTime(e.target.value)} className="w-full p-2 border rounded-lg" />
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-2 mb-2">
+                            <input type="checkbox" checked={quietHours.enabled} onChange={(e) => setQuietHours({...quietHours, enabled: e.target.checked})} className="rounded" />
+                            <span className="text-sm font-medium">Heures de silence</span>
+                        </label>
+                        <div className="flex gap-2">
+                            <input type="time" value={quietHours.start} onChange={(e) => setQuietHours({...quietHours, start: e.target.value})} className="flex-1 p-2 border rounded-lg" disabled={!quietHours.enabled} />
+                            <span className="self-center">à</span>
+                            <input type="time" value={quietHours.end} onChange={(e) => setQuietHours({...quietHours, end: e.target.value})} className="flex-1 p-2 border rounded-lg" disabled={!quietHours.enabled} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
+                Sauvegarder
+            </button>
+        </div>
+    );
+};
+
+const AdvancedSettingsContent: React.FC = () => {
+    const { addToast } = useToast();
+    const [settings, setSettings] = useState({
+        offlineMode: false,
+        debugMode: false,
+        autoBackup: true,
+        logLevel: 'info',
+        cacheSize: '100MB'
+    });
+
+    const handleSave = () => {
+        localStorage.setItem('advancedSettings', JSON.stringify(settings));
+        addToast("Paramètres avancés sauvegardés", 'success');
+    };
+
+    const handleClearCache = () => {
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    caches.delete(name);
+                });
+            });
+        }
+        addToast("Cache vidé", 'success');
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={settings.offlineMode} onChange={(e) => setSettings({...settings, offlineMode: e.target.checked})} className="rounded" />
+                        <span className="text-sm">Mode hors-ligne</span>
+                    </label>
+                    <p className="text-xs text-text-muted mt-1">Limite l'utilisation des données mobiles</p>
+                </div>
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={settings.debugMode} onChange={(e) => setSettings({...settings, debugMode: e.target.checked})} className="rounded" />
+                        <span className="text-sm">Mode débogage</span>
+                    </label>
+                    <p className="text-xs text-text-muted mt-1">Affiche les logs détaillés</p>
+                </div>
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={settings.autoBackup} onChange={(e) => setSettings({...settings, autoBackup: e.target.checked})} className="rounded" />
+                        <span className="text-sm">Sauvegarde automatique</span>
+                    </label>
+                    <p className="text-xs text-text-muted mt-1">Sauvegarde quotidienne des données</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-2">Niveau de log</label>
+                    <select value={settings.logLevel} onChange={(e) => setSettings({...settings, logLevel: e.target.value})} className="w-full p-2 border rounded-lg">
+                        <option value="error">Erreur</option>
+                        <option value="warn">Avertissement</option>
+                        <option value="info">Info</option>
+                        <option value="debug">Débogage</option>
+                    </select>
+                </div>
+            </div>
+            <div className="flex gap-4">
+                <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
+                    Sauvegarder
+                </button>
+                <button onClick={handleClearCache} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg">
+                    Vider le cache
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const DashboardSettingsContent: React.FC = () => {
+    const { addToast } = useToast();
+    const [preferences, setPreferences] = useState({
+        defaultPeriod: 'month',
+        defaultChart: 'bar',
+        autoRefresh: true,
+        refreshInterval: 300,
+        exportFormat: 'pdf'
+    });
+
+    const handleSave = () => {
+        localStorage.setItem('dashboardSettings', JSON.stringify(preferences));
+        addToast("Préférences du tableau de bord sauvegardées", 'success');
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label className="block text-sm font-medium mb-2">Période par défaut</label>
+                    <select value={preferences.defaultPeriod} onChange={(e) => setPreferences({...preferences, defaultPeriod: e.target.value})} className="w-full p-2 border rounded-lg">
+                        <option value="week">Semaine</option>
+                        <option value="month">Mois</option>
+                        <option value="quarter">Trimestre</option>
+                        <option value="year">Année</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-2">Graphique par défaut</label>
+                    <select value={preferences.defaultChart} onChange={(e) => setPreferences({...preferences, defaultChart: e.target.value})} className="w-full p-2 border rounded-lg">
+                        <option value="bar">Barres</option>
+                        <option value="line">Lignes</option>
+                        <option value="pie">Camembert</option>
+                        <option value="area">Aires</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={preferences.autoRefresh} onChange={(e) => setPreferences({...preferences, autoRefresh: e.target.checked})} className="rounded" />
+                        <span className="text-sm">Actualisation automatique</span>
+                    </label>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-2">Format d'export</label>
+                    <select value={preferences.exportFormat} onChange={(e) => setPreferences({...preferences, exportFormat: e.target.value})} className="w-full p-2 border rounded-lg">
+                        <option value="pdf">PDF</option>
+                        <option value="excel">Excel</option>
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label className="block text-sm font-medium mb-2">Intervalle d'actualisation (secondes)</label>
+                <input type="number" value={preferences.refreshInterval} onChange={(e) => setPreferences({...preferences, refreshInterval: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="30" max="3600" />
+            </div>
+            <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
+                Sauvegarder
+            </button>
+        </div>
+    );
+};
+
+const AISettingsContent: React.FC = () => {
+    const { addToast } = useData();
+    const [settings, setSettings] = useState({
+        model: 'gemini-2.5-flash',
+        temperature: 0.7,
+        maxTokens: 1000,
+        autoGenerate: false,
+        smartSuggestions: true
+    });
+
+    const handleSave = () => {
+        localStorage.setItem('aiSettings', JSON.stringify(settings));
+        addToast("Paramètres IA sauvegardés", 'success');
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label className="block text-sm font-medium mb-2">Modèle IA</label>
+                    <select value={settings.model} onChange={(e) => setSettings({...settings, model: e.target.value})} className="w-full p-2 border rounded-lg">
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-2">Température (créativité)</label>
+                    <input type="range" min="0" max="1" step="0.1" value={settings.temperature} onChange={(e) => setSettings({...settings, temperature: parseFloat(e.target.value)})} className="w-full" />
+                    <span className="text-sm text-text-muted">{settings.temperature}</span>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-2">Tokens maximum</label>
+                    <input type="number" value={settings.maxTokens} onChange={(e) => setSettings({...settings, maxTokens: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="100" max="4000" />
+                </div>
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={settings.autoGenerate} onChange={(e) => setSettings({...settings, autoGenerate: e.target.checked})} className="rounded" />
+                        <span className="text-sm">Génération automatique</span>
+                    </label>
+                </div>
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={settings.smartSuggestions} onChange={(e) => setSettings({...settings, smartSuggestions: e.target.checked})} className="rounded" />
+                        <span className="text-sm">Suggestions intelligentes</span>
+                    </label>
+                </div>
+            </div>
+            <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
+                Sauvegarder
+            </button>
+        </div>
+    );
+};
+
+const ConnectivitySettingsContent: React.FC = () => {
+    const { addToast } = useToast();
+    const [settings, setSettings] = useState({
+        autoSync: true,
+        syncInterval: 3600,
+        offlineMode: false,
+        dataUsage: 'wifi',
+        retryAttempts: 3
+    });
+
+    const handleSave = () => {
+        localStorage.setItem('connectivitySettings', JSON.stringify(settings));
+        addToast("Paramètres de connectivité sauvegardés", 'success');
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={settings.autoSync} onChange={(e) => setSettings({...settings, autoSync: e.target.checked})} className="rounded" />
+                        <span className="text-sm">Synchronisation automatique</span>
+                    </label>
+                </div>
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={settings.offlineMode} onChange={(e) => setSettings({...settings, offlineMode: e.target.checked})} className="rounded" />
+                        <span className="text-sm">Mode hors-ligne</span>
+                    </label>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-2">Intervalle de sync (secondes)</label>
+                    <input type="number" value={settings.syncInterval} onChange={(e) => setSettings({...settings, syncInterval: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="300" max="86400" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-2">Utilisation des données</label>
+                    <select value={settings.dataUsage} onChange={(e) => setSettings({...settings, dataUsage: e.target.value})} className="w-full p-2 border rounded-lg">
+                        <option value="wifi">WiFi uniquement</option>
+                        <option value="mobile">WiFi + Mobile</option>
+                        <option value="unlimited">Illimité</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-2">Tentatives de retry</label>
+                    <input type="number" value={settings.retryAttempts} onChange={(e) => setSettings({...settings, retryAttempts: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="1" max="10" />
+                </div>
+            </div>
+            <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
+                Sauvegarder
+            </button>
+        </div>
+    );
+};
+
+const AdvancedCommunicationContent: React.FC = () => {
+    const { addToast } = useToast();
+    const [settings, setSettings] = useState({
+        emailSignature: '',
+        autoReply: false,
+        replyDelay: 24,
+        trackOpens: true,
+        customHeaders: false
+    });
+
+    const handleSave = () => {
+        localStorage.setItem('communicationSettings', JSON.stringify(settings));
+        addToast("Paramètres de communication sauvegardés", 'success');
+    };
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <label className="block text-sm font-medium mb-2">Signature email</label>
+                <textarea value={settings.emailSignature} onChange={(e) => setSettings({...settings, emailSignature: e.target.value})} className="w-full p-2 border rounded-lg" rows={4} placeholder="Cordialement, Votre Nom" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={settings.autoReply} onChange={(e) => setSettings({...settings, autoReply: e.target.checked})} className="rounded" />
+                        <span className="text-sm">Réponse automatique</span>
+                    </label>
+                </div>
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={settings.trackOpens} onChange={(e) => setSettings({...settings, trackOpens: e.target.checked})} className="rounded" />
+                        <span className="text-sm">Suivi des ouvertures</span>
+                    </label>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-2">Délai de réponse (heures)</label>
+                    <input type="number" value={settings.replyDelay} onChange={(e) => setSettings({...settings, replyDelay: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="1" max="168" />
+                </div>
+                <div>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={settings.customHeaders} onChange={(e) => setSettings({...settings, customHeaders: e.target.checked})} className="rounded" />
+                        <span className="text-sm">En-têtes personnalisés</span>
+                    </label>
+                </div>
+            </div>
+            <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
+                Sauvegarder
+            </button>
         </div>
     );
 };

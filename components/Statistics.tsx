@@ -99,23 +99,34 @@ export const Statistics: React.FC = () => {
     const { addToast } = useToast();
     const allVisits = useMemo(() => [...upcomingVisits, ...archivedVisits], [upcomingVisits, archivedVisits]);
     
+    // Debug logs pour vérifier les données
+    console.log('Statistics - speakers:', speakers.length);
+    console.log('Statistics - upcomingVisits:', upcomingVisits.length);
+    console.log('Statistics - archivedVisits:', archivedVisits.length);
+    console.log('Statistics - allVisits:', allVisits.length);
+    
     const [analysis, setAnalysis] = useState<string | null>(null);
     const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
     const [analysisError, setAnalysisError] = useState<string | null>(null);
 
     const generalStats = useMemo(() => {
-        const speakerVisitCounts = new Map<string, number>();
+        console.log('Calculating generalStats for', allVisits.length, 'visits');
+        
+        const speakerVisitCounts = new Map<string, { id: string; name: string; count: number }>();
         allVisits.forEach(v => {
-            speakerVisitCounts.set(v.id, (speakerVisitCounts.get(v.id) || 0) + 1);
+            console.log('Processing visit:', v.id, v.nom);
+            const existing = speakerVisitCounts.get(v.id);
+            if (existing) {
+                existing.count++;
+            } else {
+                speakerVisitCounts.set(v.id, { id: v.id, name: v.nom, count: 1 });
+            }
         });
 
         let mostFrequentSpeaker = { id: '', name: 'N/A', count: 0 };
         if (speakerVisitCounts.size > 0) {
-            const [topSpeakerId, topCount] = [...speakerVisitCounts.entries()].reduce((a, b) => b[1] > a[1] ? b : a);
-            const speaker = speakers.find(s => s.id === topSpeakerId);
-            if (speaker) {
-                mostFrequentSpeaker = { id: speaker.id, name: speaker.nom, count: topCount };
-            }
+            const topSpeaker = Array.from(speakerVisitCounts.values()).reduce((a, b) => b.count > a.count ? b : a);
+            mostFrequentSpeaker = { id: topSpeaker.id, name: topSpeaker.name, count: topSpeaker.count };
         }
         
         const hostVisitCounts = new Map<string, number>();
@@ -135,13 +146,16 @@ export const Statistics: React.FC = () => {
             return sum + (visit.expenses || []).reduce((expSum, exp) => expSum + exp.amount, 0);
         }, 0);
 
-        return {
+        const stats = {
             totalVisits: allVisits.length,
             mostFrequentSpeaker,
             mostHospitableHost,
             totalExpenses,
         };
-    }, [allVisits, speakers]);
+        
+        console.log('General stats calculated:', stats);
+        return stats;
+    }, [allVisits]);
 
     const hostParticipationData = useMemo(() => {
         const counts = new Map<string, number>();
@@ -159,17 +173,14 @@ export const Statistics: React.FC = () => {
     const congregationDistributionData = useMemo(() => {
         const speakerVisitCounts = new Map<string, number>();
         allVisits.forEach(v => {
-             const speaker = speakers.find(s => s.id === v.id);
-             if (speaker) {
-                const cong = speaker.congregation || 'Non spécifiée';
-                speakerVisitCounts.set(cong, (speakerVisitCounts.get(cong) || 0) + 1);
-             }
+            const cong = v.congregation || 'Non spécifiée';
+            speakerVisitCounts.set(cong, (speakerVisitCounts.get(cong) || 0) + 1);
         });
          return Array.from(speakerVisitCounts.entries())
             .map(([label, value]) => ({ label, value }))
             .sort((a, b) => b.value - a.value)
             .slice(0, 10);
-    }, [allVisits, speakers]);
+    }, [allVisits]);
     
     const talkPopularityData = useMemo(() => {
         const counts = new Map<string, number>();
@@ -277,8 +288,8 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
             </div>
 
             {/* Ligne 2: Analyse IA + Statistiques avancées */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-0.5 p-1 flex-1">
-                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-0.5 p-1 flex-1">
+                <div className="md:col-span-2 bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
                     <div className="flex items-center gap-0.5 mb-0.5">
                         <SparklesIcon className="w-2 h-2 text-secondary" />
                         <h3 className="text-xs font-bold">Analyse IA</h3>
@@ -287,10 +298,11 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
                         {isGeneratingAnalysis ? <SpinnerIcon className="w-2 h-2" /> : <SparklesIcon className="w-2 h-2" />}
                         {isGeneratingAnalysis ? '...' : 'AI'}
                     </button>
-                    <div className="min-h-[1rem] text-xs">
+                    <div className="min-h-[3rem] text-xs overflow-y-auto max-h-[4rem]">
                         {isGeneratingAnalysis && <div className="h-1 bg-gray-200 rounded animate-pulse"></div>}
-                        {!isGeneratingAnalysis && !analysis && <p className="text-text-muted">Cliquez</p>}
-                        {analysis && <p className="truncate">{analysis.substring(0, 25)}...</p>}
+                        {!isGeneratingAnalysis && !analysis && <p className="text-text-muted">Cliquez pour générer l'analyse</p>}
+                        {analysis && <RenderAnalysis text={analysis} />}
+                        {analysisError && <p className="text-red-500 text-xs">{analysisError}</p>}
                     </div>
                 </div>
 
@@ -321,11 +333,11 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
             </div>
 
             {/* Ligne 3: Top 5 en colonnes */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-0.5 p-1 flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-0.5 p-1 flex-1">
                 <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
                     <h3 className="text-xs font-bold mb-0.5">Top Accueils</h3>
                     <div className="space-y-0.25 text-xs">
-                        {hostParticipationData.slice(0, 3).map((item) => (
+                        {hostParticipationData.slice(0, 2).map((item) => (
                             <div key={item.label} className="flex justify-between">
                                 <span className="truncate">{item.label}</span>
                                 <span className="font-bold">{item.value}</span>
@@ -337,7 +349,7 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
                 <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
                     <h3 className="text-xs font-bold mb-0.5">Top Congrégations</h3>
                     <div className="space-y-0.25 text-xs">
-                        {congregationDistributionData.slice(0, 3).map((item) => (
+                        {congregationDistributionData.slice(0, 2).map((item) => (
                             <div key={item.label} className="flex justify-between">
                                 <span className="truncate">{item.label}</span>
                                 <span className="font-bold">{item.value}</span>
@@ -349,7 +361,7 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
                 <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
                     <h3 className="text-xs font-bold mb-0.5">Top Discours</h3>
                     <div className="space-y-0.25 text-xs">
-                        {talkPopularityData.slice(0, 3).map((item) => (
+                        {talkPopularityData.slice(0, 2).map((item) => (
                             <div key={item.label} className="flex justify-between">
                                 <span className="truncate">{item.label}</span>
                                 <span className="font-bold">{item.value}</span>
@@ -357,10 +369,30 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
                         ))}
                     </div>
                 </div>
+
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Tags Orateurs</h3>
+                    <div className="space-y-0.25 text-xs">
+                        {(() => {
+                            const speakerTags = new Map<string, number>();
+                            speakers.forEach(speaker => {
+                                (speaker.tags || []).forEach(tag => {
+                                    speakerTags.set(tag, (speakerTags.get(tag) || 0) + 1);
+                                });
+                            });
+                            return Array.from(speakerTags.entries()).sort((a, b) => b[1] - a[1]).slice(0, 2);
+                        })().map(([tag, count]) => (
+                            <div key={tag} className="flex justify-between">
+                                <span className="truncate">{tag}</span>
+                                <span className="font-bold">{count}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Ligne 4: Répartitions */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-0.5 p-1 flex-1">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-0.5 p-1">
                 <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
                     <h3 className="text-xs font-bold mb-0.5">Statut</h3>
                     <div className="text-xs space-y-0.25">
@@ -416,16 +448,17 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
                 </div>
 
                 <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
-                    <h3 className="text-xs font-bold mb-0.5">Tags Orateurs</h3>
+                    <h3 className="text-xs font-bold mb-0.5">Feedback Tags</h3>
                     <div className="text-xs space-y-0.25">
                         {(() => {
-                            const speakerTags = new Map<string, number>();
-                            speakers.forEach(speaker => {
-                                (speaker.tags || []).forEach(tag => {
-                                    speakerTags.set(tag, (speakerTags.get(tag) || 0) + 1);
+                            const feedbacks = allVisits.filter(v => v.feedback);
+                            const feedbackTags = new Map<string, number>();
+                            feedbacks.forEach(v => {
+                                (v.feedback?.tags || []).forEach(tag => {
+                                    feedbackTags.set(tag, (feedbackTags.get(tag) || 0) + 1);
                                 });
                             });
-                            return Array.from(speakerTags.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3);
+                            return Array.from(feedbackTags.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3);
                         })().map(([tag, count]) => (
                             <div key={tag} className="flex justify-between">
                                 <span className="truncate">{tag}</span>
@@ -437,11 +470,21 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
             </div>
 
             {/* Ligne 5: Graphiques compactes */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-0.5 p-1 flex-1">
-                <HorizontalBarChart data={expenseByCategoryData} title="Frais par Catégorie" isCurrency={true} />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-0.5 p-1">
+                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Frais par Catégorie</h3>
+                    <div className="space-y-0.25 text-xs">
+                        {expenseByCategoryData.slice(0, 3).map((item) => (
+                            <div key={item.label} className="flex justify-between">
+                                <span className="truncate">{item.label}</span>
+                                <span className="font-bold">{item.value.toFixed(0)}€</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
                 <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
                     <h3 className="text-xs font-bold mb-0.5">Tendance 6 mois</h3>
-                    <div className="h-16 flex items-end justify-between text-xs">
+                    <div className="h-12 flex items-end justify-between text-xs">
                         {(() => {
                             const monthlyTrend = new Map<string, number>();
                             const now = new Date();
@@ -472,24 +515,25 @@ Analysez ces données et fournissez des aperçus actionnables. Par exemple, comm
                         })()}
                     </div>
                 </div>
-                <div className="bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
-                    <h3 className="text-xs font-bold mb-0.5">Feedback Tags</h3>
-                    <div className="text-xs space-y-0.25">
-                        {(() => {
-                            const feedbacks = allVisits.filter(v => v.feedback);
-                            const feedbackTags = new Map<string, number>();
-                            feedbacks.forEach(v => {
-                                (v.feedback?.tags || []).forEach(tag => {
-                                    feedbackTags.set(tag, (feedbackTags.get(tag) || 0) + 1);
-                                });
-                            });
-                            return Array.from(feedbackTags.entries()).sort((a, b) => b[1] - a[1]).slice(0, 4);
-                        })().map(([tag, count]) => (
-                            <div key={tag} className="flex justify-between">
-                                <span className="truncate">{tag}</span>
-                                <span className="font-bold">{count}</span>
-                            </div>
-                        ))}
+                <div className="md:col-span-2 bg-card-light dark:bg-card-dark p-1 rounded-lg shadow-soft-lg">
+                    <h3 className="text-xs font-bold mb-0.5">Résumé des données</h3>
+                    <div className="grid grid-cols-2 gap-0.5 text-xs">
+                        <div>
+                            <span className="text-text-muted">Total visites:</span>
+                            <span className="font-bold ml-0.5">{generalStats.totalVisits}</span>
+                        </div>
+                        <div>
+                            <span className="text-text-muted">Total frais:</span>
+                            <span className="font-bold ml-0.5">{generalStats.totalExpenses.toFixed(0)}€</span>
+                        </div>
+                        <div>
+                            <span className="text-text-muted">Orateurs:</span>
+                            <span className="font-bold ml-0.5">{speakers.length}</span>
+                        </div>
+                        <div>
+                            <span className="text-text-muted">Feedbacks:</span>
+                            <span className="font-bold ml-0.5">{allVisits.filter(v => v.feedback).length}</span>
+                        </div>
                     </div>
                 </div>
             </div>
