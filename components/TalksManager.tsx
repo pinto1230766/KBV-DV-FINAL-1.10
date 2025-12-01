@@ -34,61 +34,61 @@ const TalkCard: React.FC<TalkCardProps> = ({ talk, onEdit, onAssign }) => {
     const currentStatus = statusInfo[talk.status as TalkStatus];
 
     return (
-        <div className="bg-gray-50 dark:bg-card-dark rounded-lg transition-shadow hover:shadow-md">
-            <div className="p-3 flex items-center gap-4 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)} role="button" aria-expanded={isExpanded}>
-                <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light rounded-full font-bold text-lg">
+        <div className="bg-gray-50 dark:bg-card-dark rounded-md transition-shadow hover:shadow-md">
+            <div className="p-2 flex items-center gap-3 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)} role="button" aria-expanded={isExpanded}>
+                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light rounded-full font-bold text-sm">
                     {talk.number}
                 </div>
                 <div className="flex-grow min-w-0">
-                    <p className="font-semibold text-text-main dark:text-text-main-dark truncate" title={talk.theme}>{talk.theme}</p>
-                    <div className="flex items-center gap-4 text-xs text-text-muted dark:text-text-muted-dark mt-1">
-                        <span className={`px-2 py-0.5 font-semibold rounded-full ${currentStatus.color}`}>{currentStatus.text}</span>
+                    <p className="font-semibold text-sm text-text-main dark:text-text-main-dark truncate" title={talk.theme}>{talk.theme}</p>
+                    <div className="flex items-center gap-2 text-xs text-text-muted dark:text-text-muted-dark mt-0.5">
+                        <span className={`px-1.5 py-0.5 font-semibold rounded-full ${currentStatus.color}`}>{currentStatus.text}</span>
                         {talk.nextVisit ? (
-                            <span>Prósimu bes: <strong>{talk.nextVisit.date}</strong> pa <strong>{talk.nextVisit.speaker}</strong></span>
+                            <span className="text-xs">Prósimu: <strong>{talk.nextVisit.date}</strong></span>
                         ) : talk.lastPresented ? (
-                            <span>Últimu bes: <strong>{talk.lastPresented.date}</strong> pa <strong>{talk.lastPresented.speaker}</strong></span>
+                            <span className="text-xs">Últimu: <strong>{talk.lastPresented.date}</strong></span>
                         ) : null}
                     </div>
                 </div>
-                <div className="flex items-center flex-shrink-0">
-                    <button onClick={(e) => { e.stopPropagation(); onAssign(talk); }} className="hidden sm:flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary dark:text-primary-light text-sm font-semibold rounded-md hover:bg-primary/20 transition-transform active:scale-95">
-                        <PlusIcon className="w-4 h-4" /> Atribui
+                <div className="flex items-center flex-shrink-0 gap-1">
+                    <button onClick={(e) => { e.stopPropagation(); onAssign(talk); }} className="hidden sm:flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary dark:text-primary-light text-xs font-semibold rounded-sm hover:bg-primary/20 transition-transform active:scale-95">
+                        <PlusIcon className="w-3 h-3" /> Atribui
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); onEdit(talk); }} className="p-2 text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-primary-light rounded-full transition-colors active:scale-90" aria-label={`Modifier le discours ${talk.number}`} title="Modifier">
-                        <EditIcon className="w-5 h-5" />
+                    <button onClick={(e) => { e.stopPropagation(); onEdit(talk); }} className="p-1.5 text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-primary-light rounded-full transition-colors active:scale-90" aria-label={`Modifier le discours ${talk.number}`} title="Modifier">
+                        <EditIcon className="w-4 h-4" />
                     </button>
-                    <ChevronDownIcon className={`w-6 h-6 text-text-muted dark:text-text-muted-dark transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                    <ChevronDownIcon className={`w-4 h-4 text-text-muted dark:text-text-muted-dark transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>
             </div>
 
             {isExpanded && (
-                <div className="px-3 pb-3 animate-fade-in">
-                    <div className="border-t border-border-light dark:border-border-dark pt-3">
-                         <button onClick={(e) => { e.stopPropagation(); onAssign(talk); }} className="sm:hidden w-full flex items-center justify-center gap-2 mb-3 px-3 py-2 bg-primary/10 text-primary dark:text-primary-light text-sm font-semibold rounded-md hover:bg-primary/20 transition-transform active:scale-95">
-                            <PlusIcon className="w-4 h-4" /> Atribui es diskursu
+                <div className="px-2 pb-2 animate-fade-in">
+                    <div className="border-t border-border-light dark:border-border-dark pt-2">
+                         <button onClick={(e) => { e.stopPropagation(); onAssign(talk); }} className="sm:hidden w-full flex items-center justify-center gap-1 mb-2 px-2 py-1 bg-primary/10 text-primary dark:text-primary-light text-xs font-semibold rounded-sm hover:bg-primary/20 transition-transform active:scale-95">
+                            <PlusIcon className="w-3 h-3" /> Atribui
                         </button>
-                        <h5 className="font-bold text-sm mb-2 px-2">Istóriku di prizentasons</h5>
+                        <h5 className="font-bold text-xs mb-1.5 px-1">Istóriku di prizentasons</h5>
                         {fullHistory.length > 0 ? (
-                            <table className="w-full text-sm">
+                            <table className="w-full text-xs">
                                 <thead>
                                     <tr className="text-left text-xs text-text-muted dark:text-text-muted-dark">
-                                        <th className="p-2">Data</th>
-                                        <th className="p-2">Orador</th>
-                                        <th className="p-2">Statu</th>
+                                        <th className="p-1">Data</th>
+                                        <th className="p-1">Orador</th>
+                                        <th className="p-1">Statu</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {fullHistory.map(visit => (
                                         <tr key={visit.visitId} className="border-t border-border-light dark:border-border-dark">
-                                            <td className="p-2">{new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR')}</td>
-                                            <td className="p-2 font-semibold">{visit.nom}</td>
-                                            <td className="p-2">{visits.some(v => v.visitId === visit.visitId) ? 'Programadu' : 'Arkivadu'}</td>
+                                            <td className="p-1">{new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR')}</td>
+                                            <td className="p-1 font-semibold text-xs">{visit.nom}</td>
+                                            <td className="p-1 text-xs">{visits.some(v => v.visitId === visit.visitId) ? 'Programadu' : 'Arkivadu'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         ) : (
-                            <p className="text-center text-sm text-text-muted dark:text-text-muted-dark py-4">Es diskursu nunka foi prizentadu.</p>
+                            <p className="text-center text-xs text-text-muted dark:text-text-muted-dark py-2">Es diskursu nunka foi prizentadu.</p>
                         )}
                     </div>
                 </div>
@@ -263,7 +263,7 @@ export const TalksManager: React.FC = () => {
                 </div>
             </div>
             {talksWithInfo.length > 0 ? (
-                <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 -mr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pr-2 -mr-2">
                     {talksWithInfo.map((talk, index) => (
                         <div key={talk.number} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${index * 30}ms` }}>
                             <TalkCard talk={talk} onEdit={handleEditTalk} onAssign={handleAssignTalk} />

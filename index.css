@@ -22,6 +22,37 @@ html, body {
   width: 100%;
 }
 
+/* Styles personnalisés pour la barre de scroll sur Android */
+.android-scrollbar {
+  scrollbar-width: thin !important;
+  scrollbar-color: #9CA3AF #F3F4F6 !important;
+}
+
+.android-scrollbar::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+  display: block !important;
+}
+
+.android-scrollbar::-webkit-scrollbar-track {
+  background: #F3F4F6 !important;
+  border-radius: 4px !important;
+}
+
+.android-scrollbar::-webkit-scrollbar-thumb {
+  background: #9CA3AF !important;
+  border-radius: 4px !important;
+  border: 1px solid #E5E7EB !important;
+}
+
+.android-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6B7280 !important;
+}
+
+.android-scrollbar::-webkit-scrollbar-corner {
+  background: #F3F4F6 !important;
+}
+
 /* Animations personnalisées */
 @keyframes fadeIn {
   from {

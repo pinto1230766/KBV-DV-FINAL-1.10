@@ -72,16 +72,13 @@ const ConversationListItem: React.FC<{ visit: Visit, isSelected: boolean, onSele
     return (
         <button
             onClick={onSelect}
-            className={`w-full text-left p-3 rounded-xl flex items-center gap-4 transition-all duration-200 group ${isSelected ? 'bg-secondary text-white shadow-lg' : 'hover:bg-gray-100 dark:hover:bg-primary-light/10'}`}
+            className={`w-full text-left p-0.5 rounded flex flex-col items-center gap-0.5 transition-all duration-200 group ${isSelected ? 'bg-secondary text-white shadow-lg' : 'hover:bg-gray-100 dark:hover:bg-primary-light/10'}`}
         >
-            <Avatar item={visit} size="w-12 h-12" />
-            <div className="flex-grow min-w-0">
-                <div className="flex justify-between items-center">
-                    <p className={`font-bold truncate ${isSelected ? 'text-white' : 'text-text-main dark:text-text-main-dark'}`}>{visit.nom}</p>
-                    {isUrgent && <span className="w-2.5 h-2.5 bg-highlight rounded-full flex-shrink-0 animate-pulse-slow" title="Action requise"></span>}
-                </div>
-                <p className={`text-sm capitalize ${isSelected ? 'text-white/80' : 'text-text-muted dark:text-text-muted-dark'}`}>
-                    {new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'long', day: 'numeric' })}
+            <Avatar item={visit} size="w-5 h-5" />
+            <div className="w-full text-center">
+                <p className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-text-main dark:text-text-main-dark'}`}>{visit.nom}</p>
+                <p className={`text-xs capitalize ${isSelected ? 'text-white/80' : 'text-text-muted dark:text-text-muted-dark'}`}>
+                    {new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })}
                 </p>
                 <CommunicationProgress visit={visit} />
             </div>
@@ -98,19 +95,19 @@ const CommunicationStep: React.FC<{ visit: Visit; type: MessageType; role: Messa
     const dateSent = isSent ? new Date(visit.communicationStatus![type]![role]!).toLocaleDateString('fr-FR') : null;
 
     return (
-        <div className={`p-4 rounded-lg flex items-center justify-between gap-4 transition-colors ${isSent ? 'bg-green-50 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-primary-light/10'}`}>
-            <div className="flex items-center gap-3">
+        <div className={`p-1.5 rounded-sm flex items-center justify-between gap-1.5 transition-colors ${isSent ? 'bg-green-50 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-primary-light/10'}`}>
+            <div className="flex items-center gap-1">
                 {isSent 
-                    ? <CheckCircleIcon className="w-6 h-6 text-green-500 flex-shrink-0" /> 
-                    : <EnvelopeIcon className="w-6 h-6 text-text-muted dark:text-text-muted-dark flex-shrink-0" />
+                    ? <CheckCircleIcon className="w-3.5 h-3.5 text-green-500 flex-shrink-0" /> 
+                    : <EnvelopeIcon className="w-3.5 h-3.5 text-text-muted dark:text-text-muted-dark flex-shrink-0" />
                 }
                 <div>
-                    <p className="font-semibold text-text-main dark:text-text-main-dark">{label}</p>
+                    <p className="font-semibold text-text-main dark:text-text-main-dark text-sm">{label}</p>
                     {isSent && <p className="text-xs text-green-700 dark:text-green-300 font-medium">Envoyé le {dateSent}</p>}
                 </div>
             </div>
             {!isSent && (
-                <button onClick={onOpen} className="px-3 py-1.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-light transition-transform active:scale-95">
+                <button onClick={onOpen} className="px-1.5 py-0.5 bg-primary text-white text-xs font-semibold rounded-sm hover:bg-primary-light transition-transform active:scale-95">
                     Générer
                 </button>
             )}
@@ -129,27 +126,27 @@ const ConversationDetailView: React.FC<{ visit: Visit, onOpenMessageGenerator: M
     };
 
     return (
-        <div className="flex flex-col bg-card-light dark:bg-card-dark rounded-xl shadow-soft-lg h-full">
+        <div className="flex flex-col bg-card-light dark:bg-card-dark rounded-xl shadow-soft-lg h-full overflow-hidden">
             {/* Header */}
-            <div className="p-4 border-b border-border-light dark:border-border-dark flex items-center gap-4 flex-shrink-0">
+            <div className="p-1.5 border-b border-border-light dark:border-border-dark flex items-center gap-1.5 flex-shrink-0">
                 {isMobile && (
                     <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-primary-light/20">
                         <ChevronLeftIcon className="w-6 h-6" />
                     </button>
                 )}
-                <Avatar item={visit} size="w-10 h-10" />
+                <Avatar item={visit} size="w-5 h-5" />
                 <div>
-                    <h3 className="text-lg font-bold text-primary dark:text-white">{visit.nom}</h3>
+                    <h3 className="text-sm font-bold text-primary dark:text-white">{visit.nom}</h3>
                     <p className="text-sm text-text-muted dark:text-text-muted-dark capitalize">
                         {new Date(visit.visitDate + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                 </div>
             </div>
             {/* Content */}
-            <div className="p-4 md:p-6 space-y-6 overflow-y-auto">
+            <div className="p-1.5 space-y-2 overflow-hidden flex-shrink-0">
                 <div>
-                    <h4 className="font-bold text-text-main dark:text-text-main-dark mb-3">Communications Orateur</h4>
-                    <div className="space-y-3">
+                    <h4 className="font-bold text-text-main dark:text-text-main-dark mb-1 text-sm">Communications Orateur</h4>
+                    <div className="space-y-1">
                         <CommunicationStep visit={visit} type="confirmation" role="speaker" label="Confirmation & Besoins" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'confirmation')} />
                         <CommunicationStep visit={visit} type="preparation" role="speaker" label="Détails de préparation" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'preparation')} />
                         <CommunicationStep visit={visit} type="reminder-7" role="speaker" label="Rappel J-7" onOpen={() => onOpenMessageGenerator(visit, 'speaker', 'reminder-7')} />
@@ -158,21 +155,21 @@ const ConversationDetailView: React.FC<{ visit: Visit, onOpenMessageGenerator: M
                     </div>
                 </div>
 
-                <div className="pt-6 border-t border-border-light dark:border-border-dark">
-                    <h4 className="font-bold text-text-main dark:text-text-main-dark mb-3">Communication Personnalisée (Orateur)</h4>
-                     <div className="bg-gray-100 dark:bg-primary-light/10 rounded-lg p-4">
+                <div className="pt-2 border-t border-border-light dark:border-border-dark">
+                    <h4 className="font-bold text-text-main dark:text-text-main-dark mb-1 text-sm">Communication Personnalisée (Orateur)</h4>
+                     <div className="bg-gray-100 dark:bg-primary-light/10 rounded-sm p-1.5">
                         <textarea
                             value={personalMessage}
                             onChange={(e) => setPersonalMessage(e.target.value)}
-                            rows={4}
+                            rows={2}
                             placeholder="Écrivez votre message personnalisé ici pour des situations spécifiques (ex: invitation à un repas par une autre famille, etc.)."
-                            className="w-full p-2 border rounded-md bg-card-light dark:bg-card-dark border-border-light dark:border-border-dark"
+                            className="w-full p-1 text-xs border rounded-sm bg-card-light dark:bg-card-dark border-border-light dark:border-border-dark"
                         />
                         <div className="text-right mt-2">
                              <button
                                 onClick={handleOpenPersonalMessage}
                                 disabled={!personalMessage.trim()}
-                                className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-light transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-1.5 py-0.5 bg-primary text-white text-xs font-semibold rounded-sm hover:bg-primary-light transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Générer le message
                             </button>
@@ -181,9 +178,9 @@ const ConversationDetailView: React.FC<{ visit: Visit, onOpenMessageGenerator: M
                 </div>
 
                  {(visit.locationType === 'physical' && visit.host !== 'N/A') && (
-                    <div className="pt-6 border-t border-border-light dark:border-border-dark">
-                        <h4 className="font-bold text-text-main dark:text-text-main-dark mb-3">Communications Accueil ({visit.host})</h4>
-                        <div className="space-y-3">
+                    <div className="pt-2 border-t border-border-light dark:border-border-dark">
+                        <h4 className="font-bold text-text-main dark:text-text-main-dark mb-1 text-sm">Communications Accueil ({visit.host})</h4>
+                        <div className="space-y-1">
                             <CommunicationStep visit={visit} type="confirmation" role="host" label="Confirmation" onOpen={() => onOpenMessageGenerator(visit, 'host', 'confirmation')} />
                             <CommunicationStep visit={visit} type="preparation" role="host" label="Détails de préparation" onOpen={() => onOpenMessageGenerator(visit, 'host', 'preparation')} />
                             <CommunicationStep visit={visit} type="reminder-7" role="host" label="Rappel J-7" onOpen={() => onOpenMessageGenerator(visit, 'host', 'reminder-7')} />
@@ -239,42 +236,42 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({ onOpenMessageG
 
     return (
         <div className="flex flex-col animate-fade-in h-full">
-            <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
+            <div className="p-1.5 sm:p-2 flex flex-col h-full">
                 <div className="flex-shrink-0">
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-1 mb-1.5">
                         <div className="relative flex-grow">
                             <input
                                 type="text"
                                 placeholder="Rechercher une visite par nom..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:ring-primary focus:border-primary bg-card-light dark:bg-card-dark"
+                                className="w-full pl-7 pr-2 py-0.5 text-xs border border-border-light dark:border-border-dark rounded-sm focus:ring-primary focus:border-primary bg-card-light dark:bg-card-dark"
                             />
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <SearchIcon className="w-5 h-5 text-gray-400" />
+                                <SearchIcon className="w-3 h-3 text-gray-400" />
                             </div>
                         </div>
                         {visitsNeedingHost.length > 0 && (
                             <button
                                 onClick={() => setIsSelectionModalOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-all active:scale-95 whitespace-nowrap shadow-md"
+                                className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500 text-white font-semibold rounded-sm hover:bg-amber-600 transition-all active:scale-95 whitespace-nowrap shadow-md text-xs"
                                 title="Demande d'accueil groupée"
                             >
-                                <PlusIcon className="w-5 h-5" />
+                                <PlusIcon className="w-3 h-3" />
                                 <span className="hidden sm:inline">Demande d'accueil</span>
                             </button>
                         )}
                     </div>
                 </div>
 
-                <div className="flex-grow min-h-0">
-                    <div className="md:grid md:grid-cols-3 lg:grid-cols-4 gap-6 h-full">
+                <div className="flex-grow min-h-0 overflow-hidden">
+                    <div className="md:grid md:grid-cols-4 lg:grid-cols-4 gap-1 h-full overflow-hidden">
                         {/* Mobile View */}
-                        <div className="md:hidden h-full overflow-y-auto">
+                        <div className="md:hidden h-full overflow-hidden max-h-full">
                             {selectedVisit ? (
                                 <ConversationDetailView visit={selectedVisit} onOpenMessageGenerator={onOpenMessageGenerator} onBack={() => setSelectedVisitId(null)} isMobile={true} />
                             ) : (
-                                <div className="space-y-2">
+                                <div className="space-y-0.5">
                                     {activeVisits.length > 0 ? activeVisits.map(visit => (
                                         <ConversationListItem key={visit.visitId} visit={visit} isSelected={false} onSelect={() => setSelectedVisitId(visit.visitId)} />
                                     )) : (
@@ -285,14 +282,16 @@ export const MessagingCenter: React.FC<MessagingCenterProps> = ({ onOpenMessageG
                         </div>
 
                         {/* Desktop View */}
-                        <div className="hidden md:block md:col-span-1 lg:col-span-1 pr-2 space-y-2 h-full overflow-y-auto">
-                            {activeVisits.length > 0 ? activeVisits.map(visit => (
-                                <ConversationListItem key={visit.visitId} visit={visit} isSelected={visit.visitId === selectedVisitId} onSelect={() => setSelectedVisitId(visit.visitId)} />
-                            )) : (
-                                <p className="text-center py-8 text-text-muted dark:text-text-muted-dark">Aucune visite à venir.</p>
-                            )}
+                        <div className="hidden md:block md:col-span-2 lg:col-span-2 pr-0.25 h-full overflow-hidden max-h-full">
+                            <div className="grid grid-cols-3 gap-0.5">
+                                {activeVisits.length > 0 ? activeVisits.map(visit => (
+                                    <ConversationListItem key={visit.visitId} visit={visit} isSelected={visit.visitId === selectedVisitId} onSelect={() => setSelectedVisitId(visit.visitId)} />
+                                )) : (
+                                    <p className="col-span-3 text-center py-8 text-text-muted dark:text-text-muted-dark">Aucune visite à venir.</p>
+                                )}
+                            </div>
                         </div>
-                        <div className="hidden md:block md:col-span-2 lg:col-span-3 h-full">
+                        <div className="hidden md:block md:col-span-2 lg:col-span-2 h-full overflow-hidden max-h-full">
                             {selectedVisit ? (
                                 <ConversationDetailView visit={selectedVisit} onOpenMessageGenerator={onOpenMessageGenerator} onBack={() => {}} isMobile={false} />
                             ) : (
