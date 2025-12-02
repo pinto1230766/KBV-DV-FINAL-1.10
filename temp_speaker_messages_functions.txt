@@ -1,0 +1,50 @@
+// Fonctions de gestion des messages d'orateurs à ajouter dans DataContext.tsx
+
+// Ajouter après la fonction deleteSpecialDate (ligne 1420)
+
+    // --- Speaker Messages Management ---
+    const addSpeakerMessage = async (speakerId: string, speakerName: string, speakerPhone: string): Promise<void> => {
+        const newMessage: SpeakerMessage = {
+            id: generateUUID(),
+            speakerId,
+            speakerName,
+            speakerPhone,
+            receivedAt: new Date().toISOString(),
+            read: false,
+            notificationSent: true,
+        };
+        
+        updateAppData(prev => ({
+            ...prev,
+            speakerMessages: [...prev.speakerMessages, newMessage]
+        }));
+    };
+
+    const markMessageAsRead = async (messageId: string): Promise<void> => {
+        updateAppData(prev => ({
+            ...prev,
+            speakerMessages: prev.speakerMessages.map(msg => 
+                msg.id === messageId ? { ...msg, read: true } : msg
+            )
+        }));
+    };
+
+    const deleteSpeakerMessage = async (messageId: string): Promise<void> => {
+        updateAppData(prev => ({
+            ...prev,
+            speakerMessages: prev.speakerMessages.filter(msg => msg.id !== messageId)
+        }));
+    };
+
+// Modifications pour resetData (ligne 1105):
+// Ajouter speakerMessages: [] dans emptyData
+
+// Modifications pour importData (ligne 1087):
+// Ajouter speakerMessages: data.speakerMessages || appData.speakerMessages || [], dans newAppData
+
+// Modifications pour value (ligne 1422):
+// Ajouter à la fin avant la fermeture:
+//         speakerMessages: appData?.speakerMessages || [],
+//         addSpeakerMessage,
+//         markMessageAsRead,
+//         deleteSpeakerMessage,

@@ -7,13 +7,12 @@ import {
 } from './Icons';
 import { TabButton } from './TabButton';
 import { NotificationPermissionBanner } from './NotificationPermissionBanner';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface MainLayoutProps {
     children: React.ReactNode;
     activeTab: Tab;
     setActiveTab: (tab: Tab) => void;
-    isDarkMode: boolean;
-    toggleTheme: () => void;
     congregationProfile: CongregationProfile;
     logoUrl: string;
     showNotificationBanner: boolean;
@@ -27,16 +26,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     children,
     activeTab,
     setActiveTab,
-    isDarkMode,
-    toggleTheme,
     congregationProfile,
     logoUrl,
     showNotificationBanner,
     onEnableNotifications,
     onDismissNotificationBanner,
     onOpenSearch,
-    onOpenPrint
+    onOpenPrint,
 }) => {
+    const { settings, setTheme } = useSettings();
+    const isDarkMode = settings.theme === 'dark' || (settings.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    const toggleTheme = () => {
+        setTheme(isDarkMode ? 'light' : 'dark');
+    };
     // Defensive check to ensure React is properly initialized
     if (typeof React === 'undefined' || !React.useState) {
         console.error('React is not properly initialized in MainLayout component');
@@ -75,6 +78,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             return '8px'; // Android 15 and below (S10 Ultra) - réduit de 12px à 8px (minimum)
         }
     };
+    const headerClass = useSafeAreas ? 'pt-[env(safe-area-inset-top)]' : 'pt-[2px]';
+    const mainClass = useSafeAreas ? 'pb-[env(safe-area-inset-bottom)]' : 'pb-[8px]';
+
     return (
         <div className={`flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-background dark:bg-background-dark`}>
             {showNotificationBanner && (
@@ -83,7 +89,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     onDismiss={onDismissNotificationBanner}
                 />
             )}
-            <div className="header-safe-area backdrop-blur-lg flex-shrink-0 z-40 no-print" style={{ paddingTop: getHeaderPadding() }}>
+            <div className={`header-safe-area backdrop-blur-lg flex-shrink-0 z-40 no-print ${headerClass}`}>
                 <header className="bg-background/95 dark:bg-background-dark/95 border-b border-white/20 dark:border-white/10">
                     <div className="px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center py-2 sm:py-4">
@@ -94,7 +100,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                                 </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <button onClick={onOpenSearch} className="p-3 rounded-full text-text-main dark:text-text-main-dark hover:bg-gray-200 dark:hover:bg-primary-light transition-colors">
+                                <button onClick={onOpenSearch} className="p-3 rounded-full text-text-main dark:text-text-main-dark hover:bg-gray-200 dark:hover:bg-primary-light transition-colors" title="Rechercher">
                                     <SearchIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </button>
                                 {activeTab === 'dashboard' && (
@@ -102,7 +108,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                                         <PrintIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                                     </button>
                                 )}
-                                <button onClick={toggleTheme} className="p-3 rounded-full text-text-main dark:text-text-main-dark hover:bg-gray-200 dark:hover:bg-primary-light transition-colors">
+                                <button onClick={toggleTheme} className="p-3 rounded-full text-text-main dark:text-text-main-dark hover:bg-gray-200 dark:hover:bg-primary-light transition-colors" title="Changer le thème">
                                     {isDarkMode ? <SunIcon className="w-5 h-5 sm:w-6 sm:h-6" /> : <MoonIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
                                 </button>
                             </div>
@@ -127,7 +133,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 </nav>
             </div>
 
-            <main className="flex-grow min-h-0 mobile-nav-safe-area" style={{ paddingBottom: getMainPadding() }}>
+            <main className={`flex-grow min-h-0 mobile-nav-safe-area ${mainClass}`}>
                 {children}
             </main>
         </div>

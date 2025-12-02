@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Visit } from '../types';
 import { LocalNotifications, LocalNotificationSchema } from '@capacitor/local-notifications';
+import { useSettings } from '../contexts/SettingsContext';
 
 const formatDate = (dateString: string) => {
     // Appending 'T00:00:00' ensures the date string is parsed in the local timezone, not as UTC midnight.
@@ -34,6 +35,9 @@ const useVisitNotifications = (
         console.error('React is not properly initialized in useVisitNotifications hook');
         return;
     }
+
+    const { settings } = useSettings();
+    const { notificationSettings } = settings;
 
     useEffect(() => {
         const syncNotifications = async () => {
@@ -70,23 +74,45 @@ const useVisitNotifications = (
                     const visitDate = new Date(visit.visitDate + 'T00:00:00');
                     
                     const reminderSetups = [
-                        { days: 7, title: `Rappel J-7: Visite de ${visit.nom}`, body: `Le ${formatDate(visit.visitDate)} à ${visit.visitTime}.\nAccueil par : ${visit.host}`},
-                        { days: 2, title: `Rappel J-2: Visite de ${visit.nom}`, body: `Dans 2 jours: ${formatDate(visit.visitDate)}.\nN'oubliez pas les derniers détails avec ${visit.host}.`},
-                        { days: 1, title: `Rappel J-1: Visite de ${visit.nom}`, body: `Demain à ${visit.visitTime}.\nNous avons hâte de l'accueillir !`},
-                    ];
+                        { type: 'reminder7', days: 7, title: `Rappel J-7: Visite de ${visit.nom}`, body: `Le ${formatDate(visit.visitDate)} à ${visit.visitTime}.\nAccueil par : ${visit.host}`},
+                        { type: 'reminder2', days: 2, title: `Rappel J-2: Visite de ${visit.nom}`, body: `Dans 2 jours: ${formatDate(visit.visitDate)}. \nN'oubliez pas les derniers détails avec ${visit.host}.`},
+                    ].filter(r => (notificationSettings as any)[r.type]); // Filter based on user settings
 
                     reminderSetups.forEach(setup => {
-                        const notificationDate = new Date(visitDate);
-                        notificationDate.setDate(visitDate.getDate() - setup.days);
-                        notificationDate.setHours(9, 0, 0, 0); // Schedule for 9:00 AM.
+                        const notificationDateTime = new Date(visitDate);
+                        notificationDateTime.setDate(visitDate.getDate() - setup.days);
+                        
+                        // Use user-defined notification time
+                        const [hours, minutes] = notificationSettings.notificationTime.split(':').map(Number);
+                        notificationDateTime.setHours(hours, minutes, 0, 0);
+
+                        // Quiet hours logic
+                        if (notificationSettings.quietHours.enabled) {
+                            const quietStartHour = Number(notificationSettings.quietHours.start.split(':')[0]);
+                            const quietEndHour = Number(notificationSettings.quietHours.end.split(':')[0]);
+                            const notificationHour = notificationDateTime.getHours();
+
+                            const isOvernight = quietStartHour > quietEndHour;
+                            let duringQuietHours = false;
+                            if (isOvernight) {
+                                duringQuietHours = (notificationHour >= quietStartHour || notificationHour < quietEndHour);
+                            } else {
+                                duringQuietHours = (notificationHour >= quietStartHour && notificationHour < quietEndHour);
+                            }
+
+                            if (duringQuietHours) {
+                                console.log(`Skipping notification for ${visit.nom} due to quiet hours.`);
+                                return; // Skip scheduling this notification
+                            }
+                        }
 
                         // 4. Only schedule notifications that are in the future.
-                        if (notificationDate > now) {
+                        if (notificationDateTime > now) {
                             notificationsToSchedule.push({
                                 id: visitIdToNumeric(visit.visitId) + setup.days, // Create a unique numeric ID
                                 title: setup.title,
                                 body: setup.body,
-                                schedule: { at: notificationDate, allowWhileIdle: true },
+                                schedule: { at: notificationDateTime, allowWhileIdle: true },
                                 extra: { visitId: visit.visitId }
                             });
                         }
@@ -104,10 +130,9 @@ const useVisitNotifications = (
 
         syncNotifications();
         // This hook runs when visits or notification permissions change.
-    }, [visits, notificationPermission]);
+    }, [visits, notificationPermission, notificationSettings]); // Add notificationSettings to dependencies
 
 // This hook is for side-effects only (scheduling notifications).
-};
+}; 
 
 export { useVisitNotifications };
-

@@ -1,17 +1,27 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     UploadIcon, SpinnerIcon, ExclamationTriangleIcon,
-    ExternalLinkIcon, ShieldCheckIcon, PodiumIcon, BookOpenIcon, ServerStackIcon, LockClosedIcon, LockOpenIcon, CloudArrowDownIcon, InformationCircleIcon, SparklesIcon, DownloadIcon, ChevronDownIcon, ClockIcon, SunIcon, MoonIcon, ComputerDesktopIcon, PaintBrushIcon, EnvelopeIcon, SaveIcon, ArrowUturnLeftIcon, MapPinIcon, EyeIcon, EyeSlashIcon, BellIcon, CogIcon, ChartBarIcon, WifiIcon, UserGroupIcon, GlobeAltIcon, AdjustmentsHorizontalIcon
+    ExternalLinkIcon, ShieldCheckIcon, PodiumIcon, BookOpenIcon, ServerStackIcon, LockClosedIcon, LockOpenIcon, CloudArrowDownIcon, InformationCircleIcon, SparklesIcon, DownloadIcon, ChevronDownIcon, ClockIcon, SunIcon, MoonIcon, ComputerDesktopIcon, PaintBrushIcon, EnvelopeIcon, SaveIcon, ArrowUturnLeftIcon, MapPinIcon, EyeIcon, EyeSlashIcon, BellIcon, CogIcon, ChartBarIcon, WifiIcon, UserGroupIcon, AdjustmentsHorizontalIcon
 } from './Icons';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
 import { ArchivedVisits } from './ArchivedVisits';
 import { EncryptionPrompt } from './EncryptionPrompt';
 import { CongregationProfile, Visit, Language, MessageType, MessageRole } from '../types';
+
+type MessageTemplate = {
+    id: string;
+    title: string;
+    content: string;
+    type: MessageType;
+    isDefault: boolean;
+};
 import useOnlineStatus from '../hooks/useOnlineStatus';
 import { DuplicateFinderModal } from './DuplicateFinderModal';
-import { LanguageSelector } from './LanguageSelector';
 import { messageTemplates, hostRequestMessageTemplates } from '../constants';
+import { processTemplate, validateTemplate, getAvailableVariables } from '../utils/templateProcessor';
+import { validateAndRepairImportedData, createBackupBeforeImport } from '../utils/dataValidator';
+import { ResetConfirmationModal } from './ResetConfirmationModal';
 
 interface SettingsProps {
     onImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -212,46 +222,150 @@ const TemplateItem: React.FC<{
     onSave: (newTemplate: string) => void;
     onRestore: () => void;
     isCustom: boolean;
-}> = ({ title, template, onSave, onRestore, isCustom }) => {
+    processTemplate?: (template: string) => string;
+}> = ({ title, template, onSave, onRestore, isCustom, processTemplate }) => {
     const [text, setText] = useState(template);
+    const [showPreview, setShowPreview] = useState(false);
+    const [showVariables, setShowVariables] = useState(false);
+    const { addToast } = useToast();
     const isDirty = text !== template;
+    const validationIssues = validateTemplate(text);
+    const availableVariables = getAvailableVariables();
 
     useEffect(() => {
         setText(template);
     }, [template]);
 
-    const handleSave = () => {
-        onSave(text);
+    const handleSave = async () => {
+        if (validationIssues.length > 0) {
+            addToast(`Erreurs dans le modèle: ${validationIssues.join(', ')}`, 'error');
+            return;
+        }
+        
+        try {
+            await onSave(text);
+            addToast('Modèle sauvegardé avec succès', 'success');
+        } catch (error) {
+            addToast('Erreur lors de la sauvegarde', 'error');
+        }
+    };
+
+    const handleRestore = async () => {
+        try {
+            await onRestore();
+            addToast('Modèle par défaut restauré', 'info');
+        } catch (error) {
+            addToast('Erreur lors de la restauration', 'error');
+        }
     };
 
     return (
         <div className="p-4 bg-gray-50 dark:bg-primary-light/10 rounded-lg">
             <div className="flex justify-between items-center mb-2">
                 <h4 className="font-semibold text-text-main dark:text-text-main-dark">{title}</h4>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                    <button 
+                        type="button" 
+                        onClick={() => setShowVariables(!showVariables)} 
+                        className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md flex items-center gap-1 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    >
+                        <AdjustmentsHorizontalIcon className="w-4 h-4"/> Variables
+                    </button>
+                    {processTemplate && (
+                        <button 
+                            type="button" 
+                            onClick={() => setShowPreview(!showPreview)} 
+                            className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md flex items-center gap-1 hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                        >
+                            <EyeIcon className="w-4 h-4"/> {showPreview ? 'Masquer' : 'Aperçu'}
+                        </button>
+                    )}
                     {isCustom && (
-                        <button type="button" onClick={onRestore} className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1 hover:underline">
+                        <button type="button" onClick={handleRestore} className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1 hover:underline">
                             <ArrowUturnLeftIcon className="w-4 h-4" /> Rétablir
                         </button>
                     )}
-                    <button type="button" onClick={handleSave} disabled={!isDirty} className="px-3 py-1 text-xs bg-primary text-white rounded-md flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95">
-                        <SaveIcon className="w-4 h-4"/> Enregistrer
+                    <button 
+                        type="button" 
+                        onClick={handleSave} 
+                        disabled={!isDirty || validationIssues.length > 0} 
+                        className={`px-3 py-1 text-xs rounded-md flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95 ${
+                            validationIssues.length > 0 
+                                ? 'bg-red-600 text-white' 
+                                : 'bg-primary text-white'
+                        }`}
+                    >
+                        <SaveIcon className="w-4 h-4"/> 
+                        {validationIssues.length > 0 ? 'Erreurs' : 'Enregistrer'}
                     </button>
                 </div>
             </div>
-            <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                rows={8}
-                className="w-full p-2 border rounded-md bg-card-light dark:bg-card-dark border-border-light dark:border-border-dark font-mono text-sm"
-            />
+            <div className="space-y-3">
+                {validationIssues.length > 0 && (
+                    <div className="p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                        <p className="text-sm text-red-700 dark:text-red-300 font-medium">Erreurs détectées :</p>
+                        <ul className="text-xs text-red-600 dark:text-red-400 mt-1 list-disc list-inside">
+                            {validationIssues.map((issue, index) => (
+                                <li key={index}>{issue}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                
+                {showVariables && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                        <h5 className="text-sm font-medium mb-2 text-blue-700 dark:text-blue-300">Variables disponibles :</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                            {Object.entries(availableVariables).map(([variable, description]) => (
+                                <div key={variable} className="flex items-center gap-2">
+                                    <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded text-xs font-mono">
+                                        {'{' + variable + '}'}
+                                    </code>
+                                    <span className="text-blue-600 dark:text-blue-400">{description}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                
+                <textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    rows={8}
+                    className={`w-full p-2 border rounded-md bg-card-light dark:bg-card-dark font-mono text-sm ${
+                        validationIssues.length > 0 
+                            ? 'border-red-300 dark:border-red-700' 
+                            : 'border-border-light dark:border-border-dark'
+                    }`}
+                    placeholder="Saisissez votre modèle de message ici..."
+                />
+                
+                {showPreview && processTemplate && (
+                    <div className="border-t pt-3">
+                        <h5 className="text-sm font-medium mb-2 text-text-muted dark:text-text-muted-dark">Aperçu avec variables remplacées :</h5>
+                        <div className="p-3 bg-white dark:bg-gray-800 border rounded-md text-sm whitespace-pre-wrap">
+                            {processTemplate(text)}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
 
 const TemplateEditorContent: React.FC = () => {
     const { customTemplates, customHostRequestTemplates, saveCustomTemplate, deleteCustomTemplate, saveCustomHostRequestTemplate, deleteCustomHostRequestTemplate } = useData();
-    const [language, setLanguage] = useState<Language>('fr');
+    const { settings } = useSettings();
+    const { addToast } = useToast();
+    const language = settings.language;
+    const [previewData, setPreviewData] = useState({
+        speakerName: 'João Silva',
+        hostName: 'Maria Santos',
+        visitDate: '15 janvier 2024',
+        visitTime: '14:30',
+        hospitalityOverseer: 'Francisco Pinto',
+        hospitalityOverseerPhone: '+33777388914'
+    });
 
     const getVisitTemplate = useCallback((type: MessageType, role: MessageRole): { template: string, isCustom: boolean } => {
         const custom = customTemplates[language]?.[type]?.[role];
@@ -272,6 +386,17 @@ const TemplateEditorContent: React.FC = () => {
         return { template: customTpl || defaultTpl, isCustom: !!customTpl };
     }, [customHostRequestTemplates, language]);
 
+    const processTemplatePreview = useCallback((template: string): string => {
+        return processTemplate(template, {
+            ...previewData,
+            firstTimeIntroduction: '\n\nC\'est la première fois que nous nous contactons.',
+            hostPhone: '+33612345678',
+            hostAddress: '123 Rue Example, Lyon',
+            speakerPhone: '+33687654321',
+            visitList: '1. **João Silva** (Porto KBV)\n   📅 15 janvier 2024 à 14:30\n   📞 +33687654321'
+        });
+    }, [previewData]);
+
     const visitMessageTypes: { type: MessageType, label: string }[] = [
         { type: 'confirmation', label: 'Confirmation' },
         { type: 'preparation', label: 'Préparation' },
@@ -282,8 +407,81 @@ const TemplateEditorContent: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-end">
-                <LanguageSelector lang={language} setLang={setLanguage} />
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="text-sm text-text-muted dark:text-text-muted-dark">
+                    <p>Les modèles sont affichés pour la langue sélectionnée dans les paramètres de l'interface (<span className="font-semibold">{language === 'fr' ? 'Français' : language === 'cv' ? 'Cap-verdien' : language === 'en' ? 'Anglais' : 'Espagnol'}</span>).</p>
+                    <p className="text-xs mt-1">Variables disponibles : {'{speakerName}'}, {'{hostName}'}, {'{visitDate}'}, {'{visitTime}'}, {'{hospitalityOverseer}'}, {'{hospitalityOverseerPhone}'}</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                        onClick={() => {
+                            const templates = { customTemplates, customHostRequestTemplates };
+                            const blob = new Blob([JSON.stringify(templates, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `message-templates-${new Date().toISOString().slice(0, 10)}.json`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            addToast('Modèles exportés', 'success');
+                        }}
+                        className="px-3 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center gap-1"
+                    >
+                        <DownloadIcon className="w-4 h-4"/> Exporter
+                    </button>
+                    <label className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center gap-1 cursor-pointer">
+                        <UploadIcon className="w-4 h-4"/> Importer
+                        <input
+                            type="file"
+                            accept=".json"
+                            className="sr-only"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = (event) => {
+                                        try {
+                                            const imported = JSON.parse(event.target?.result as string);
+                                            if (imported.customTemplates) {
+                                                Object.entries(imported.customTemplates).forEach(([lang, templates]: [string, any]) => {
+                                                    Object.entries(templates).forEach(([type, typeTemplates]: [string, any]) => {
+                                                        Object.entries(typeTemplates).forEach(([role, template]: [string, any]) => {
+                                                            saveCustomTemplate(lang as Language, type as MessageType, role as MessageRole, template);
+                                                        });
+                                                    });
+                                                });
+                                            }
+                                            if (imported.customHostRequestTemplates) {
+                                                Object.entries(imported.customHostRequestTemplates).forEach(([lang, templates]: [string, any]) => {
+                                                    Object.entries(templates).forEach(([type, template]: [string, any]) => {
+                                                        saveCustomHostRequestTemplate(lang as Language, type as 'singular' | 'plural', template);
+                                                    });
+                                                });
+                                            }
+                                            addToast('Modèles importés avec succès', 'success');
+                                        } catch (error) {
+                                            addToast('Erreur lors de l\'importation', 'error');
+                                        }
+                                    };
+                                    reader.readAsText(file);
+                                }
+                                e.target.value = '';
+                            }}
+                        />
+                    </label>
+                </div>
+            </div>
+            
+            <div className="text-xs text-text-muted dark:text-text-muted-dark bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
+                <p className="font-medium mb-1">📝 Conseils d'utilisation :</p>
+                <ul className="space-y-1 list-disc list-inside">
+                    <li>💾 Les modifications sont automatiquement sauvegardées</li>
+                    <li>👁️ Utilisez l'aperçu pour voir le rendu final avec les variables</li>
+                    <li>📁 Exportez vos modèles pour les sauvegarder ou les partager</li>
+                    <li>⚠️ Les variables en rouge indiquent des erreurs de syntaxe</li>
+                </ul>
             </div>
 
             <div>
@@ -299,6 +497,7 @@ const TemplateEditorContent: React.FC = () => {
                                     isCustom={getVisitTemplate(type, 'speaker').isCustom}
                                     onSave={(text) => saveCustomTemplate(language, type, 'speaker', text)}
                                     onRestore={() => deleteCustomTemplate(language, type, 'speaker')}
+                                    processTemplate={processTemplatePreview}
                                 />
                                 <TemplateItem
                                     title="Pour l'accueil"
@@ -306,6 +505,7 @@ const TemplateEditorContent: React.FC = () => {
                                     isCustom={getVisitTemplate(type, 'host').isCustom}
                                     onSave={(text) => saveCustomTemplate(language, type, 'host', text)}
                                     onRestore={() => deleteCustomTemplate(language, type, 'host')}
+                                    processTemplate={processTemplatePreview}
                                 />
                             </div>
                         </div>
@@ -322,6 +522,7 @@ const TemplateEditorContent: React.FC = () => {
                         isCustom={getHostRequestTemplate('singular').isCustom}
                         onSave={(text) => saveCustomHostRequestTemplate(language, 'singular', text)}
                         onRestore={() => deleteCustomHostRequestTemplate(language, 'singular')}
+                        processTemplate={processTemplatePreview}
                     />
                     <TemplateItem
                         title="Modèle pour plusieurs personnes"
@@ -329,6 +530,7 @@ const TemplateEditorContent: React.FC = () => {
                         isCustom={getHostRequestTemplate('plural').isCustom}
                         onSave={(text) => saveCustomHostRequestTemplate(language, 'plural', text)}
                         onRestore={() => deleteCustomHostRequestTemplate(language, 'plural')}
+                        processTemplate={processTemplatePreview}
                     />
                 </div>
             </div>
@@ -385,16 +587,61 @@ const GoogleSheetsContent: React.FC<{ onSync: () => Promise<void> }> = ({ onSync
 
 const SecurityContent: React.FC = () => {
     const { isEncrypted, enableEncryption, disableEncryption, apiKey, updateApiKey } = useData();
+    const { addToast } = useToast();
     const [isPromptOpen, setIsPromptOpen] = useState(false);
     const [promptMode, setPromptMode] = useState<'setup' | 'disable'>('setup');
     const [keyInput, setKeyInput] = useState('');
     const [showKey, setShowKey] = useState(false);
+    
+    // Paramètres de sécurité locaux
+    const [securitySettings, setSecuritySettings] = useState(() => {
+        const stored = localStorage.getItem('securitySettings');
+        return stored ? JSON.parse(stored) : {
+            autoLockTimeout: 30,
+            requirePasswordOnStart: true,
+            encryptSensitiveData: true,
+            clearClipboardAfter: 30,
+            hidePhoneNumbers: false,
+            hideAddresses: false,
+            logSecurityEvents: true,
+            allowScreenshots: true,
+            sessionTimeout: 120
+        };
+    });
 
     const isEnvKeySet = useMemo(() => (typeof process !== 'undefined' && !!process.env?.API_KEY), []);
 
     useEffect(() => {
         setKeyInput(apiKey);
     }, [apiKey]);
+
+    // Sauvegarder et appliquer les paramètres de sécurité
+    const saveSecuritySettings = (newSettings: any) => {
+        const updated = { ...securitySettings, ...newSettings };
+        setSecuritySettings(updated);
+        localStorage.setItem('securitySettings', JSON.stringify(updated));
+        
+        // Appliquer les paramètres immédiatement
+        applySecuritySettings(updated);
+        addToast('Paramètres de sécurité appliqués', 'success');
+    };
+
+    // Appliquer les paramètres de sécurité
+    const applySecuritySettings = (settings: any) => {
+        // Masquer les captures d'écran
+        if (!settings.allowScreenshots) {
+            document.body.style.setProperty('-webkit-user-select', 'none');
+            document.body.style.setProperty('user-select', 'none');
+        } else {
+            document.body.style.removeProperty('-webkit-user-select');
+            document.body.style.removeProperty('user-select');
+        }
+
+        // Configurer le timeout de session
+        if (settings.sessionTimeout > 0) {
+            localStorage.setItem('sessionTimeout', settings.sessionTimeout.toString());
+        }
+    };
 
     const handleKeySave = () => {
         if (isEnvKeySet) return;
@@ -448,7 +695,115 @@ const SecurityContent: React.FC = () => {
                 )}
             </div>
             
-            <div className="pt-4 mt-4 border-t border-border-light dark:border-border-dark">
+            {/* Paramètres de confidentialité */}
+            <div className="pt-6 mt-6 border-t border-border-light dark:border-border-dark">
+                <h3 className="text-lg font-semibold text-text-main dark:text-text-main-dark mb-4">Paramètres de confidentialité</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="flex items-center gap-2">
+                            <input 
+                                type="checkbox" 
+                                checked={securitySettings.hidePhoneNumbers} 
+                                onChange={(e) => saveSecuritySettings({ hidePhoneNumbers: e.target.checked })}
+                                className="rounded" 
+                            />
+                            <span className="text-sm">Masquer les numéros de téléphone</span>
+                        </label>
+                        <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1 ml-6">Affiche ****1234 au lieu du numéro complet</p>
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-2">
+                            <input 
+                                type="checkbox" 
+                                checked={securitySettings.hideAddresses} 
+                                onChange={(e) => saveSecuritySettings({ hideAddresses: e.target.checked })}
+                                className="rounded" 
+                            />
+                            <span className="text-sm">Masquer les adresses</span>
+                        </label>
+                        <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1 ml-6">Masque les numéros de rue</p>
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-2">
+                            <input 
+                                type="checkbox" 
+                                checked={securitySettings.allowScreenshots} 
+                                onChange={(e) => saveSecuritySettings({ allowScreenshots: e.target.checked })}
+                                className="rounded" 
+                            />
+                            <span className="text-sm">Autoriser les captures d'écran</span>
+                        </label>
+                        <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1 ml-6">Désactiver pour plus de sécurité</p>
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-2">
+                            <input 
+                                type="checkbox" 
+                                checked={securitySettings.logSecurityEvents} 
+                                onChange={(e) => saveSecuritySettings({ logSecurityEvents: e.target.checked })}
+                                className="rounded" 
+                            />
+                            <span className="text-sm">Journaliser les événements de sécurité</span>
+                        </label>
+                        <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1 ml-6">Enregistre les tentatives d'accès</p>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Paramètres de session */}
+            <div className="pt-6 mt-6 border-t border-border-light dark:border-border-dark">
+                <h3 className="text-lg font-semibold text-text-main dark:text-text-main-dark mb-4">Gestion de session</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Verrouillage automatique (minutes)</label>
+                        <input 
+                            type="number" 
+                            value={securitySettings.autoLockTimeout} 
+                            onChange={(e) => saveSecuritySettings({ autoLockTimeout: parseInt(e.target.value) })}
+                            className="w-full p-2 border rounded-lg" 
+                            min="5" 
+                            max="120" 
+                        />
+                        <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1">0 = désactivé</p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Timeout de session (minutes)</label>
+                        <input 
+                            type="number" 
+                            value={securitySettings.sessionTimeout} 
+                            onChange={(e) => saveSecuritySettings({ sessionTimeout: parseInt(e.target.value) })}
+                            className="w-full p-2 border rounded-lg" 
+                            min="30" 
+                            max="480" 
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Effacer le presse-papiers après (secondes)</label>
+                        <input 
+                            type="number" 
+                            value={securitySettings.clearClipboardAfter} 
+                            onChange={(e) => saveSecuritySettings({ clearClipboardAfter: parseInt(e.target.value) })}
+                            className="w-full p-2 border rounded-lg" 
+                            min="0" 
+                            max="300" 
+                        />
+                        <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1">0 = jamais</p>
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-2">
+                            <input 
+                                type="checkbox" 
+                                checked={securitySettings.requirePasswordOnStart} 
+                                onChange={(e) => saveSecuritySettings({ requirePasswordOnStart: e.target.checked })}
+                                className="rounded" 
+                            />
+                            <span className="text-sm">Mot de passe requis au démarrage</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="pt-6 mt-6 border-t border-border-light dark:border-border-dark">
                 <h3 className="text-lg font-semibold text-text-main dark:text-text-main-dark mb-2">Clé API Gemini</h3>
                 <p className="text-sm text-text-muted dark:text-text-muted-dark mb-4">
                     Une clé API est requise pour les fonctionnalités d'IA (suggestions, analyse, etc.). Vous pouvez en obtenir une gratuitement sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary dark:text-secondary hover:underline">Google AI Studio</a>.
@@ -504,8 +859,11 @@ const SecurityContent: React.FC = () => {
 };
 
 const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'archiveSectionRef'>> = ({ onImport, onResetData, isImporting }) => {
-    const { exportData, appData } = useData();
+    const { exportData, appData, importData } = useData();
+    const { addToast } = useToast();
     const [usage, setUsage] = useState({ bytes: 0, percent: 0 });
+    const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+    const [isImportingLocal, setIsImportingLocal] = useState(false);
     const QUOTA = 50 * 1024 * 1024; // 50MB
 
     useEffect(() => {
@@ -518,6 +876,47 @@ const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'a
             });
         }
     }, [appData]);
+
+    const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsImportingLocal(true);
+        
+        try {
+            const backupKey = createBackupBeforeImport(appData);
+            addToast('Sauvegarde de sécurité créée', 'info');
+
+            const text = await file.text();
+            const data = JSON.parse(text);
+            
+            const validation = validateAndRepairImportedData(data);
+            
+            if (!validation.isValid) {
+                throw new Error(`Fichier invalide: ${validation.errors.join(', ')}`);
+            }
+
+            if (validation.warnings.length > 0) {
+                addToast(`Import avec avertissements: ${validation.warnings.length} problème(s) corrigé(s)`, 'warning', 8000);
+            }
+
+            await importData(validation.repairedData!);
+            addToast('Données importées avec succès', 'success');
+            
+        } catch (error) {
+            console.error('Erreur lors de l\'import:', error);
+            const message = error instanceof Error ? error.message : 'Erreur inconnue';
+            addToast(`Échec de l'import: ${message}`, 'error', 10000);
+        } finally {
+            setIsImportingLocal(false);
+            event.target.value = '';
+        }
+    };
+
+    const handleResetConfirm = () => {
+        onResetData();
+        setIsResetModalOpen(false);
+    };
 
     const usageMB = (usage.bytes / 1024 / 1024).toFixed(2);
     const quotaMB = (QUOTA / 1024 / 1024).toFixed(2);
@@ -576,19 +975,20 @@ const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'a
                         <span className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Enregistrer toutes les données dans un fichier.</span>
                     </button>
                     <label htmlFor="import-file" className="flex flex-col items-center justify-center text-center p-4 bg-gray-100 dark:bg-primary-light/10 rounded-lg hover:bg-gray-200 dark:hover:bg-primary-light/20 transition-colors cursor-pointer">
-                        {isImporting ? (
+                        {isImportingLocal ? (
                             <>
                                 <SpinnerIcon className="w-8 h-8 mb-2 text-secondary" />
                                 <span className="font-semibold">Importation...</span>
+                                <span className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Validation et réparation en cours</span>
                             </>
                         ) : (
                             <>
                                 <UploadIcon className="w-8 h-8 mb-2 text-secondary" />
                                 <span className="font-semibold">Importer les données</span>
+                                <span className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Restaurer depuis un fichier (avec validation)</span>
                             </>
                         )}
-                         <span className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Restaurer depuis un fichier</span>
-                        <input id="import-file" type="file" className="sr-only" onChange={onImport} accept=".json" disabled={isImporting} />
+                        <input id="import-file" type="file" className="sr-only" onChange={handleImportFile} accept=".json" disabled={isImportingLocal} />
                     </label>
                 </div>
              </div>
@@ -603,12 +1003,29 @@ const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'a
                             Efface définitivement toutes les visites, orateurs et contacts. Cette action est irréversible.
                          </p>
                     </div>
-                     <button onClick={onResetData} className="w-full sm:w-auto mt-2 sm:mt-0 flex-shrink-0 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                     <button onClick={() => setIsResetModalOpen(true)} className="w-full sm:w-auto mt-2 sm:mt-0 flex-shrink-0 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         <ExclamationTriangleIcon className="w-5 h-5 mr-2" />
                         Réinitialiser
                     </button>
                 </div>
             </div>
+            
+            {/* Informations sur la sauvegarde automatique */}
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">💡 Conseils de sauvegarde</h4>
+                <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-disc list-inside">
+                    <li>Effectuez une sauvegarde avant toute modification importante</li>
+                    <li>L'import crée automatiquement une sauvegarde de sécurité</li>
+                    <li>Les fichiers corrompus sont automatiquement réparés lors de l'import</li>
+                    <li>Conservez plusieurs sauvegardes à différentes dates</li>
+                </ul>
+            </div>
+            
+            <ResetConfirmationModal 
+                isOpen={isResetModalOpen}
+                onClose={() => setIsResetModalOpen(false)}
+                onConfirm={handleResetConfirm}
+            />
         </div>
     );
 };
@@ -722,10 +1139,6 @@ export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImp
                 <GoogleSheetsContent onSync={syncWithGoogleSheet} />
             </SettingsSection>
 
-            <SettingsSection title="Sécurité et Confidentialité" description="Protégez vos données avec un mot de passe." icon={ShieldCheckIcon}>
-                <SecurityContent />
-            </SettingsSection>
-
             <SettingsSection title="Maintenance" description="Outils pour maintenir la qualité des données." icon={SparklesIcon}>
                  <MaintenanceContent />
             </SettingsSection>
@@ -774,18 +1187,18 @@ export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImp
     );
 };
 
+import { useSettings } from '../contexts/SettingsContext';
+
 // Composants pour les nouvelles sections
 const InterfaceCustomizationContent: React.FC = () => {
     const { addToast } = useToast();
-    const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
-    const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
-    const [language, setLanguage] = useState<'fr' | 'en'>('fr');
-    const [animations, setAnimations] = useState(true);
+    const { settings, setTheme, setFontSize, setLanguage, setAnimations } = useSettings();
     const [compactMode, setCompactMode] = useState(false);
 
     const handleSave = () => {
         localStorage.setItem('interfaceSettings', JSON.stringify({
-            theme, fontSize, language, animations, compactMode
+            ...settings,
+            compactMode
         }));
         addToast("Paramètres d'interface sauvegardés", 'success');
     };
@@ -795,7 +1208,7 @@ const InterfaceCustomizationContent: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Thème visuel</label>
-                    <select value={theme} onChange={(e) => setTheme(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
+                    <select value={settings.theme} onChange={(e) => setTheme(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
                         <option value="light">Clair</option>
                         <option value="dark">Sombre</option>
                         <option value="auto">Automatique</option>
@@ -803,7 +1216,7 @@ const InterfaceCustomizationContent: React.FC = () => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Taille du texte</label>
-                    <select value={fontSize} onChange={(e) => setFontSize(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
+                    <select value={settings.fontSize} onChange={(e) => setFontSize(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
                         <option value="small">Petit</option>
                         <option value="medium">Moyen</option>
                         <option value="large">Grand</option>
@@ -811,9 +1224,9 @@ const InterfaceCustomizationContent: React.FC = () => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Langue</label>
-                    <select value={language} onChange={(e) => setLanguage(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
+                    <select value={settings.language} onChange={(e) => setLanguage(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
                         <option value="fr">Français</option>
-                        <option value="en">English</option>
+                        <option value="cv">Cap-verdien</option>
                     </select>
                 </div>
                 <div>
@@ -826,7 +1239,7 @@ const InterfaceCustomizationContent: React.FC = () => {
             </div>
             <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={animations} onChange={(e) => setAnimations(e.target.checked)} className="rounded" />
+                    <input type="checkbox" checked={settings.animations} onChange={(e) => setAnimations(e.target.checked)} className="rounded" />
                     <span className="text-sm">Activer les animations</span>
                 </label>
                 <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
@@ -838,23 +1251,20 @@ const InterfaceCustomizationContent: React.FC = () => {
 };
 
 const NotificationSettingsContent: React.FC = () => {
-    const { addToast } = useToast();
-    const [notifications, setNotifications] = useState({
-        reminder7: true,
-        reminder2: true,
-        confirmation: true,
-        thanks: false,
-        email: false,
-        push: true
-    });
-    const [notificationTime, setNotificationTime] = useState('09:00');
-    const [quietHours, setQuietHours] = useState({ enabled: false, start: '22:00', end: '08:00' });
+    const { settings, setNotificationSettings } = useSettings();
+    const { notificationSettings } = settings;
 
-    const handleSave = () => {
-        localStorage.setItem('notificationSettings', JSON.stringify({
-            ...notifications, notificationTime, quietHours
-        }));
-        addToast("Paramètres de notification sauvegardés", 'success');
+    const handleNotificationChange = (key: keyof typeof notificationSettings, value: any) => {
+        setNotificationSettings({ [key]: value } as any);
+    };
+
+    const handleQuietHoursChange = (key: keyof typeof notificationSettings.quietHours, value: any) => {
+        setNotificationSettings({
+            quietHours: {
+                ...notificationSettings.quietHours,
+                [key]: value,
+            },
+        });
     };
 
     return (
@@ -873,8 +1283,8 @@ const NotificationSettingsContent: React.FC = () => {
                         <label key={key} className="flex items-center gap-2">
                             <input
                                 type="checkbox"
-                                checked={(notifications as any)[key]}
-                                onChange={(e) => setNotifications({...notifications, [key]: e.target.checked})}
+                                checked={(notificationSettings as any)[key]}
+                                onChange={(e) => handleNotificationChange(key as any, e.target.checked)}
                                 className="rounded"
                             />
                             <span className="text-sm">{label}</span>
@@ -887,41 +1297,32 @@ const NotificationSettingsContent: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-2">Heure par défaut</label>
-                        <input type="time" value={notificationTime} onChange={(e) => setNotificationTime(e.target.value)} className="w-full p-2 border rounded-lg" />
+                        <input type="time" value={notificationSettings.notificationTime} onChange={(e) => handleNotificationChange('notificationTime', e.target.value)} className="w-full p-2 border rounded-lg" />
                     </div>
                     <div>
                         <label className="flex items-center gap-2 mb-2">
-                            <input type="checkbox" checked={quietHours.enabled} onChange={(e) => setQuietHours({...quietHours, enabled: e.target.checked})} className="rounded" />
+                            <input type="checkbox" checked={notificationSettings.quietHours.enabled} onChange={(e) => handleQuietHoursChange('enabled', e.target.checked)} className="rounded" />
                             <span className="text-sm font-medium">Heures de silence</span>
                         </label>
                         <div className="flex gap-2">
-                            <input type="time" value={quietHours.start} onChange={(e) => setQuietHours({...quietHours, start: e.target.value})} className="flex-1 p-2 border rounded-lg" disabled={!quietHours.enabled} />
+                            <input type="time" value={notificationSettings.quietHours.start} onChange={(e) => handleQuietHoursChange('start', e.target.value)} className="flex-1 p-2 border rounded-lg" disabled={!notificationSettings.quietHours.enabled} />
                             <span className="self-center">à</span>
-                            <input type="time" value={quietHours.end} onChange={(e) => setQuietHours({...quietHours, end: e.target.value})} className="flex-1 p-2 border rounded-lg" disabled={!quietHours.enabled} />
+                            <input type="time" value={notificationSettings.quietHours.end} onChange={(e) => handleQuietHoursChange('end', e.target.value)} className="flex-1 p-2 border rounded-lg" disabled={!notificationSettings.quietHours.enabled} />
                         </div>
                     </div>
                 </div>
             </div>
-            <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
-                Sauvegarder
-            </button>
         </div>
     );
 };
 
 const AdvancedSettingsContent: React.FC = () => {
+    const { settings, setAdvancedSettings } = useSettings();
     const { addToast } = useToast();
-    const [settings, setSettings] = useState({
-        offlineMode: false,
-        debugMode: false,
-        autoBackup: true,
-        logLevel: 'info',
-        cacheSize: '100MB'
-    });
+    const { advancedSettings } = settings;
 
-    const handleSave = () => {
-        localStorage.setItem('advancedSettings', JSON.stringify(settings));
-        addToast("Paramètres avancés sauvegardés", 'success');
+    const handleAdvancedSettingChange = (key: keyof typeof advancedSettings, value: any) => {
+        setAdvancedSettings({ [key]: value } as any);
     };
 
     const handleClearCache = () => {
@@ -940,28 +1341,28 @@ const AdvancedSettingsContent: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={settings.offlineMode} onChange={(e) => setSettings({...settings, offlineMode: e.target.checked})} className="rounded" />
+                        <input type="checkbox" checked={advancedSettings.offlineMode} onChange={(e) => handleAdvancedSettingChange('offlineMode', e.target.checked)} className="rounded" />
                         <span className="text-sm">Mode hors-ligne</span>
                     </label>
                     <p className="text-xs text-text-muted mt-1">Limite l'utilisation des données mobiles</p>
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={settings.debugMode} onChange={(e) => setSettings({...settings, debugMode: e.target.checked})} className="rounded" />
+                        <input type="checkbox" checked={advancedSettings.debugMode} onChange={(e) => handleAdvancedSettingChange('debugMode', e.target.checked)} className="rounded" />
                         <span className="text-sm">Mode débogage</span>
                     </label>
                     <p className="text-xs text-text-muted mt-1">Affiche les logs détaillés</p>
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={settings.autoBackup} onChange={(e) => setSettings({...settings, autoBackup: e.target.checked})} className="rounded" />
+                        <input type="checkbox" checked={advancedSettings.autoBackup} onChange={(e) => handleAdvancedSettingChange('autoBackup', e.target.checked)} className="rounded" />
                         <span className="text-sm">Sauvegarde automatique</span>
                     </label>
                     <p className="text-xs text-text-muted mt-1">Sauvegarde quotidienne des données</p>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Niveau de log</label>
-                    <select value={settings.logLevel} onChange={(e) => setSettings({...settings, logLevel: e.target.value})} className="w-full p-2 border rounded-lg">
+                    <select value={advancedSettings.logLevel} onChange={(e) => handleAdvancedSettingChange('logLevel', e.target.value)} className="w-full p-2 border rounded-lg">
                         <option value="error">Erreur</option>
                         <option value="warn">Avertissement</option>
                         <option value="info">Info</option>
@@ -970,9 +1371,6 @@ const AdvancedSettingsContent: React.FC = () => {
                 </div>
             </div>
             <div className="flex gap-4">
-                <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
-                    Sauvegarder
-                </button>
                 <button onClick={handleClearCache} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg">
                     Vider le cache
                 </button>
@@ -982,18 +1380,11 @@ const AdvancedSettingsContent: React.FC = () => {
 };
 
 const DashboardSettingsContent: React.FC = () => {
-    const { addToast } = useToast();
-    const [preferences, setPreferences] = useState({
-        defaultPeriod: 'month',
-        defaultChart: 'bar',
-        autoRefresh: true,
-        refreshInterval: 300,
-        exportFormat: 'pdf'
-    });
+    const { settings, setDashboardSettings } = useSettings();
+    const { dashboardSettings } = settings;
 
-    const handleSave = () => {
-        localStorage.setItem('dashboardSettings', JSON.stringify(preferences));
-        addToast("Préférences du tableau de bord sauvegardées", 'success');
+    const handleDashboardSettingChange = (key: keyof typeof dashboardSettings, value: any) => {
+        setDashboardSettings({ [key]: value } as any);
     };
 
     return (
@@ -1001,7 +1392,7 @@ const DashboardSettingsContent: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium mb-2">Période par défaut</label>
-                    <select value={preferences.defaultPeriod} onChange={(e) => setPreferences({...preferences, defaultPeriod: e.target.value})} className="w-full p-2 border rounded-lg">
+                    <select value={dashboardSettings.defaultPeriod} onChange={(e) => handleDashboardSettingChange('defaultPeriod', e.target.value)} className="w-full p-2 border rounded-lg">
                         <option value="week">Semaine</option>
                         <option value="month">Mois</option>
                         <option value="quarter">Trimestre</option>
@@ -1010,7 +1401,7 @@ const DashboardSettingsContent: React.FC = () => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Graphique par défaut</label>
-                    <select value={preferences.defaultChart} onChange={(e) => setPreferences({...preferences, defaultChart: e.target.value})} className="w-full p-2 border rounded-lg">
+                    <select value={dashboardSettings.defaultChart} onChange={(e) => handleDashboardSettingChange('defaultChart', e.target.value)} className="w-full p-2 border rounded-lg">
                         <option value="bar">Barres</option>
                         <option value="line">Lignes</option>
                         <option value="pie">Camembert</option>
@@ -1019,13 +1410,13 @@ const DashboardSettingsContent: React.FC = () => {
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={preferences.autoRefresh} onChange={(e) => setPreferences({...preferences, autoRefresh: e.target.checked})} className="rounded" />
+                        <input type="checkbox" checked={dashboardSettings.autoRefresh} onChange={(e) => handleDashboardSettingChange('autoRefresh', e.target.checked)} className="rounded" />
                         <span className="text-sm">Actualisation automatique</span>
                     </label>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Format d'export</label>
-                    <select value={preferences.exportFormat} onChange={(e) => setPreferences({...preferences, exportFormat: e.target.value})} className="w-full p-2 border rounded-lg">
+                    <select value={dashboardSettings.exportFormat} onChange={(e) => handleDashboardSettingChange('exportFormat', e.target.value)} className="w-full p-2 border rounded-lg">
                         <option value="pdf">PDF</option>
                         <option value="excel">Excel</option>
                         <option value="csv">CSV</option>
@@ -1035,28 +1426,18 @@ const DashboardSettingsContent: React.FC = () => {
             </div>
             <div>
                 <label className="block text-sm font-medium mb-2">Intervalle d'actualisation (secondes)</label>
-                <input type="number" value={preferences.refreshInterval} onChange={(e) => setPreferences({...preferences, refreshInterval: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="30" max="3600" />
+                <input type="number" value={dashboardSettings.refreshInterval} onChange={(e) => handleDashboardSettingChange('refreshInterval', parseInt(e.target.value))} className="w-full p-2 border rounded-lg" min="30" max="3600" />
             </div>
-            <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
-                Sauvegarder
-            </button>
         </div>
     );
 };
 
 const AISettingsContent: React.FC = () => {
-    const { addToast } = useData();
-    const [settings, setSettings] = useState({
-        model: 'gemini-2.5-flash',
-        temperature: 0.7,
-        maxTokens: 1000,
-        autoGenerate: false,
-        smartSuggestions: true
-    });
+    const { settings, setAISettings } = useSettings();
+    const { aiSettings } = settings;
 
-    const handleSave = () => {
-        localStorage.setItem('aiSettings', JSON.stringify(settings));
-        addToast("Paramètres IA sauvegardés", 'success');
+    const handleAISettingChange = (key: keyof typeof aiSettings, value: any) => {
+        setAISettings({ [key]: value } as any);
     };
 
     return (
@@ -1064,48 +1445,48 @@ const AISettingsContent: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium mb-2">Modèle IA</label>
-                    <select value={settings.model} onChange={(e) => setSettings({...settings, model: e.target.value})} className="w-full p-2 border rounded-lg">
+                    <select value={aiSettings.model} onChange={(e) => handleAISettingChange('model', e.target.value)} className="w-full p-2 border rounded-lg">
                         <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                         <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                     </select>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Température (créativité)</label>
-                    <input type="range" min="0" max="1" step="0.1" value={settings.temperature} onChange={(e) => setSettings({...settings, temperature: parseFloat(e.target.value)})} className="w-full" />
-                    <span className="text-sm text-text-muted">{settings.temperature}</span>
+                    <input type="range" min="0" max="1" step="0.1" value={aiSettings.temperature} onChange={(e) => handleAISettingChange('temperature', parseFloat(e.target.value))} className="w-full" />
+                    <span className="text-sm text-text-muted">{aiSettings.temperature}</span>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Tokens maximum</label>
-                    <input type="number" value={settings.maxTokens} onChange={(e) => setSettings({...settings, maxTokens: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="100" max="4000" />
+                    <input type="number" value={aiSettings.maxTokens} onChange={(e) => handleAISettingChange('maxTokens', parseInt(e.target.value))} className="w-full p-2 border rounded-lg" min="100" max="4000" />
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={settings.autoGenerate} onChange={(e) => setSettings({...settings, autoGenerate: e.target.checked})} className="rounded" />
+                        <input type="checkbox" checked={aiSettings.autoGenerate} onChange={(e) => handleAISettingChange('autoGenerate', e.target.checked)} className="rounded" />
                         <span className="text-sm">Génération automatique</span>
                     </label>
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={settings.smartSuggestions} onChange={(e) => setSettings({...settings, smartSuggestions: e.target.checked})} className="rounded" />
+                        <input type="checkbox" checked={aiSettings.smartSuggestions} onChange={(e) => handleAISettingChange('smartSuggestions', e.target.checked)} className="rounded" />
                         <span className="text-sm">Suggestions intelligentes</span>
                     </label>
                 </div>
             </div>
-            <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
-                Sauvegarder
-            </button>
         </div>
     );
 };
 
 const ConnectivitySettingsContent: React.FC = () => {
     const { addToast } = useToast();
-    const [settings, setSettings] = useState({
-        autoSync: true,
-        syncInterval: 3600,
-        offlineMode: false,
-        dataUsage: 'wifi',
-        retryAttempts: 3
+    const [settings, setSettings] = useState(() => {
+        const savedSettings = localStorage.getItem('connectivitySettings');
+        return savedSettings ? JSON.parse(savedSettings) : {
+            autoSync: true,
+            syncInterval: 3600,
+            offlineMode: false,
+            dataUsage: 'wifi',
+            retryAttempts: 3
+        };
     });
 
     const handleSave = () => {
@@ -1154,12 +1535,15 @@ const ConnectivitySettingsContent: React.FC = () => {
 
 const AdvancedCommunicationContent: React.FC = () => {
     const { addToast } = useToast();
-    const [settings, setSettings] = useState({
-        emailSignature: '',
-        autoReply: false,
-        replyDelay: 24,
-        trackOpens: true,
-        customHeaders: false
+    const [settings, setSettings] = useState(() => {
+        const savedSettings = localStorage.getItem('communicationSettings');
+        return savedSettings ? JSON.parse(savedSettings) : {
+            emailSignature: '',
+            autoReply: false,
+            replyDelay: 24,
+            trackOpens: true,
+            customHeaders: false
+        };
     });
 
     const handleSave = () => {

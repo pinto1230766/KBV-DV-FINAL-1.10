@@ -4,6 +4,7 @@ import { Speaker, TalkHistory, Visit } from '../types';
 import { XIcon, CheckCircleIcon, ClockIcon, XCircleIcon, ExclamationTriangleIcon, SparklesIcon, SpinnerIcon, StarIcon, CameraIcon } from './Icons';
 import { useToast } from '../contexts/ToastContext';
 import { useData } from '../contexts/DataContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { Avatar } from './Avatar';
 import { resizeImage } from '../utils/image';
@@ -40,6 +41,8 @@ const AIAnalysis: React.FC<{ text: string }> = ({ text }) => {
 
 export const SpeakerDetailsModal: React.FC<SpeakerDetailsModalProps> = ({ isOpen, onClose, speaker }) => {
     const { visits, addSpeaker, updateSpeaker, deleteSpeaker, apiKey, archivedVisits, isOnline } = useData();
+    const { settings } = useSettings();
+    const { aiSettings } = settings;
     const [activeTab, setActiveTab] = useState<'details' | 'visits' | 'feedback'>('details');
     const { addToast } = useToast();
     const confirm = useConfirm();
@@ -213,7 +216,7 @@ export const SpeakerDetailsModal: React.FC<SpeakerDetailsModalProps> = ({ isOpen
 
 **Informations sur l'orateur :**
 - Nom : ${nom}
-- Congrégation : ${congregation}
+-Congrégation : ${congregation}
 - Statut : ${maritalStatus === 'couple' ? 'En couple' : 'Célibataire'}
 - Véhiculé : ${isVehiculed ? 'Oui' : 'Non'}
 - Notes/Préférences : ${notes || 'Aucune'}
@@ -224,12 +227,16 @@ ${historyString}
 ${scheduledString}
 
 **Ta tâche :**
-Rédige un résumé qui synthétise ces informations pour aider à planifier le prochain accueil. Ne retourne que le résumé, sans aucun préambule comme "Voici une suggestion :".`;
+Rédige un résumé qui synthétise ces informations pour aider à planifier le prochain accueil. Ne retourne que le résumé, sans aucun préambule comme "Voici une suggestion:".`;
     
             const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: aiSettings.model,
                 contents: prompt,
+                generationConfig: {
+                    temperature: aiSettings.temperature,
+                    maxOutputTokens: aiSettings.maxTokens,
+                }
             });
     
             setAiSummary(response.text?.trim() || '');

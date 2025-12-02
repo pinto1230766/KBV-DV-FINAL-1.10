@@ -297,3 +297,36 @@ select:focus {
     border: 1px solid #e2e8f0;
   }
 }
+
+.animations-disabled *,
+.animations-disabled *::before,
+.animations-disabled *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Compact Mode Styles */
+.compact-mode .card {
+  padding: 0.5rem;
+}
+.compact-mode .btn {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+.compact-mode .p-4 {
+  padding: 0.75rem;
+}
+.compact-mode .py-4 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+.compact-mode .px-4 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.compact-mode .text-lg {
+  font-size: 1.05rem;
+}
+.compact-mode .text-xl {
+  font-size: 1.15rem;
+}

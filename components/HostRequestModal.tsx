@@ -3,6 +3,7 @@ import { Visit, Language } from '../types';
 import { XIcon, CopyIcon, SparklesIcon, SpinnerIcon, ArrowUpOnSquareIcon, EditIcon, SaveIcon, ArrowUturnLeftIcon, WhatsAppIcon } from './Icons';
 import { useToast } from '../contexts/ToastContext';
 import { useData } from '../contexts/DataContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { hostRequestMessageTemplates } from '../constants';
 import { LanguageSelector } from './LanguageSelector';
 import { GoogleGenAI } from '@google/genai';
@@ -20,6 +21,8 @@ interface HostRequestModalProps {
 export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onClose, visits, language, onLanguageChange }) => {
   const { congregationProfile, apiKey, customHostRequestTemplates, saveCustomHostRequestTemplate, deleteCustomHostRequestTemplate } = useData();
   const { addToast } = useToast();
+  const { settings } = useSettings();
+  const { aiSettings } = settings;
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -147,7 +150,14 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
     const prompt = `${promptAction}\n\n---\n\n${message}`;
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+      const response = await ai.models.generateContent({
+        model: aiSettings.model, 
+        contents: prompt,
+        generationConfig: {
+            temperature: aiSettings.temperature,
+            maxOutputTokens: aiSettings.maxTokens,
+        }
+      });
       const refined = typeof response?.text === 'string' ? response.text.trim() : '';
       setMessage(refined);
       addToast("Message amélioré par l'IA !", 'success');
@@ -203,7 +213,7 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
                 </div>
               </div>
               <textarea id="templateContent" rows={12} value={editedTemplateText} onChange={e => setEditedTemplateText(e.target.value)} className="w-full p-2 border rounded-md bg-gray-50 dark:bg-primary-light/10 border-border-light dark:border-border-dark whitespace-pre-wrap" />
-              <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Utilisez des variables comme {'{visitList}'}, {'{hospitalityOverseer}'}, etc.</p>
+              <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Utilisez des variables comme {visitList}, {hospitalityOverseer}, etc.</p>
             </div>
           ) : (
             <div>

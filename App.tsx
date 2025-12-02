@@ -18,6 +18,7 @@ import { useToast } from './contexts/ToastContext';
 import { useConfirm } from './contexts/ConfirmContext';
 import { MessageGeneratorModal } from './components/MessageGeneratorModal';
 import { useData } from './contexts/DataContext';
+import { useSettings } from './contexts/SettingsContext';
 import { NotificationPermissionBanner } from './components/NotificationPermissionBanner';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { HostDetailsModal } from './components/HostDetailsModal';
@@ -58,6 +59,7 @@ const App: React.FC = () => {
         visits,
         logoUrl
     } = useData();
+    const { settings, setLanguage } = useSettings();
     
     // Modals State
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -90,19 +92,10 @@ const App: React.FC = () => {
     const [isImporting, setIsImporting] = useState(false);
     const [isSpeakerListExpanded, setIsSpeakerListExpanded] = useState(false);
     const [isHostListExpanded, setIsHostListExpanded] = useState(false);
-    const [language, setLanguage] = useState<Language>('fr');
     
     // FIX: Capacitor's PermissionState can include 'prompt-with-rationale'. Widening the type to handle all possible states returned by the permissions API.
     const [notificationPermission, setNotificationPermission] = useState<'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'>('prompt');
     const [showNotificationBanner, setShowNotificationBanner] = useState(false);
-
-    const [isDarkMode, setIsDarkMode] = useState(() => {
-        const stored = localStorage.getItem('is-dark-mode');
-        if (stored !== null) {
-            return stored === 'true';
-        }
-        return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    });
     
     const { addToast } = useToast();
     const confirm = useConfirm();
@@ -110,21 +103,7 @@ const App: React.FC = () => {
     const hostListRef = useRef<HTMLDivElement>(null);
     const archiveSectionRef = useRef<HTMLDivElement>(null);
 
-    // Move the hook call after all state and refs are initialized
     useVisitNotifications(upcomingVisits, notificationPermission);
-    
-    useEffect(() => {
-        const root = window.document.documentElement;
-
-        if (isDarkMode) {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
-
-        // Stocker la préférence de l'utilisateur
-        localStorage.setItem('is-dark-mode', String(isDarkMode));
-    }, [isDarkMode]);
     
     useEffect(() => {
         const checkPermissions = async () => {
@@ -132,7 +111,6 @@ const App: React.FC = () => {
                 // On non-native platforms, this might throw.
                 if (typeof LocalNotifications === 'undefined') {
                     console.log('LocalNotifications not available on this platform');
-                    setNotificationPermission('denied');
                     return;
                 }
 
@@ -164,11 +142,8 @@ const App: React.FC = () => {
 
     useEffect(() => {
         const root = document.documentElement;
-        if (language === 'fr') root.lang = 'fr';
-        else if (language === 'en') root.lang = 'en';
-        else if (language === 'es') root.lang = 'es';
-        else root.lang = language as string;
-    }, [language]);
+        root.lang = settings.language;
+    }, [settings.language]);
 
     const handleEnableNotifications = async () => {
         try {
@@ -201,9 +176,6 @@ const App: React.FC = () => {
     }, []);
 
     const handleOpenFreeFormMessage = useCallback((recipient: Speaker | Host, role: MessageRole) => {
-        // FIX: The original object construction was causing a type inference issue where
-        // the 'role' property was being widened to 'string' instead of 'MessageRole'.
-        // This new structure is more explicit and ensures correct type assignment.
         setMessageModalData({
             initialText: '',
             role,
@@ -215,14 +187,9 @@ const App: React.FC = () => {
     useEffect(() => {
         if (visitForThankYou) {
             handleOpenMessageGenerator(visitForThankYou, 'speaker', 'thanks');
-            setVisitForThankYou(null); // Reset after opening
+            setVisitForThankYou(null);
         }
     }, [visitForThankYou, handleOpenMessageGenerator]);
-
-
-    const toggleTheme = () => {
-       setIsDarkMode(prev => !prev);
-    };
 
     const handleScheduleVisit = useCallback((speaker: Speaker) => {
         setSpeakerToSchedule(speaker);
@@ -318,13 +285,11 @@ const App: React.FC = () => {
     const handleScheduleFromShortcut = useCallback(() => {
         setActiveTab('planning');
         setIsSpeakerListExpanded(true);
-        // Use timeout to ensure the list has rendered before scrolling
         setTimeout(() => {
             speakerListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
     }, []);
     
-    // --- Navigation handlers from Dashboard ---
     const handleGoToSpeakers = useCallback(() => {
         setActiveTab('planning');
         setIsSpeakerListExpanded(true);
@@ -347,27 +312,22 @@ const App: React.FC = () => {
 
     const handleGoToSettings = useCallback(() => {
         setActiveTab('settings');
-        // Use a timeout to ensure the settings tab has rendered before we try to scroll and expand
         setTimeout(() => {
             const archiveSection = archiveSectionRef.current;
             if (archiveSection) {
                 archiveSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                
-                // Programmatically expand the section if it's not already open
                 const expandButton = archiveSection.querySelector('[role="button"]') as HTMLElement;
                 if (expandButton && expandButton.getAttribute('aria-expanded') === 'false') {
                     expandButton.click();
                 }
             }
-        }, 150); // A small delay is safer
+        }, 150);
     }, []);
 
-    // Effect to handle PWA shortcut actions
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const action = params.get('action');
 
-        // Use a timeout to ensure modals don't conflict with initial render
         if (action) {
             setTimeout(() => {
                 if (action === 'schedule') {
@@ -377,7 +337,6 @@ const App: React.FC = () => {
                 } else if (action === 'add_host') {
                     handleAddHost();
                 }
-                // Clean up URL to avoid re-triggering on reload
                 if (window.history.replaceState) {
                     const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
                     window.history.replaceState({}, document.title, cleanUrl);
@@ -490,8 +449,6 @@ const App: React.FC = () => {
             <MainLayout
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
-                isDarkMode={isDarkMode}
-                toggleTheme={toggleTheme}
                 congregationProfile={congregationProfile}
                 logoUrl={logoUrl}
                 showNotificationBanner={showNotificationBanner}
@@ -551,7 +508,7 @@ const App: React.FC = () => {
                     isOpen={isMessageGeneratorModalOpen}
                     onClose={() => setIsMessageGeneratorModalOpen(false)}
                     {...messageModalData}
-                    language={language}
+                    language={settings.language}
                     onLanguageChange={setLanguage}
                 />
             )}
@@ -576,7 +533,7 @@ const App: React.FC = () => {
                     isOpen={isHostRequestModalOpen}
                     onClose={() => setIsHostRequestModalOpen(false)}
                     visits={visitsForHostRequest}
-                    language={language}
+                    language={settings.language}
                     onLanguageChange={setLanguage}
                 />
             )}

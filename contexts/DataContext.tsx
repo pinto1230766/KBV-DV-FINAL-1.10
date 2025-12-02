@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useCallback, ReactNode, useState, useEffect, useRef } from 'react';
 import { generateUUID } from '../utils/uuid';
-import { Speaker, Visit, Host, CustomMessageTemplates, CustomHostRequestTemplates, Language, MessageType, MessageRole, TalkHistory, CongregationProfile, PublicTalk, Feedback, SavedView, ActiveFilters, SpecialDate } from '../types';
+import { Speaker, Visit, Host, CustomMessageTemplates, CustomHostRequestTemplates, Language, MessageType, MessageRole, TalkHistory, CongregationProfile, PublicTalk, Feedback, SavedView, ActiveFilters, SpecialDate, SpeakerMessage } from '../types';
 import { initialSpeakers, initialHosts, UNASSIGNED_HOST, NO_HOST_NEEDED, initialVisits, initialPublicTalks, initialSpecialDates } from '../constants';
 import { useToast } from './ToastContext';
 import { encrypt, decrypt } from '../utils/crypto';
@@ -11,6 +11,9 @@ import { Capacitor } from '@capacitor/core';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { get, set, del } from '../utils/idb';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { useTemplatePersistence, validateTemplateStructure, validateHostRequestTemplateStructure } from '../hooks/useTemplatePersistence';
+import { sensitiveDataManager } from '../utils/sensitiveDataManager';
+import { useSessionTimeout } from '../hooks/useSessionTimeout';
 
 interface AppData {
   speakers: Speaker[];
@@ -23,6 +26,7 @@ interface AppData {
   publicTalks: PublicTalk[];
   savedViews: SavedView[];
   specialDates: SpecialDate[];
+  speakerMessages: SpeakerMessage[];
 }
 
 const initialData: AppData = {
@@ -45,6 +49,7 @@ const initialData: AppData = {
     publicTalks: initialPublicTalks,
     savedViews: [],
     specialDates: initialSpecialDates,
+    speakerMessages: [],
 };
 
 
@@ -111,6 +116,12 @@ interface DataContextType {
   addSpecialDate: (dateData: SpecialDate) => void;
   updateSpecialDate: (dateData: SpecialDate) => void;
   deleteSpecialDate: (dateId: string) => void;
+  
+  speakerMessages: SpeakerMessage[];
+  addSpeakerMessage: (speakerId: string, speakerName: string, speakerPhone: string) => Promise<void>;
+  markMessageAsRead: (messageId: string) => Promise<void>;
+  deleteSpeakerMessage: (messageId: string) => Promise<void>;
+  extendSession: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -126,6 +137,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [sessionPassword, setSessionPassword] = useState<string | null>(null);
     const [storedApiKey, setStoredApiKey] = useLocalStorage<string>('gemini-api-key', '');
     const apiKey = useMemo(() => (typeof process !== 'undefined' && process.env?.API_KEY) ? process.env.API_KEY : storedApiKey, [storedApiKey]);
+    
+    // Template persistence hook
+    const { restoreFromBackup } = useTemplatePersistence(
+        appData?.customTemplates || {},
+        appData?.customHostRequestTemplates || {}
+    );
+    
+    // Session timeout hook
+    const { extendSession } = useSessionTimeout({
+        onTimeout: () => {
+            if (isEncrypted) {
+                setIsLocked(true);
+                setSessionPassword(null);
+            }
+        },
+        isActive: !isLocked && !!appData
+    });
 
     const updateApiKey = (key: string) => {
         setStoredApiKey(key);
@@ -195,11 +223,40 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             } else {
                 try {
                     const dataFromDb = await get<AppData>('appData');
-                    setAppData(dataFromDb || initialData);
+                    let finalData = dataFromDb || initialData;
+                    
+                    // Check if templates are missing and try to restore from backup
+                    if (finalData && (!finalData.customTemplates || !finalData.customHostRequestTemplates)) {
+                        const backup = restoreFromBackup();
+                        if (Object.keys(backup.messageTemplates).length > 0 || Object.keys(backup.hostRequestTemplates).length > 0) {
+                            finalData = {
+                                ...finalData,
+                                customTemplates: { ...finalData.customTemplates, ...backup.messageTemplates },
+                                customHostRequestTemplates: { ...finalData.customHostRequestTemplates, ...backup.hostRequestTemplates }
+                            };
+                            setTimeout(() => addToast("Modèles restaurés depuis la sauvegarde.", "info"), 0);
+                        }
+                    }
+                    
+                    setAppData(finalData);
                 } catch (error) {
                     console.error("Error loading plaintext data:", error);
-                    setTimeout(() => addToast("Erreur de chargement des données.", "error"), 0);
-                    setAppData(initialData);
+                    
+                    // Try to restore from backup
+                    try {
+                        const backup = restoreFromBackup();
+                        const recoveredData = {
+                            ...initialData,
+                            customTemplates: backup.messageTemplates,
+                            customHostRequestTemplates: backup.hostRequestTemplates
+                        };
+                        setAppData(recoveredData);
+                        setTimeout(() => addToast("Données partiellement restaurées depuis la sauvegarde.", "warning"), 0);
+                    } catch (backupError) {
+                        console.error("Error restoring from backup:", backupError);
+                        setTimeout(() => addToast("Erreur de chargement des données.", "error"), 0);
+                        setAppData(initialData);
+                    }
                 }
             }
             setIsLoading(false);
@@ -353,20 +410,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setAppData(prev => (prev ? updater(prev) : null));
     };
 
-    const addSpeaker = (speakerData: Speaker) => {
+    const addSpeaker = async (speakerData: Speaker) => {
+        // Chiffrer les données sensibles si nécessaire
+        const processedSpeaker = await sensitiveDataManager.processObject(speakerData, 'encrypt');
+        
         updateAppData(prev => ({
             ...prev,
-            speakers: [...prev.speakers, speakerData].sort((a, b) => a.nom.localeCompare(b.nom))
+            speakers: [...prev.speakers, processedSpeaker].sort((a, b) => a.nom.localeCompare(b.nom))
         }));
         setTimeout(() => addToast("Orateur ajouté.", 'success'), 0);
     };
 
-    const updateSpeaker = (speakerData: Speaker) => {
+    const updateSpeaker = async (speakerData: Speaker) => {
+        // Chiffrer les données sensibles si nécessaire
+        const processedSpeaker = await sensitiveDataManager.processObject(speakerData, 'encrypt');
+        
         updateAppData(prev => ({
             ...prev,
-            speakers: prev.speakers.map(s => s.id === speakerData.id ? speakerData : s).sort((a, b) => a.nom.localeCompare(b.nom)),
-            visits: prev.visits.map(v => v.id === speakerData.id ? { ...v, nom: speakerData.nom, congregation: speakerData.congregation, telephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v),
-            archivedVisits: prev.archivedVisits.map(v => v.id === speakerData.id ? { ...v, nom: speakerData.nom, congregation: speakerData.congregation, telephone: speakerData.telephone, photoUrl: speakerData.photoUrl } : v)
+            speakers: prev.speakers.map(s => s.id === speakerData.id ? processedSpeaker : s).sort((a, b) => a.nom.localeCompare(b.nom)),
+            visits: prev.visits.map(v => v.id === speakerData.id ? { ...v, nom: processedSpeaker.nom, congregation: processedSpeaker.congregation, telephone: processedSpeaker.telephone, photoUrl: processedSpeaker.photoUrl } : v),
+            archivedVisits: prev.archivedVisits.map(v => v.id === speakerData.id ? { ...v, nom: processedSpeaker.nom, congregation: processedSpeaker.congregation, telephone: processedSpeaker.telephone, photoUrl: processedSpeaker.photoUrl } : v),
+            speakerMessages: prev.speakerMessages.map(m => m.speakerId === speakerData.id ? { ...m, speakerName: processedSpeaker.nom, speakerPhone: processedSpeaker.telephone || '' } : m)
         }));
         setTimeout(() => addToast("Orateur mis à jour.", 'success'), 0);
     };
@@ -558,9 +622,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
     };
 
-    const addHost = (newHost: Host): boolean => {
+    const addHost = async (newHost: Host): Promise<boolean> => {
         if (newHost.nom && !appData?.hosts.some(h => h.nom.toLowerCase() === newHost.nom.toLowerCase())) {
-            updateAppData(prev => ({ ...prev, hosts: [...prev.hosts, newHost].sort((a, b) => a.nom.localeCompare(b.nom)) }));
+            // Chiffrer les données sensibles si nécessaire
+            const processedHost = await sensitiveDataManager.processObject(newHost, 'encrypt');
+            
+            updateAppData(prev => ({ ...prev, hosts: [...prev.hosts, processedHost].sort((a, b) => a.nom.localeCompare(b.nom)) }));
             return true;
         }
         return false;
@@ -646,14 +713,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const saveCustomTemplate = (language: Language, messageType: MessageType, role: MessageRole, text: string) => {
-        updateAppData(prev => {
-            const newTemplates = JSON.parse(JSON.stringify(prev.customTemplates));
-            if (!newTemplates[language]) newTemplates[language] = {};
-            if (!newTemplates[language]![messageType]) newTemplates[language]![messageType] = {};
-            newTemplates[language]![messageType]![role] = text;
-            return { ...prev, customTemplates: newTemplates };
-        });
-        setTimeout(() => addToast("Modèle de message sauvegardé !", 'success'), 0);
+        try {
+            const trimmedText = text.trim();
+            if (!trimmedText) {
+                throw new Error('Le modèle ne peut pas être vide');
+            }
+            
+            updateAppData(prev => {
+                const newTemplates = JSON.parse(JSON.stringify(prev.customTemplates));
+                if (!newTemplates[language]) newTemplates[language] = {};
+                if (!newTemplates[language]![messageType]) newTemplates[language]![messageType] = {};
+                newTemplates[language]![messageType]![role] = trimmedText;
+                return { ...prev, customTemplates: newTemplates };
+            });
+        } catch (error) {
+            console.error('Error saving custom template:', error);
+            throw error;
+        }
     };
     
     const deleteCustomTemplate = (language: Language, messageType: MessageType, role: MessageRole) => {
@@ -666,19 +742,28 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
             return { ...prev, customTemplates: newTemplates };
         });
-        setTimeout(() => addToast("Modèle par défaut restauré.", 'info'), 0);
+        // Don't show toast here as it's handled in the component
     };
 
     const saveCustomHostRequestTemplate = (language: Language, type: 'singular' | 'plural', text: string) => {
-        updateAppData(prev => {
-            const newTemplates = JSON.parse(JSON.stringify(prev.customHostRequestTemplates));
-            if (!newTemplates[language]) {
-                newTemplates[language] = {};
+        try {
+            const trimmedText = text.trim();
+            if (!trimmedText) {
+                throw new Error('Le modèle ne peut pas être vide');
             }
-            newTemplates[language][type] = text;
-            return { ...prev, customHostRequestTemplates: newTemplates };
-        });
-        setTimeout(() => addToast("Modèle de message de demande d'accueil sauvegardé !", 'success'), 0);
+            
+            updateAppData(prev => {
+                const newTemplates = JSON.parse(JSON.stringify(prev.customHostRequestTemplates));
+                if (!newTemplates[language]) {
+                    newTemplates[language] = {};
+                }
+                newTemplates[language][type] = trimmedText;
+                return { ...prev, customHostRequestTemplates: newTemplates };
+            });
+        } catch (error) {
+            console.error('Error saving custom host request template:', error);
+            throw error;
+        }
     };
 
     const deleteCustomHostRequestTemplate = (language: Language, type: 'singular' | 'plural') => {
@@ -692,7 +777,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
             return { ...prev, customHostRequestTemplates: newTemplates };
         });
-        setTimeout(() => addToast("Modèle par défaut restauré pour la demande d'accueil.", 'info'), 0);
+        // Don't show toast here as it's handled in the component
     };
     
     const updateCongregationProfile = (profile: CongregationProfile) => {
@@ -1088,6 +1173,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             publicTalks: finalTalks,
             savedViews: data.savedViews || appData.savedViews || [],
             specialDates: data.specialDates || appData.specialDates || [],
+            speakerMessages: data.speakerMessages || appData.speakerMessages || [],
         };
     
         setAppData(newAppData);
@@ -1115,6 +1201,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             publicTalks: [],
             savedViews: [],
             specialDates: [],
+            speakerMessages: [],
         };
         setAppData(emptyData);
         setTimeout(() => addToast("Toutes les données ont été réinitialisées.", 'success'), 0);
@@ -1411,6 +1498,40 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }));
         setTimeout(() => addToast("Date spéciale supprimée.", 'success'), 0);
     };
+
+    // --- Speaker Messages Management ---
+    const addSpeakerMessage = async (speakerId: string, speakerName: string, speakerPhone: string): Promise<void> => {
+        const newMessage: SpeakerMessage = {
+            id: generateUUID(),
+            speakerId,
+            speakerName,
+            speakerPhone,
+            receivedAt: new Date().toISOString(),
+            read: false,
+            notificationSent: true,
+        };
+        
+        updateAppData(prev => ({
+            ...prev,
+            speakerMessages: [...prev.speakerMessages, newMessage]
+        }));
+    };
+
+    const markMessageAsRead = async (messageId: string): Promise<void> => {
+        updateAppData(prev => ({
+            ...prev,
+            speakerMessages: prev.speakerMessages.map(msg => 
+                msg.id === messageId ? { ...msg, read: true } : msg
+            )
+        }));
+    };
+
+    const deleteSpeakerMessage = async (messageId: string): Promise<void> => {
+        updateAppData(prev => ({
+            ...prev,
+            speakerMessages: prev.speakerMessages.filter(msg => msg.id !== messageId)
+        }));
+    };
     
     const value: DataContextType = {
         appData,
@@ -1437,6 +1558,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         mergeSpeakers,
         mergeHosts,
         addSpecialDate, updateSpecialDate, deleteSpecialDate,
+        speakerMessages: appData?.speakerMessages || [],
+        addSpeakerMessage,
+        markMessageAsRead,
+        deleteSpeakerMessage,
+        extendSession,
     };
     
     if (isLoading) {

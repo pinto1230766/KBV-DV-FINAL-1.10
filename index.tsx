@@ -1,13 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './index.css';
 import App from './App';
 import { ToastProvider } from './contexts/ToastContext';
 import { ConfirmProvider } from './contexts/ConfirmContext';
 import { DataProvider } from './contexts/DataContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-// Register Service Worker for PWA capabilities
-if ('serviceWorker' in navigator) {
+// Register Service Worker for PWA capabilities in production only
+if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     // Construct the full URL to sw.js to ensure it's on the correct origin
     const swUrl = new URL('/sw.js', window.location.origin).href;
@@ -29,11 +31,13 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <ToastProvider>
-        <DataProvider>
-          <ConfirmProvider>
-            <App />
-          </ConfirmProvider>
-        </DataProvider>
+        <SettingsProvider>
+          <DataProvider>
+            <ConfirmProvider>
+              <App />
+            </ConfirmProvider>
+          </DataProvider>
+        </SettingsProvider>
       </ToastProvider>
     </ErrorBoundary>
   </React.StrictMode>

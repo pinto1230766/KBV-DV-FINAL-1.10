@@ -136,7 +136,7 @@ export interface Toast {
   duration?: number;
 }
 
-export type Language = 'fr' | 'cv' | 'en' | 'es';
+export type Language = 'fr' | 'cv';
 export type MessageType = 'confirmation' | 'preparation' | 'reminder-7' | 'reminder-2' | 'thanks';
 export type MessageRole = 'speaker' | 'host';
 
@@ -213,4 +213,14 @@ export interface WeatherData {
   humidity: number; // percentage
   windSpeed: number; // km/h
   precipitationChance: number; // percentage
+}
+
+export interface SpeakerMessage {
+  id: string;
+  speakerId: string;
+  speakerName: string;
+  speakerPhone: string;
+  receivedAt: string; // ISO date
+  read: boolean;
+  notificationSent: boolean;
 }

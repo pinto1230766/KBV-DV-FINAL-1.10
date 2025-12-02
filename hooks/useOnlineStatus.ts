@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useSettings } from '../contexts/SettingsContext';
 
 const useOnlineStatus = (): boolean => {
+    const { settings } = useSettings();
+    const { offlineMode } = settings.advancedSettings;
+
     // Start with the browser's determination, but we will verify it.
     const [isOnline, setIsOnline] = useState(
         typeof window !== 'undefined' ? window.navigator.onLine : true
@@ -53,6 +57,10 @@ const useOnlineStatus = (): boolean => {
             clearInterval(interval);
         };
     }, [isOnline]);
+
+    if (offlineMode) {
+        return false; // Force offline if offlineMode is enabled in settings
+    }
 
     return isOnline;
 };

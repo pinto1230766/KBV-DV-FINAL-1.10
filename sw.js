@@ -1,5 +1,5 @@
 // The name for the cache - IMPORTANT: Change this version number when you update the app's files.
-const CACHE_NAME = 'gestion-visiteurs-tj-v45';
+const CACHE_NAME = 'gestion-visiteurs-tj-v46';
 
 // List of files to cache for full offline functionality
 const APP_SHELL_URLS = [
@@ -58,7 +58,6 @@ const APP_SHELL_URLS = [
 ];
 
 const EXTERNAL_URLS = [
-  'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800&display=swap'
 ];
 

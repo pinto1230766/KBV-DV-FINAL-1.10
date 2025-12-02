@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Visit } from '../types';
 import { useData } from '../contexts/DataContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { UNASSIGNED_HOST } from '../constants';
 import { ArrowRightIcon, ExclamationTriangleIcon, StarIcon, PlusIcon, SunIcon, CarIcon, SpinnerIcon } from './Icons';
 import { GoogleGenAI } from '@google/genai';
@@ -91,6 +92,8 @@ const toYYYYMMDD = (d: Date) => {
 export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => {
     const { upcomingVisits, archivedVisits, speakers, apiKey, congregationProfile, hosts, isOnline } = useData();
     const { addToast } = useToast();
+    const { settings } = useSettings();
+    const { aiSettings } = settings;
     const [weather, setWeather] = useState<string | null>(null);
     const [travelTime, setTravelTime] = useState<string | null>(null);
     const [isFetchingWeather, setIsFetchingWeather] = useState(false);
@@ -140,8 +143,12 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
 
             const prompt = `Tu es un assistant météo. Quelle est la météo la plus probable pour ${locationInfo} le ${readableDate} (date exacte ${nextVisit.visitDate})? ${daysMessage} Même si les données sont incertaines, donne une estimation concise du temps attendu avec températures approximatives, par exemple : "Ensoleillé, 24°C / 18°C". N'indique jamais que tu ne peux pas fournir la météo.`;
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+                model: aiSettings.model,
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: aiSettings.temperature,
+                    maxOutputTokens: aiSettings.maxTokens,
+                }
             });
             const resultText = extractTextFromGeminiResponse(response);
             if (resultText) {
@@ -168,8 +175,12 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
             const destination = "Salle du Royaume des Témoins de Jéhovah, 16 Rue Imbert Colomes, 69001 Lyon"; // Example address
             const prompt = `Quel est le temps de trajet en voiture entre "${host.address}" et ${destination} un samedi après-midi à Lyon? Donne une estimation concise, par exemple : "Environ 25 min en voiture".`;
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+                model: aiSettings.model,
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: aiSettings.temperature,
+                    maxOutputTokens: aiSettings.maxTokens,
+                }
             });
             const resultText = extractTextFromGeminiResponse(response);
             if (resultText) {

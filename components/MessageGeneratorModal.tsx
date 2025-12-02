@@ -4,6 +4,7 @@ import { messageTemplates } from '../constants';
 import { XIcon, CopyIcon, WhatsAppIcon, ChevronDownIcon, SaveIcon, ArrowUturnLeftIcon, SparklesIcon, SpinnerIcon, EditIcon, CheckIcon, ArrowUpOnSquareIcon } from './Icons';
 import { useToast } from '../contexts/ToastContext';
 import { useData } from '../contexts/DataContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { LanguageSelector } from './LanguageSelector';
 import { GoogleGenAI } from '@google/genai';
 import { Capacitor } from '@capacitor/core';
@@ -60,6 +61,8 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
 }) => {
   const { speakers, hosts, customTemplates, saveCustomTemplate, deleteCustomTemplate, logCommunication, apiKey, congregationProfile } = useData();
   const { addToast } = useToast();
+  const { settings } = useSettings();
+  const { aiSettings } = settings;
 
   const isFreeForm = !visit;
 
@@ -222,7 +225,7 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
         try {
             const ai = new GoogleGenAI({ apiKey });
 
-            const speakerDetails = speaker ? `Nom: ${speaker.nom}, Congrégation: ${speaker.congregation}, Notes: ${speaker.notes || 'Aucune'}, Tags: ${(speaker.tags || []).join(', ')}` : 'Non applicable';
+            const speakerDetails = speaker ? `Nom: ${speaker.nom},Congrégation: ${speaker.congregation}, Notes: ${speaker.notes || 'Aucune'}, Tags: ${(speaker.tags || []).join(', ')}` : 'Non applicable';
             const hostDetails = host ? `Nom: ${host.nom}, Notes: ${host.notes || 'Aucune'}, Tags: ${(host.tags || []).join(', ')}` : 'Non applicable';
             const visitDetails = visit ? `Date: ${formatFullDate(visit.visitDate)}, Hébergement: ${visit.accommodation || 'N/D'}, Repas: ${visit.meals || 'N/D'}` : 'Pas de visite associée.';
 
@@ -250,9 +253,18 @@ export const MessageGeneratorModal: React.FC<MessageGeneratorModalProps> = ({
             `;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-            });
+                model: aiSettings.model,
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [{ text: prompt }]
+                    }
+                ],
+                generationConfig: {
+                    temperature: aiSettings.temperature,
+                    maxOutputTokens: aiSettings.maxTokens,
+                }
+            } as any);  // Using type assertion as a last resort
 
             const refined = typeof response?.text === 'string' ? response.text.trim() : '';
             setMessageText(refined);

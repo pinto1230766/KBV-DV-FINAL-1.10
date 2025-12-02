@@ -1,7 +1,8 @@
 // @ts-nocheck
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Visit, MessageRole, MessageType, Speaker, Host } from '../types';
 import { useData } from '../contexts/DataContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { 
     PlusIcon, 
     UserIcon, 
@@ -96,6 +97,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const upcomingVisits = Array.isArray(data.upcomingVisits) ? data.upcomingVisits : [];
     const archivedVisits = Array.isArray(data.archivedVisits) ? data.archivedVisits : [];
     
+    const { settings } = useSettings();
+    const { dashboardSettings } = settings;
+
+    // Auto-refresh logic
+    useEffect(() => {
+        if (dashboardSettings.autoRefresh && dashboardSettings.refreshInterval > 0) {
+            const intervalId = setInterval(() => {
+                console.log(`Dashboard auto-refresh triggered at ${new Date().toLocaleTimeString()}`);
+                // In a real scenario, this would trigger a data refetch.
+                // For now, it's just a log to show functionality.
+            }, dashboardSettings.refreshInterval * 1000); // Convert seconds to milliseconds
+
+            return () => clearInterval(intervalId);
+        }
+    }, [dashboardSettings.autoRefresh, dashboardSettings.refreshInterval]);
+
+
     const stats = [
         { title: "Orateurs", value: speakers?.length || 0, icon: UserIcon, color: "bg-accent", onClick: onGoToSpeakers },
         { title: "Contacts d'accueil", value: hosts?.length || 0, icon: HomeIcon, color: "bg-secondary", onClick: onGoToHosts },
