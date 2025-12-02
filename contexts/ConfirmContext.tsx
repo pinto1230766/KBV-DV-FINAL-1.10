@@ -14,7 +14,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, message, onConfirm,
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-[99]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div className="flex items-end sm:items-center justify-center min-h-full p-4 text-center sm:p-0">
+      <div className="flex items-center justify-center h-screen p-4 text-center sm:p-0">
           <div className="relative bg-card-light dark:bg-card-dark rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full animate-fade-in-up max-h-[90vh] flex flex-col">
             <div className="p-6 bg-gradient-to-br from-primary to-secondary dark:from-primary-dark dark:to-secondary text-white flex-shrink-0">
                 <div className="flex items-center space-x-4">

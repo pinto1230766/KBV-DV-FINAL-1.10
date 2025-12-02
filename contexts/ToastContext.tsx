@@ -66,7 +66,7 @@ export const ToastContainer: React.FC = () => {
   if (!toasts.length) return null;
 
   return (
-    <div aria-live="assertive" className="fixed inset-0 flex items-center justify-center px-4 py-6 pointer-events-none sm:p-6 z-[100]">
+    <div aria-live="assertive" className="fixed inset-0 flex items-center justify-center px-4 py-6 sm:p-6 z-[100]">
         <div className="w-full max-w-sm flex flex-col-reverse space-y-4 space-y-reverse pointer-events-auto">
             {toasts.map((toast) => (
                 <Toast key={toast.id} toast={toast} onDismiss={removeToast} />
