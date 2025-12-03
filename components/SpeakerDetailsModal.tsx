@@ -141,7 +141,7 @@ export const SpeakerDetailsModal: React.FC<SpeakerDetailsModalProps> = ({ isOpen
         setPhotoUrl(null);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const speakerData: Speaker = {
             id: speaker?.id || generateUUID(),
@@ -158,9 +158,9 @@ export const SpeakerDetailsModal: React.FC<SpeakerDetailsModalProps> = ({ isOpen
         };
 
         if (isAdding) {
-            addSpeaker(speakerData);
+            await addSpeaker(speakerData);
         } else {
-            updateSpeaker(speakerData);
+            await updateSpeaker(speakerData);
         }
         onClose();
     };
@@ -233,7 +233,7 @@ Rédige un résumé qui synthétise ces informations pour aider à planifier le 
             const response = await ai.models.generateContent({
                 model: aiSettings.model,
                 contents: prompt,
-                generationConfig: {
+                config: {
                     temperature: aiSettings.temperature,
                     maxOutputTokens: aiSettings.maxTokens,
                 }

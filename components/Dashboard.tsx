@@ -104,9 +104,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     useEffect(() => {
         if (dashboardSettings.autoRefresh && dashboardSettings.refreshInterval > 0) {
             const intervalId = setInterval(() => {
-                console.log(`Dashboard auto-refresh triggered at ${new Date().toLocaleTimeString()}`);
                 // In a real scenario, this would trigger a data refetch.
-                // For now, it's just a log to show functionality.
+                // For now, it's just a placeholder to show functionality.
             }, dashboardSettings.refreshInterval * 1000); // Convert seconds to milliseconds
 
             return () => clearInterval(intervalId);

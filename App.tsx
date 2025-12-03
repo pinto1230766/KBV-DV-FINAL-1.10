@@ -63,7 +63,7 @@ const App: React.FC = () => {
     
     // Modals State
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-    const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
+    const [editingVisit, setEditingVisit] = useState<Visit | undefined>(undefined);
     const [speakerToSchedule, setSpeakerToSchedule] = useState<Speaker | null>(null);
     
     const [isSpeakerDetailsModalOpen, setIsSpeakerDetailsModalOpen] = useState(false);
@@ -110,7 +110,7 @@ const App: React.FC = () => {
             try {
                 // On non-native platforms, this might throw.
                 if (typeof LocalNotifications === 'undefined') {
-                    console.log('LocalNotifications not available on this platform');
+                    
                     return;
                 }
 
@@ -193,7 +193,7 @@ const App: React.FC = () => {
 
     const handleScheduleVisit = useCallback((speaker: Speaker) => {
         setSpeakerToSchedule(speaker);
-        setEditingVisit(null);
+        setEditingVisit(undefined);
         setIsScheduleModalOpen(true);
     }, []);
 
@@ -491,9 +491,9 @@ const App: React.FC = () => {
                 <ScheduleVisitModal 
                     isOpen={isScheduleModalOpen}
                     onClose={() => setIsScheduleModalOpen(false)}
-                    visit={editingVisit}
+                    editingVisit={editingVisit}
                     speaker={speakerToSchedule}
-                    onComplete={handleCompleteVisit}
+                    onSave={handleCompleteVisit}
                 />
             )}
             {isSpeakerDetailsModalOpen && (
@@ -560,3 +560,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

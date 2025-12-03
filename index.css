@@ -3,112 +3,190 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Styles de base pour l'application KBV Lyon */
+/* 
+ * =========================================
+ *  Système de Thème et Variables de Couleur
+ * =========================================
+ */
+:root {
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e2e8f0;
 
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-accent: #3b82f6;
+  --text-on-accent: #ffffff;
+
+  --border-primary: #e2e8f0;
+  --border-secondary: #cbd5e1;
+  --border-focus: #3b82f6;
+  --border-focus-shadow: rgba(59, 130, 246, 0.1);
+  
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb-hover: #94a3b8;
+
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --card-shadow-hover: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  --btn-primary-bg: #3b82f6;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover-bg: #2563eb;
+  --btn-primary-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-accent: #60a5fa;
+  --text-on-accent: #ffffff;
+
+  --border-primary: #334155;
+  --border-secondary: #475569;
+  --border-focus: #60a5fa;
+  --border-focus-shadow: rgba(96, 165, 250, 0.2);
+
+  --scrollbar-thumb: #475569;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb-hover: #64748b;
+
+  --card-bg: #1e293b;
+  --card-border: #475569; /* Un peu plus clair pour la visibilité */
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 4px 6px rgba(0, 0, 0, 0.4);
+
+  --btn-primary-bg: #2563eb;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover-bg: #1d4ed8;
+  --btn-primary-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 
+ * =========================================
+ *  Styles de Base
+ * =========================================
+ */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  border-color: var(--border-primary);
 }
 
-html, body {
+html, body, #root {
   height: 100%;
   width: 100%;
   overflow: hidden;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-#root {
-  height: 100%;
+/* 
+ * =========================================
+ *  Composants UI
+ * =========================================
+ */
+
+/* Cartes */
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+  border: 1px solid var(--card-border);
+}
+
+.card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+/* Boutons */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--btn-primary-shadow);
+  background: var(--btn-primary-hover-bg);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Inputs, Textarea, Select */
+input, textarea, select {
   width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
-/* Styles personnalisés pour la barre de scroll sur Android */
-.android-scrollbar {
-  scrollbar-width: thin !important;
-  scrollbar-color: #9CA3AF #F3F4F6 !important;
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--border-focus-shadow);
 }
 
-.android-scrollbar::-webkit-scrollbar {
-  width: 8px !important;
-  height: 8px !important;
-  display: block !important;
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
-.android-scrollbar::-webkit-scrollbar-track {
-  background: #F3F4F6 !important;
-  border-radius: 4px !important;
+
+/* 
+ * =========================================
+ *  Utilitaires et Overrides
+ * =========================================
+ */
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
-.android-scrollbar::-webkit-scrollbar-thumb {
-  background: #9CA3AF !important;
-  border-radius: 4px !important;
-  border: 1px solid #E5E7EB !important;
-}
-
-.android-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #6B7280 !important;
-}
-
-.android-scrollbar::-webkit-scrollbar-corner {
-  background: #F3F4F6 !important;
-}
-
-/* Animations personnalisées */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.4s ease-out forwards;
-}
-
-.animate-slide-in {
-  animation: slideIn 0.3s ease-in-out;
-}
-
-.shadow-soft-lg {
-  box-shadow:
-    0 10px 25px rgba(15, 23, 42, 0.08),
-    0 20px 45px rgba(15, 23, 42, 0.12);
-}
-
-.dark .shadow-soft-lg {
-  box-shadow:
-    0 12px 30px rgba(15, 23, 42, 0.45),
-    0 6px 18px rgba(15, 23, 42, 0.35);
-}
-
+/* Glass effect */
 .bg-glass {
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -116,49 +194,20 @@ html, body {
   backdrop-filter: blur(20px);
 }
 
-.bg-glass-dark {
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(20px);
+.dark .bg-glass {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(20px);
 }
 
-/* Scrollbar personnalisée */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #475569;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
-
-/* Styles pour les toasts et notifications */
+/* Toasts & Modals */
 .toast-container {
   position: fixed;
   top: 20px;
   right: 20px;
   z-index: 9999;
 }
-
-/* Styles pour les modales */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -169,134 +218,41 @@ html, body {
   justify-content: center;
 }
 
-/* Styles pour le chargement */
+/* Spinner */
 .loading-spinner {
   border: 3px solid rgba(0, 0, 0, 0.1);
-  border-top-color: #3b82f6;
+  border-top-color: var(--text-accent);
   border-radius: 50%;
   width: 40px;
   height: 40px;
   animation: spin 1s linear infinite;
 }
 
+/* 
+ * =========================================
+ *  Animations
+ * =========================================
+ */
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
-
-/* Styles pour les cartes */
-.card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-
-.dark .card {
-  background: #1e293b;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
-.card:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
-
-/* Styles pour les boutons */
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border: none;
-  outline: none;
-}
-
-.btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.btn:active {
-  transform: translateY(0);
-}
-
-/* Styles pour les inputs */
-input, textarea, select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-}
-
-.dark input,
-.dark textarea,
-.dark select {
-  background: #1e293b;
-  border-color: #334155;
-  color: #e2e8f0;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-/* Styles pour les badges */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-/* Utilitaires */
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Styles pour l'impression */
-@media print {
-  body {
-    background: white !important;
-  }
-  
-  .no-print {
-    display: none !important;
-  }
-  
-  .card {
-    box-shadow: none !important;
-    border: 1px solid #e2e8f0;
-  }
-}
+.animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+.animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+.animate-slide-in { animation: slideIn 0.3s ease-in-out; }
 
 .animations-disabled *,
 .animations-disabled *::before,
@@ -305,28 +261,53 @@ select:focus {
   animation: none !important;
 }
 
-/* Compact Mode Styles */
-.compact-mode .card {
-  padding: 0.5rem;
+/* 
+ * =========================================
+ *  Styles d'impression
+ * =========================================
+ */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0;
+  }
 }
-.compact-mode .btn {
-  padding: 0.25rem 0.75rem;
-  font-size: 0.875rem;
+
+/* 
+ * =========================================
+ *  Overrides pour Tailwind
+ *  (nécessaire si des classes de couleur sont utilisées dans le HTML)
+ * =========================================
+ */
+.dark .bg-white,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: var(--bg-secondary) !important;
 }
-.compact-mode .p-4 {
-  padding: 0.75rem;
+
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-slate-900 {
+ color: var(--text-primary) !important;
 }
-.compact-mode .py-4 {
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+
+.dark .text-gray-600,
+.dark .text-slate-600 {
+  color: var(--text-secondary) !important;
 }
-.compact-mode .px-4 {
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-}
-.compact-mode .text-lg {
-  font-size: 1.05rem;
-}
-.compact-mode .text-xl {
-  font-size: 1.15rem;
+
+.dark .border,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: var(--border-secondary) !important;
 }

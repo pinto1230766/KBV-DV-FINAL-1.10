@@ -45,11 +45,26 @@ export default defineConfig(({ mode }) => {
         devSourcemap: true,
       },
       build: {
-        cssCodeSplit: false,
-        sourcemap: true,
+        cssCodeSplit: true,
+        sourcemap: false,
+        minify: 'terser',
+        target: 'es2020',
         rollupOptions: {
           output: {
-            inlineDynamicImports: false
+            inlineDynamicImports: false,
+            manualChunks: {
+              vendor: ['react', 'react-dom'],
+              ui: ['@headlessui/react'],
+              settings: ['./contexts/SettingsContext.tsx'],
+              data: ['./contexts/DataContext.tsx'],
+              constants: ['./constants.ts']
+            }
+          }
+        },
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true
           }
         }
       },

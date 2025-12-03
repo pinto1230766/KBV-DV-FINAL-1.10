@@ -144,11 +144,7 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
             const prompt = `Tu es un assistant météo. Quelle est la météo la plus probable pour ${locationInfo} le ${readableDate} (date exacte ${nextVisit.visitDate})? ${daysMessage} Même si les données sont incertaines, donne une estimation concise du temps attendu avec températures approximatives, par exemple : "Ensoleillé, 24°C / 18°C". N'indique jamais que tu ne peux pas fournir la météo.`;
             const response = await ai.models.generateContent({
                 model: aiSettings.model,
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: aiSettings.temperature,
-                    maxOutputTokens: aiSettings.maxTokens,
-                }
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
             });
             const resultText = extractTextFromGeminiResponse(response);
             if (resultText) {
@@ -176,11 +172,7 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
             const prompt = `Quel est le temps de trajet en voiture entre "${host.address}" et ${destination} un samedi après-midi à Lyon? Donne une estimation concise, par exemple : "Environ 25 min en voiture".`;
             const response = await ai.models.generateContent({
                 model: aiSettings.model,
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: aiSettings.temperature,
-                    maxOutputTokens: aiSettings.maxTokens,
-                }
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
             });
             const resultText = extractTextFromGeminiResponse(response);
             if (resultText) {
@@ -306,3 +298,5 @@ export const ProactiveAssistant: React.FC<ProactiveAssistantProps> = (props) => 
         </div>
     );
 };
+
+

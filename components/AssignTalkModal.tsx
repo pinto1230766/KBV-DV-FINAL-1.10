@@ -64,27 +64,32 @@ export const AssignTalkModal: React.FC<AssignTalkModalProps> = ({ isOpen, onClos
         const cong = selectedSpeaker.congregation.toLowerCase();
         let locationType: 'physical' | 'zoom' | 'streaming' = 'physical';
         if (cong.includes('zoom')) locationType = 'zoom';
-        else if (cong.includes('streaming')) locationType = 'streaming';
+        else if (cong.includes('streaming') || cong.includes('visioconférence')) locationType = 'streaming';
 
-        const newVisit: Visit = {
-            id: selectedSpeaker.id,
+        const visitData: Visit = {
+            id: speakerId,
+            visitId: generateUUID(),
             nom: selectedSpeaker.nom,
             congregation: selectedSpeaker.congregation,
-            telephone: selectedSpeaker.telephone,
-            photoUrl: selectedSpeaker.photoUrl,
-            visitId: generateUUID(),
-            visitDate,
-            visitTime: congregationProfile.defaultTime,
-            host: locationType !== 'physical' ? 'N/A' : UNASSIGNED_HOST,
+            visitDate: visitDate,
+            arrivalDate: visitDate,
+            departureDate: visitDate,
+            visitTime: congregationProfile.defaultTime || '14:00',
+            host: UNASSIGNED_HOST,
             accommodation: '',
             meals: '',
+            notes: '',
             status: 'pending',
-            locationType,
-            talkNoOrType: talk.number.toString(),
+            attachments: [],
+            expenses: [],
+            talkNoOrType: String(talk.number),
             talkTheme: talk.theme,
-            communicationStatus: {},
+            locationType,
+            checklist: [],
         };
-        addVisit(newVisit);
+
+        addVisit(visitData);
+        addToast(`Discours "${talk.theme}" attribué à ${selectedSpeaker.nom} le ${new Date(visitDate + 'T00:00:00').toLocaleDateString('fr-FR')}.`, 'success');
         onClose();
     };
 

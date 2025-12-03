@@ -5,6 +5,7 @@ import {
 } from './Icons';
 import { useData } from '../contexts/DataContext';
 import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { ArchivedVisits } from './ArchivedVisits';
 import { EncryptionPrompt } from './EncryptionPrompt';
 import { CongregationProfile, Visit, Language, MessageType, MessageRole } from '../types';
@@ -25,7 +26,7 @@ import { ResetConfirmationModal } from './ResetConfirmationModal';
 
 interface SettingsProps {
     onImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    onResetData: () => void;
+    onResetData: () => Promise<void>;
     isImporting: boolean;
     onLeaveFeedback: (visit: Visit) => void;
     archiveSectionRef: React.RefObject<HTMLDivElement>;
@@ -228,6 +229,7 @@ const TemplateItem: React.FC<{
     const [showPreview, setShowPreview] = useState(false);
     const [showVariables, setShowVariables] = useState(false);
     const { addToast } = useToast();
+    const confirm = useConfirm();
     const isDirty = text !== template;
     const validationIssues = validateTemplate(text);
     const availableVariables = getAvailableVariables();
@@ -251,6 +253,9 @@ const TemplateItem: React.FC<{
     };
 
     const handleRestore = async () => {
+        const confirmed = await confirm('Êtes-vous sûr de vouloir restaurer le modèle par défaut ?');
+        if (!confirmed) return;
+        
         try {
             await onRestore();
             addToast('Modèle par défaut restauré', 'info');
@@ -357,6 +362,7 @@ const TemplateEditorContent: React.FC = () => {
     const { customTemplates, customHostRequestTemplates, saveCustomTemplate, deleteCustomTemplate, saveCustomHostRequestTemplate, deleteCustomHostRequestTemplate } = useData();
     const { settings } = useSettings();
     const { addToast } = useToast();
+    const confirm = useConfirm();
     const language = settings.language;
     const [previewData, setPreviewData] = useState({
         speakerName: 'João Silva',
@@ -366,6 +372,83 @@ const TemplateEditorContent: React.FC = () => {
         hospitalityOverseer: 'Francisco Pinto',
         hospitalityOverseerPhone: '+33777388914'
     });
+    const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
+    
+    // Validation des templates
+    const validateTemplateContent = (content: string) => {
+        const errors: string[] = [];
+        
+        // Vérification des variables non fermées
+        const openVars = content.match(/\{[^{}]*$/g);
+        if (openVars) {
+            errors.push('Variable non fermée détectée. Assurez-vous que toutes les accolades sont correctement fermées.');
+        }
+        
+        // Vérification des variables inconnues
+        const allowedVars = ['speakerName', 'hostName', 'visitDate', 'visitTime', 'hospitalityOverseer', 'hospitalityOverseerPhone'];
+        const usedVars = content.match(/\{([^}]+)\}/g) || [];
+        const unknownVars = usedVars
+            .map(v => v.replace(/[{}]/g, ''))
+            .filter(v => !allowedVars.includes(v));
+            
+        if (unknownVars.length > 0) {
+            errors.push(`Variables inconnues détectées : ${unknownVars.join(', ')}`);
+        }
+        
+        return {
+            isValid: errors.length === 0,
+            errors
+        };
+    };
+    
+    // Gestion de la sauvegarde avec validation
+    const handleSaveTemplate = async (type: MessageType, role: MessageRole, content: string) => {
+        const validation = validateTemplateContent(content);
+        if (!validation.isValid) {
+            addToast(`Erreur de validation : ${validation.errors[0]}`, 'error');
+            return false;
+        }
+        
+        try {
+            await saveCustomTemplate(language, type, role, content);
+            addToast('Modèle enregistré avec succès', 'success');
+            return true;
+        } catch (error) {
+            console.error('Erreur lors de la sauvegarde :', error);
+            addToast('Erreur lors de la sauvegarde du modèle', 'error');
+            return false;
+        }
+    };
+    
+    // Gestion de la restauration avec confirmation
+    const handleRestoreTemplate = async (type: MessageType, role: MessageRole) => {
+        if (await confirm('Êtes-vous sûr de vouloir restaurer le modèle par défaut ?')) {
+            try {
+                await deleteCustomTemplate(language, type, role);
+                addToast('Modèle restauré avec succès', 'success');
+                return true;
+            } catch (error) {
+                console.error('Erreur lors de la restauration :', error);
+                addToast('Erreur lors de la restauration du modèle', 'error');
+                return false;
+            }
+        }
+        return false;
+    };
+
+    // Gestion de la restauration des modèles de demande d'accueil
+    const handleRestoreHostRequestTemplate = async (type: 'singular' | 'plural') => {
+        const confirmed = await confirm('Êtes-vous sûr de vouloir restaurer le modèle par défaut ?');
+        if (!confirmed) return;
+        
+        try {
+            await deleteCustomHostRequestTemplate(language, type);
+            addToast('Modèle restauré avec succès', 'success');
+        } catch (error) {
+            console.error('Erreur lors de la restauration :', error);
+            addToast('Erreur lors de la restauration du modèle', 'error');
+        }
+    };
 
     const getVisitTemplate = useCallback((type: MessageType, role: MessageRole): { template: string, isCustom: boolean } => {
         const custom = customTemplates[language]?.[type]?.[role];
@@ -496,7 +579,7 @@ const TemplateEditorContent: React.FC = () => {
                                     template={getVisitTemplate(type, 'speaker').template}
                                     isCustom={getVisitTemplate(type, 'speaker').isCustom}
                                     onSave={(text) => saveCustomTemplate(language, type, 'speaker', text)}
-                                    onRestore={() => deleteCustomTemplate(language, type, 'speaker')}
+                                    onRestore={() => handleRestoreTemplate(type, 'speaker')}
                                     processTemplate={processTemplatePreview}
                                 />
                                 <TemplateItem
@@ -504,7 +587,7 @@ const TemplateEditorContent: React.FC = () => {
                                     template={getVisitTemplate(type, 'host').template}
                                     isCustom={getVisitTemplate(type, 'host').isCustom}
                                     onSave={(text) => saveCustomTemplate(language, type, 'host', text)}
-                                    onRestore={() => deleteCustomTemplate(language, type, 'host')}
+                                    onRestore={() => handleRestoreTemplate(type, 'host')}
                                     processTemplate={processTemplatePreview}
                                 />
                             </div>
@@ -521,7 +604,7 @@ const TemplateEditorContent: React.FC = () => {
                         template={getHostRequestTemplate('singular').template}
                         isCustom={getHostRequestTemplate('singular').isCustom}
                         onSave={(text) => saveCustomHostRequestTemplate(language, 'singular', text)}
-                        onRestore={() => deleteCustomHostRequestTemplate(language, 'singular')}
+                        onRestore={() => handleRestoreHostRequestTemplate('singular')}
                         processTemplate={processTemplatePreview}
                     />
                     <TemplateItem
@@ -529,7 +612,7 @@ const TemplateEditorContent: React.FC = () => {
                         template={getHostRequestTemplate('plural').template}
                         isCustom={getHostRequestTemplate('plural').isCustom}
                         onSave={(text) => saveCustomHostRequestTemplate(language, 'plural', text)}
-                        onRestore={() => deleteCustomHostRequestTemplate(language, 'plural')}
+                        onRestore={() => handleRestoreHostRequestTemplate('plural')}
                         processTemplate={processTemplatePreview}
                     />
                 </div>
@@ -913,8 +996,8 @@ const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'a
         }
     };
 
-    const handleResetConfirm = () => {
-        onResetData();
+    const handleResetConfirm = async () => {
+        await onResetData();
         setIsResetModalOpen(false);
     };
 
@@ -1188,19 +1271,69 @@ export const Settings: React.FC<SettingsProps> = ({ onImport, onResetData, isImp
 };
 
 import { useSettings } from '../contexts/SettingsContext';
+import { Switch } from '@headlessui/react';
+
+type Theme = 'light' | 'dark' | 'auto';
+type FontSize = 'small' | 'medium' | 'large';
 
 // Composants pour les nouvelles sections
 const InterfaceCustomizationContent: React.FC = () => {
     const { addToast } = useToast();
-    const { settings, setTheme, setFontSize, setLanguage, setAnimations } = useSettings();
-    const [compactMode, setCompactMode] = useState(false);
-
-    const handleSave = () => {
-        localStorage.setItem('interfaceSettings', JSON.stringify({
-            ...settings,
-            compactMode
-        }));
-        addToast("Paramètres d'interface sauvegardés", 'success');
+    const { settings, setTheme, setFontSize, setLanguage, setAnimations, setCompactMode } = useSettings();
+    
+    // Charger les paramètres sauvegardés au montage
+    useEffect(() => {
+        const savedSettings = localStorage.getItem('interfaceSettings');
+        if (savedSettings) {
+            try {
+                const parsed = JSON.parse(savedSettings);
+                if (parsed.theme) setTheme(parsed.theme);
+                if (parsed.fontSize) setFontSize(parsed.fontSize);
+                if (parsed.language) setLanguage(parsed.language);
+                if (parsed.animations !== undefined) setAnimations(parsed.animations);
+                if (parsed.compactMode !== undefined) setCompactMode(parsed.compactMode);
+            } catch (error) {
+                console.error('Erreur lors du chargement des paramètres:', error);
+            }
+        }
+    }, []);
+    
+    // Sauvegarder les paramètres à chaque modification
+    useEffect(() => {
+        const settingsToSave = {
+            theme: settings.theme,
+            fontSize: settings.fontSize,
+            language: settings.language,
+            animations: settings.animations,
+            compactMode: settings.compactMode
+        };
+        
+        localStorage.setItem('interfaceSettings', JSON.stringify(settingsToSave));
+    }, [settings]);
+    
+    const handleThemeChange = (theme: Theme) => {
+        setTheme(theme);
+        addToast(`Thème ${theme} appliqué`, 'info');
+    };
+    
+    const handleFontSizeChange = (size: FontSize) => {
+        setFontSize(size);
+        addToast(`Taille de police ${size} appliquée`, 'info');
+    };
+    
+    const handleLanguageChange = (lang: Language) => {
+        setLanguage(lang);
+        addToast(`Langue définie sur ${lang === 'fr' ? 'Français' : 'Cap-verdien'}`, 'info');
+    };
+    
+    const handleCompactModeChange = (isCompact: boolean) => {
+        setCompactMode(isCompact);
+        addToast(`Mode ${isCompact ? 'compact' : 'normal'} activé`, 'info');
+    };
+    
+    const handleAnimationsChange = (enabled: boolean) => {
+        setAnimations(enabled);
+        addToast(`Animations ${enabled ? 'activées' : 'désactivées'}`, 'info');
     };
 
     return (
@@ -1208,43 +1341,127 @@ const InterfaceCustomizationContent: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Thème visuel</label>
-                    <select value={settings.theme} onChange={(e) => setTheme(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
-                        <option value="light">Clair</option>
-                        <option value="dark">Sombre</option>
-                        <option value="auto">Automatique</option>
-                    </select>
+                    <div className="grid grid-cols-3 gap-2">
+                        <button 
+                            onClick={() => handleThemeChange('light')}
+                            className={`p-3 rounded-lg border-2 transition-all ${settings.theme === 'light' ? 'border-primary bg-primary/10' : 'border-border-light dark:border-border-dark hover:border-primary/50'}`}
+                            title="Thème clair"
+                        >
+                            <div className="h-3 bg-white rounded-sm shadow-inner"></div>
+                            <div className="mt-1 text-xs text-center">Clair</div>
+                        </button>
+                        <button 
+                            onClick={() => handleThemeChange('dark')}
+                            className={`p-3 rounded-lg border-2 transition-all ${settings.theme === 'dark' ? 'border-primary bg-primary/10' : 'border-border-light dark:border-border-dark hover:border-primary/50'}`}
+                            title="Thème sombre"
+                        >
+                            <div className="h-3 bg-gray-800 rounded-sm shadow-inner"></div>
+                            <div className="mt-1 text-xs text-center">Sombre</div>
+                        </button>
+                        <button 
+                            onClick={() => handleThemeChange('auto')}
+                            className={`p-3 rounded-lg border-2 transition-all ${settings.theme === 'auto' ? 'border-primary bg-primary/10' : 'border-border-light dark:border-border-dark hover:border-primary/50'}`}
+                            title="Automatique (système)"
+                        >
+                            <div className="h-3 bg-gradient-to-r from-white to-gray-800 rounded-sm shadow-inner"></div>
+                            <div className="mt-1 text-xs text-center">Auto</div>
+                        </button>
+                    </div>
                 </div>
+                
                 <div>
                     <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Taille du texte</label>
-                    <select value={settings.fontSize} onChange={(e) => setFontSize(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
-                        <option value="small">Petit</option>
-                        <option value="medium">Moyen</option>
-                        <option value="large">Grand</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => handleFontSizeChange('small')}
+                            className={`flex-1 py-2 rounded-lg border transition-all ${settings.fontSize === 'small' ? 'border-primary bg-primary/10 text-primary' : 'border-border-light dark:border-border-dark'}`}
+                        >
+                            <span className="text-xs">A</span>
+                        </button>
+                        <button 
+                            onClick={() => handleFontSizeChange('medium')}
+                            className={`flex-1 py-2 rounded-lg border transition-all ${settings.fontSize === 'medium' ? 'border-primary bg-primary/10 text-primary' : 'border-border-light dark:border-border-dark'}`}
+                        >
+                            <span className="text-base">A</span>
+                        </button>
+                        <button 
+                            onClick={() => handleFontSizeChange('large')}
+                            className={`flex-1 py-2 rounded-lg border transition-all ${settings.fontSize === 'large' ? 'border-primary bg-primary/10 text-primary' : 'border-border-light dark:border-border-dark'}`}
+                        >
+                            <span className="text-lg font-bold">A</span>
+                        </button>
+                    </div>
                 </div>
+                
                 <div>
                     <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Langue</label>
-                    <select value={settings.language} onChange={(e) => setLanguage(e.target.value as any)} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
+                    <select 
+                        value={settings.language} 
+                        onChange={(e) => handleLanguageChange(e.target.value as Language)} 
+                        className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10 hover:border-primary/50 transition-colors"
+                    >
                         <option value="fr">Français</option>
                         <option value="cv">Cap-verdien</option>
                     </select>
                 </div>
+                
                 <div>
                     <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Mode d'affichage</label>
-                    <select value={compactMode ? 'compact' : 'normal'} onChange={(e) => setCompactMode(e.target.value === 'compact')} className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10">
-                        <option value="normal">Normal</option>
-                        <option value="compact">Compact</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => handleCompactModeChange(false)}
+                            className={`flex-1 py-2 px-3 rounded-lg border transition-all ${!settings.compactMode ? 'border-primary bg-primary/10 text-primary' : 'border-border-light dark:border-border-dark'}`}
+                        >
+                            <span className="text-sm">Normal</span>
+                        </button>
+                        <button 
+                            onClick={() => handleCompactModeChange(true)}
+                            className={`flex-1 py-2 px-3 rounded-lg border transition-all ${settings.compactMode ? 'border-primary bg-primary/10 text-primary' : 'border-border-light dark:border-border-dark'}`}
+                        >
+                            <span className="text-sm">Compact</span>
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={settings.animations} onChange={(e) => setAnimations(e.target.checked)} className="rounded" />
-                    <span className="text-sm">Activer les animations</span>
-                </label>
-                <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
-                    Appliquer
-                </button>
+            
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div>
+                    <div className="flex items-center gap-2">
+                        <Switch
+                            checked={settings.animations}
+                            onChange={handleAnimationsChange}
+                            className={`${settings.animations ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
+                        >
+                            <span className="sr-only">Activer les animations</span>
+                            <span
+                                className={`${settings.animations ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                            />
+                        </Switch>
+                        <span className="text-sm font-medium">Activer les animations</span>
+                    </div>
+                    <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Améliore l'expérience utilisateur mais peut ralentir l'application</p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={() => {
+                            // Réinitialiser tous les paramètres
+                            setTheme('auto');
+                            setFontSize('medium');
+                            setCompactMode(false);
+                            setAnimations(true);
+                            addToast('Paramètres réinitialisés', 'success');
+                        }}
+                        className="px-3 py-1.5 text-sm text-text-muted dark:text-text-muted-dark hover:text-primary dark:hover:text-primary-light transition-colors"
+                    >
+                        Réinitialiser
+                    </button>
+                </div>
+            </div>
+            
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 rounded-lg text-sm">
+                <h4 className="font-medium mb-2">💡 Astre</h4>
+                <p>Les modifications sont appliquées automatiquement. Vos préférences sont enregistrées pour votre prochaine visite.</p>
             </div>
         </div>
     );

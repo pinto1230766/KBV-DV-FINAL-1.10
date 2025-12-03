@@ -81,7 +81,7 @@ interface DataContextType {
   removeDuplicateVisits: () => void;
   cleanDuplicateVisitsByDate: () => void;
   getMultipleVisitsSameDate: () => Map<string, Visit[]>;
-  addHost: (hostData: Host) => boolean;
+  addHost: (hostData: Host) => Promise<boolean>;
   updateHost: (hostName: string, updatedData: Partial<Host>) => void;
   deleteHost: (hostName: string) => void;
   saveCustomTemplate: (language: Language, messageType: MessageType, role: MessageRole, text: string) => void;
@@ -965,7 +965,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             recursive: true
                         });
                     } catch (error) {
-                        console.log('Le dossier de sauvegarde existe déjà ou ne peut pas être créé');
+                        
                     }
                 }
                 

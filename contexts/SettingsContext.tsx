@@ -132,10 +132,29 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Apply theme
     useEffect(() => {
         const root = window.document.documentElement;
+        const body = window.document.body;
         const isDark =
             settings.theme === 'dark' ||
             (settings.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        
+        console.log('Theme change:', settings.theme, 'isDark:', isDark);
+        
+        // Appliquer sur html et body
         root.classList.toggle('dark', isDark);
+        body.classList.toggle('dark', isDark);
+        
+        // Forcer les styles de base
+        if (isDark) {
+            root.style.setProperty('background-color', '#0f172a', 'important');
+            root.style.setProperty('color', '#e2e8f0', 'important');
+            body.style.setProperty('background-color', '#0f172a', 'important');
+            body.style.setProperty('color', '#e2e8f0', 'important');
+        } else {
+            root.style.setProperty('background-color', '#f1f5f9', 'important');
+            root.style.setProperty('color', '#1e293b', 'important');
+            body.style.setProperty('background-color', '#f1f5f9', 'important');
+            body.style.setProperty('color', '#1e293b', 'important');
+        }
     }, [settings.theme]);
 
     // Apply font size
