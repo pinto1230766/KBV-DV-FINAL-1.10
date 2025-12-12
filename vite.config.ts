@@ -49,14 +49,27 @@ export default defineConfig(({ mode }) => {
         sourcemap: false,
         minify: 'terser',
         target: 'es2020',
+        chunkSizeWarningLimit: 1000,
+        reportCompressedSize: false,
         rollupOptions: {
           output: {
             inlineDynamicImports: false,
             manualChunks: {
-              vendor: ['react', 'react-dom'],
-              ui: ['@headlessui/react'],
-              settings: ['./contexts/SettingsContext.tsx'],
-              data: ['./contexts/DataContext.tsx'],
+              react: ['react', 'react-dom'],
+              vendor: [
+                '@capacitor/core', 
+                '@capacitor/status-bar', 
+                '@capacitor/filesystem',
+                '@capacitor/camera',
+                '@capacitor/share'
+              ],
+              ui: [
+                '@headlessui/react'
+              ],
+              context: [
+                './contexts/SettingsContext.tsx',
+                './contexts/DataContext.tsx'
+              ],
               constants: ['./constants.ts']
             }
           }

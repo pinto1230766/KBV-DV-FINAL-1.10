@@ -145,7 +145,7 @@ export const HostDetailsModal: React.FC<HostDetailsModalProps> = ({ isOpen, onCl
         setPhotoUrl(null);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         const trimmedNom = nom.trim();
@@ -160,7 +160,7 @@ export const HostDetailsModal: React.FC<HostDetailsModalProps> = ({ isOpen, onCl
                 return;
             }
             
-            const success = addHost({
+            const success = await addHost({
                 nom: trimmedNom,
                 telephone: telephone.trim(),
                 address: address.trim(),
@@ -211,7 +211,7 @@ export const HostDetailsModal: React.FC<HostDetailsModalProps> = ({ isOpen, onCl
                             <CameraIcon className="w-4 h-4" />
                             Prendre
                         </label>
-                        <input id="camera-upload-host" name="camera-upload-host" type="file" className="sr-only" accept="image/*" capture onChange={handlePhotoChange} />
+                        <input id="camera-upload-host" name="camera-upload-host" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
                         {photoUrl && (
                             <button type="button" onClick={removePhoto} className="px-3 py-2 border border-transparent rounded-md text-sm font-medium text-red-700 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50">
                                 Supprimer
@@ -276,7 +276,7 @@ export const HostDetailsModal: React.FC<HostDetailsModalProps> = ({ isOpen, onCl
                     {unavailabilities.map((period, index) => (
                         <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-primary-light/10 rounded-md text-sm">
                             <span>Du <strong>{new Date(period.start + 'T00:00:00').toLocaleDateString('fr-FR')}</strong> au <strong>{new Date(period.end + 'T00:00:00').toLocaleDateString('fr-FR')}</strong></span>
-                            <button type="button" onClick={() => handleRemoveUnavailability(index)} className="p-1 text-red-500 hover:text-red-700"><TrashIcon className="w-4 h-4" /></button>
+                            <button type="button" onClick={() => handleRemoveUnavailability(index)} className="p-1 text-red-500 hover:text-red-700" aria-label="Supprimer cette période d'indisponibilité"><TrashIcon className="w-4 h-4" /></button>
                         </div>
                     ))}
                 </div>
@@ -339,7 +339,7 @@ export const HostDetailsModal: React.FC<HostDetailsModalProps> = ({ isOpen, onCl
                 <div className="p-6 bg-gradient-to-br from-primary to-secondary dark:from-primary-dark dark:to-secondary text-white rounded-t-xl flex-shrink-0">
                     <div className="flex justify-between items-start">
                          <h2 className="text-2xl font-bold">{isAdding ? "Ajouter un contact" : `Profil de ${host?.nom}`}</h2>
-                        <button type="button" onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
+                        <button type="button" onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20" aria-label="Fermer la fenêtre">
                             <XIcon className="w-6 h-6" />
                         </button>
                     </div>

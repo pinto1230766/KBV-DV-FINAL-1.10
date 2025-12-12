@@ -209,7 +209,7 @@ export const HostRequestModal: React.FC<HostRequestModalProps> = ({ isOpen, onCl
                 </div>
               </div>
               <textarea id="templateContent" rows={12} value={editedTemplateText} onChange={e => setEditedTemplateText(e.target.value)} className="w-full p-2 border rounded-md bg-gray-50 dark:bg-primary-light/10 border-border-light dark:border-border-dark whitespace-pre-wrap" />
-              <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Utilisez des variables comme {visits}, {congregationProfile.hospitalityOverseer}, etc.</p>
+              <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1">Utilisez des variables comme {'{visits}'}, {'{congregation}'}, etc.</p>
             </div>
           ) : (
             <div>

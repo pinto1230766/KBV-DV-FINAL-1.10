@@ -21,28 +21,28 @@
 
 #### 1.2 Statistiques Rapides (4 cartes)
 
-**Carte 1: Total Visites**
+##### Carte 1: Total Visites
 
 - Icône: Calendrier
 - Nombre total de visites programmées
 - Texte: "Visites programmées"
 - Couleur: Bleu
 
-**Carte 2: Visites ce mois**
+##### Carte 2: Visites ce mois
 
 - Icône: Calendrier avec horloge
 - Nombre de visites du mois en cours
 - Texte: "Ce mois-ci"
 - Couleur: Vert
 
-**Carte 3: Orateurs**
+##### Carte 3: Orateurs
 
 - Icône: Utilisateur
 - Nombre total d'orateurs
 - Texte: "Orateurs"
 - Couleur: Violet
 
-**Carte 4: Contacts d'accueil**
+##### Carte 4: Contacts d'accueil
 
 - Icône: Maison
 - Nombre total de contacts
@@ -51,7 +51,7 @@
 
 #### 1.3 Prochaines Visites (7 jours)
 
-**Design**:
+### Design
 
 - Titre: "Prochaines visites (7 jours)"
 - Liste de cartes horizontales
@@ -65,13 +65,13 @@
   - Icône de type (Physique/Zoom/Streaming)
   - Bouton "Générer message" (icône enveloppe)
 
-**Interactions**:
+### Interactions
 
 - Clic sur carte → Ouvre modal de modification
 - Clic sur "Générer message" → Ouvre modal de génération de message
 - Survol → Ombre portée et légère élévation
 
-**État vide**:
+### État vide
 
 - Icône calendrier grisée
 - Texte: "Aucune visite programmée dans les 7 prochains jours"
@@ -79,13 +79,13 @@
 
 #### 1.4 Visites Nécessitant une Action
 
-**Design**:
+### Design
 
 - Titre: "Visites nécessitant une action"
 - Badge rouge avec nombre d'actions
 - Liste de cartes avec indicateur d'urgence
 
-**Types d'actions**:
+### Types d'actions
 
 1. **Pas de contact d'accueil assigné**
    - Badge rouge: "Accueil manquant"
@@ -105,7 +105,7 @@
 
 #### 1.5 Graphiques
 
-**Graphique 1: Visites par Mois (Barres)**
+##### Graphique 1: Visites par Mois (Barres)
 
 - Titre: "Visites par mois"
 - Axe X: Mois (Jan, Fév, Mar...)
@@ -114,7 +114,7 @@
 - Hauteur: 300px
 - Responsive: Scroll horizontal sur mobile
 
-**Graphique 2: Répartition par Type (Donut)**
+##### Graphique 2: Répartition par Type (Donut)
 
 - Titre: "Répartition par type de visite"
 - Segments:
@@ -126,14 +126,14 @@
 
 #### 1.6 Actions Rapides (Boutons flottants)
 
-**Bouton Principal (FAB - Floating Action Button)**:
+### Bouton Principal (FAB - Floating Action Button)
 
 - Position: Bas droite, fixe
 - Icône: Plus (+)
 - Couleur: Bleu primaire
 - Au clic: Menu contextuel avec 3 options
 
-**Menu contextuel**:
+### Menu contextuel
 
 1. "Programmer une visite" (icône calendrier)
 2. "Ajouter un orateur" (icône utilisateur)
@@ -524,12 +524,12 @@ const groupByMonth = (visits, year, month) => {
 
 #### 3.1 Onglets principaux
 
-**Onglet 1: Visites & Accueil**
+##### Onglet 1: Visites & Accueil
 
 - Gestion des communications par visite
 - Liste des visites avec statut de communication
 
-**Onglet 2: Messages Orateurs**
+##### Onglet 2: Messages Orateurs
 
 - Messages reçus des orateurs
 - Notifications de disponibilité

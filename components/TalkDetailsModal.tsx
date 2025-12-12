@@ -62,7 +62,12 @@ export const TalkDetailsModal: React.FC<TalkDetailsModalProps> = ({ isOpen, onCl
                 <div className="p-6 bg-gradient-to-br from-primary to-secondary dark:from-primary-dark dark:to-secondary text-white rounded-t-xl">
                     <div className="flex justify-between items-center">
                         <h2 className="text-2xl font-bold">{isAdding ? 'Ajouter un discours' : 'Modifier le discours'}</h2>
-                        <button type="button" onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20"
+                            aria-label="Fermer la fenêtre"
+                        >
                             <XIcon className="w-6 h-6" />
                         </button>
                     </div>
@@ -149,7 +154,12 @@ export const UpdateTalksListModal: React.FC<UpdateTalksListModalProps> = ({ isOp
                 <div className="p-6 bg-gradient-to-br from-primary to-secondary dark:from-primary-dark dark:to-secondary text-white rounded-t-xl">
                     <div className="flex justify-between items-center">
                         <h2 className="text-2xl font-bold">Mettre à jour la liste des discours</h2>
-                        <button type="button" onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20"
+                            aria-label="Fermer la fenêtre"
+                        >
                             <XIcon className="w-6 h-6" />
                         </button>
                     </div>

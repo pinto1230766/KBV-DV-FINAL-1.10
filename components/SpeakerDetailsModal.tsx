@@ -266,7 +266,12 @@ Rédige un résumé qui synthétise ces informations pour aider à planifier le 
                 <div className="p-6 bg-gradient-to-br from-primary to-secondary dark:from-primary-dark dark:to-secondary text-white rounded-t-xl flex-shrink-0">
                     <div className="flex justify-between items-start">
                          <h2 className="text-2xl font-bold">{isAdding ? "Ajouter un orateur" : "Détails de l'orateur"}</h2>
-                        <button type="button" onClick={onClose} className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20">
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            className="p-2 -mt-2 -mr-2 rounded-full text-white/70 hover:bg-white/20"
+                            aria-label="Fermer la fenêtre"
+                        >
                             <XIcon className="w-6 h-6" />
                         </button>
                     </div>
@@ -348,9 +353,14 @@ Rédige un résumé qui synthétise ces informations pour aider à planifier le 
                                                 <CameraIcon className="w-4 h-4" />
                                                 Prendre
                                             </label>
-                                            <input id="camera-upload" name="camera-upload" type="file" className="sr-only" accept="image/*" capture onChange={handlePhotoChange} />
+                                            <input id="camera-upload" name="camera-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
                                             {photoUrl && (
-                                                <button type="button" onClick={removePhoto} className="px-3 py-2 border border-transparent rounded-md text-sm font-medium text-red-700 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50">
+                                                <button 
+                                                    type="button" 
+                                                    onClick={removePhoto} 
+                                                    className="px-3 py-2 border border-transparent rounded-md text-sm font-medium text-red-700 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50"
+                                                    aria-label="Supprimer la photo"
+                                                >
                                                     Supprimer
                                                 </button>
                                             )}

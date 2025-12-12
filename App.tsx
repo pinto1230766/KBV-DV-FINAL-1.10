@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { Speaker, Visit, MessageRole, Language, Host, MessageType, TalkHistory, ViewMode, Tab } from './types';
 import { MainLayout } from './components/MainLayout';
 import { UpcomingVisits } from './components/UpcomingVisits';
-import { SpeakerList } from './components/SpeakerList';
+import { VirtualizedSpeakerList } from './components/VirtualizedSpeakerList';
 import { ScheduleVisitModal } from './components/ScheduleVisitModal';
 // Lazy loaded components for performance
 const Dashboard = React.lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
@@ -402,14 +402,28 @@ const App: React.FC = () => {
                         />
                         {renderPlanningContent()}
                         <div ref={speakerListRef} className="my-8">
-                            <SpeakerList
-                                onSchedule={handleScheduleVisit}
-                                onAddSpeaker={handleAddSpeaker}
-                                onEditSpeaker={handleEditSpeaker}
-                                onSendMessage={(speaker) => handleOpenFreeFormMessage(speaker, 'speaker')}
-                                isExpanded={isSpeakerListExpanded}
-                                onToggleExpand={() => setIsSpeakerListExpanded(prev => !prev)}
-                            />
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                                    Liste des Orateurs
+                                </h2>
+                                <button
+                                    onClick={handleAddSpeaker}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                    <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                                    Ajouter un orateur
+                                </button>
+                            </div>
+                            <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                                <VirtualizedSpeakerList
+                                    speakers={speakers}
+                                    onEdit={handleEditSpeaker}
+                                    onSchedule={handleScheduleVisit}
+                                    onSendMessage={(speaker) => handleOpenFreeFormMessage(speaker, 'speaker')}
+                                    height={600}
+                                    itemSize={120}
+                                />
+                            </div>
                         </div>
                         <div ref={hostListRef} className="my-8">
                             <HostList

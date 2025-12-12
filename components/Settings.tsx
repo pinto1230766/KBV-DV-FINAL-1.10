@@ -46,7 +46,14 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ title, description, i
 
     return (
         <div ref={containerRef} className="bg-card-light dark:bg-card-dark rounded-xl shadow-soft-lg transition-all duration-300">
-            <div className="p-4 cursor-pointer flex justify-between items-center" onClick={() => setIsExpanded(!isExpanded)} role="button" tabIndex={0} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsExpanded(!isExpanded)} aria-expanded={isExpanded}>
+            <div
+                className="p-4 cursor-pointer flex justify-between items-center"
+                onClick={() => setIsExpanded(!isExpanded)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsExpanded(!isExpanded)}
+                aria-expanded={isExpanded}
+            >
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-secondary/10 rounded-full flex-shrink-0">
                        <Icon className="w-6 h-6 text-secondary"/>
@@ -839,48 +846,66 @@ const SecurityContent: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-medium mb-2">Verrouillage automatique (minutes)</label>
-                        <input 
-                            type="number" 
-                            value={securitySettings.autoLockTimeout} 
-                            onChange={(e) => saveSecuritySettings({ autoLockTimeout: parseInt(e.target.value) })}
-                            className="w-full p-2 border rounded-lg" 
-                            min="5" 
-                            max="120" 
-                        />
+                    <input
+                        type="number"
+                        id="autoLockTimeout"
+                        name="autoLockTimeout"
+                        aria-label="Délai de verrouillage automatique en minutes"
+                        title="Délai de verrouillage automatique en minutes"
+                        placeholder="Entrez le délai en minutes"
+                        value={securitySettings.autoLockTimeout}
+                        onChange={(e) => saveSecuritySettings({ autoLockTimeout: parseInt(e.target.value) })}
+                        className="w-full p-2 border rounded-lg"
+                        min="5"
+                        max="120"
+                    />
                         <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1">0 = désactivé</p>
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-2">Timeout de session (minutes)</label>
-                        <input 
-                            type="number" 
-                            value={securitySettings.sessionTimeout} 
+                        <input
+                            type="number"
+                            id="sessionTimeout"
+                            name="sessionTimeout"
+                            aria-label="Délai d'expiration de la session en minutes"
+                            title="Délai d'expiration de la session en minutes"
+                            placeholder="Entrez le délai en minutes"
+                            value={securitySettings.sessionTimeout}
                             onChange={(e) => saveSecuritySettings({ sessionTimeout: parseInt(e.target.value) })}
-                            className="w-full p-2 border rounded-lg" 
-                            min="30" 
-                            max="480" 
+                            className="w-full p-2 border rounded-lg"
+                            min="30"
+                            max="480"
                         />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-2">Effacer le presse-papiers après (secondes)</label>
-                        <input 
-                            type="number" 
-                            value={securitySettings.clearClipboardAfter} 
+                        <input
+                            type="number"
+                            id="clearClipboardAfter"
+                            name="clearClipboardAfter"
+                            aria-label="Délai de vidage du presse-papiers en secondes"
+                            title="Délai de vidage du presse-papiers en secondes"
+                            placeholder="Entrez le délai en secondes"
+                            value={securitySettings.clearClipboardAfter}
                             onChange={(e) => saveSecuritySettings({ clearClipboardAfter: parseInt(e.target.value) })}
-                            className="w-full p-2 border rounded-lg" 
-                            min="0" 
-                            max="300" 
+                            className="w-full p-2 border rounded-lg"
+                            min="0"
+                            max="300"
                         />
                         <p className="text-xs text-text-muted dark:text-text-muted-dark mt-1">0 = jamais</p>
                     </div>
                     <div>
                         <label className="flex items-center gap-2">
-                            <input 
-                                type="checkbox" 
-                                checked={securitySettings.requirePasswordOnStart} 
+                            <input
+                                type="checkbox"
+                                id="requirePasswordOnStart"
+                                name="requirePasswordOnStart"
+                                aria-label="Mot de passe requis au démarrage"
+                                checked={securitySettings.requirePasswordOnStart}
                                 onChange={(e) => saveSecuritySettings({ requirePasswordOnStart: e.target.checked })}
-                                className="rounded" 
+                                className="rounded"
                             />
-                            <span className="text-sm">Mot de passe requis au démarrage</span>
+                            <label htmlFor="requirePasswordOnStart" className="text-sm cursor-pointer">Mot de passe requis au démarrage</label>
                         </label>
                     </div>
                 </div>
@@ -1022,7 +1047,7 @@ const DataManagementContent: React.FC<Omit<SettingsProps, 'onLeaveFeedback' | 'a
                         <span>{usageMB} Mo / {quotaMB} Mo</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-primary-light/20 rounded-full h-2.5">
-                        <div className={`${progressBarColor} h-2.5 rounded-full`} style={{ width: `${Math.min(usage.percent, 100)}%` }}></div>
+                        <div className={`${progressBarColor} h-2.5 rounded-full w-[${Math.min(usage.percent, 100)}%]`}></div>
                     </div>
                     {usage.percent > 75 && (
                         <div className={`p-3 rounded-md text-sm flex items-start space-x-3 ${usage.percent > 90 ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}`}>
@@ -1395,10 +1420,11 @@ const InterfaceCustomizationContent: React.FC = () => {
                 
                 <div>
                     <label className="block text-sm font-medium text-text-muted dark:text-text-muted-dark mb-2">Langue</label>
-                    <select 
-                        value={settings.language} 
-                        onChange={(e) => handleLanguageChange(e.target.value as Language)} 
+                    <select
+                        value={settings.language}
+                        onChange={(e) => handleLanguageChange(e.target.value as Language)}
                         className="w-full p-2 border rounded-lg bg-card-light dark:bg-primary-light/10 hover:border-primary/50 transition-colors"
+                        aria-label="Sélectionner la langue de l'interface"
                     >
                         <option value="fr">Français</option>
                         <option value="cv">Cap-verdien</option>
@@ -1500,11 +1526,14 @@ const NotificationSettingsContent: React.FC = () => {
                         <label key={key} className="flex items-center gap-2">
                             <input
                                 type="checkbox"
+                                id={`notification-${key}`}
+                                name={`notification-${key}`}
+                                aria-label={label}
                                 checked={(notificationSettings as any)[key]}
                                 onChange={(e) => handleNotificationChange(key as any, e.target.checked)}
                                 className="rounded"
                             />
-                            <span className="text-sm">{label}</span>
+                            <label htmlFor={`notification-${key}`} className="text-sm cursor-pointer">{label}</label>
                         </label>
                     ))}
                 </div>
@@ -1514,17 +1543,52 @@ const NotificationSettingsContent: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-2">Heure par défaut</label>
-                        <input type="time" value={notificationSettings.notificationTime} onChange={(e) => handleNotificationChange('notificationTime', e.target.value)} className="w-full p-2 border rounded-lg" />
+                        <input 
+                            type="time" 
+                            id="notification-time"
+                            name="notificationTime"
+                            aria-label="Heure de notification par défaut"
+                            title="Heure de notification par défaut"
+                            value={notificationSettings.notificationTime} 
+                            onChange={(e) => handleNotificationChange('notificationTime', e.target.value)} 
+                            className="w-full p-2 border rounded-lg" 
+                        />
                     </div>
                     <div>
                         <label className="flex items-center gap-2 mb-2">
-                            <input type="checkbox" checked={notificationSettings.quietHours.enabled} onChange={(e) => handleQuietHoursChange('enabled', e.target.checked)} className="rounded" />
-                            <span className="text-sm font-medium">Heures de silence</span>
+                            <input 
+                                type="checkbox" 
+                                id="quiet-hours-enabled"
+                                name="quietHoursEnabled"
+                                aria-label="Activer les heures de silence"
+                                checked={notificationSettings.quietHours.enabled} 
+                                onChange={(e) => handleQuietHoursChange('enabled', e.target.checked)} 
+                                className="rounded" 
+                            />
+                            <label htmlFor="quiet-hours-enabled" className="text-sm font-medium cursor-pointer">Heures de silence</label>
                         </label>
                         <div className="flex gap-2">
-                            <input type="time" value={notificationSettings.quietHours.start} onChange={(e) => handleQuietHoursChange('start', e.target.value)} className="flex-1 p-2 border rounded-lg" disabled={!notificationSettings.quietHours.enabled} />
-                            <span className="self-center">à</span>
-                            <input type="time" value={notificationSettings.quietHours.end} onChange={(e) => handleQuietHoursChange('end', e.target.value)} className="flex-1 p-2 border rounded-lg" disabled={!notificationSettings.quietHours.enabled} />
+                            <input 
+                                type="time" 
+                                id="quiet-hours-start"
+                                name="quietHoursStart"
+                                aria-label="Heure de début des heures de silence"
+                                value={notificationSettings.quietHours.start} 
+                                onChange={(e) => handleQuietHoursChange('start', e.target.value)} 
+                                className="flex-1 p-2 border rounded-lg" 
+                                disabled={!notificationSettings.quietHours.enabled} 
+                            />
+                            <span className="self-center" aria-hidden="true">à</span>
+                            <input 
+                                type="time" 
+                                id="quiet-hours-end"
+                                name="quietHoursEnd"
+                                aria-label="Heure de fin des heures de silence"
+                                value={notificationSettings.quietHours.end} 
+                                onChange={(e) => handleQuietHoursChange('end', e.target.value)} 
+                                className="flex-1 p-2 border rounded-lg" 
+                                disabled={!notificationSettings.quietHours.enabled} 
+                            />
                         </div>
                     </div>
                 </div>
@@ -1558,28 +1622,60 @@ const AdvancedSettingsContent: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={advancedSettings.offlineMode} onChange={(e) => handleAdvancedSettingChange('offlineMode', e.target.checked)} className="rounded" />
-                        <span className="text-sm">Mode hors-ligne</span>
+                        <input 
+                            type="checkbox" 
+                            id="offline-mode"
+                            name="offlineMode"
+                            aria-label="Activer le mode hors-ligne"
+                            checked={advancedSettings.offlineMode} 
+                            onChange={(e) => handleAdvancedSettingChange('offlineMode', e.target.checked)} 
+                            className="rounded" 
+                        />
+                        <label htmlFor="offline-mode" className="text-sm cursor-pointer">Mode hors-ligne</label>
                     </label>
                     <p className="text-xs text-text-muted mt-1">Limite l'utilisation des données mobiles</p>
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={advancedSettings.debugMode} onChange={(e) => handleAdvancedSettingChange('debugMode', e.target.checked)} className="rounded" />
-                        <span className="text-sm">Mode débogage</span>
+                        <input 
+                            type="checkbox" 
+                            id="debug-mode"
+                            name="debugMode"
+                            aria-label="Activer le mode débogage"
+                            checked={advancedSettings.debugMode} 
+                            onChange={(e) => handleAdvancedSettingChange('debugMode', e.target.checked)} 
+                            className="rounded" 
+                        />
+                        <label htmlFor="debug-mode" className="text-sm cursor-pointer">Mode débogage</label>
                     </label>
                     <p className="text-xs text-text-muted mt-1">Affiche les logs détaillés</p>
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={advancedSettings.autoBackup} onChange={(e) => handleAdvancedSettingChange('autoBackup', e.target.checked)} className="rounded" />
-                        <span className="text-sm">Sauvegarde automatique</span>
+                        <input 
+                            type="checkbox" 
+                            id="auto-backup"
+                            name="autoBackup"
+                            aria-label="Activer la sauvegarde automatique"
+                            checked={advancedSettings.autoBackup} 
+                            onChange={(e) => handleAdvancedSettingChange('autoBackup', e.target.checked)} 
+                            className="rounded" 
+                        />
+                        <label htmlFor="auto-backup" className="text-sm cursor-pointer">Sauvegarde automatique</label>
                     </label>
                     <p className="text-xs text-text-muted mt-1">Sauvegarde quotidienne des données</p>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Niveau de log</label>
-                    <select value={advancedSettings.logLevel} onChange={(e) => handleAdvancedSettingChange('logLevel', e.target.value)} className="w-full p-2 border rounded-lg">
+                    <select 
+                        id="log-level"
+                        name="logLevel"
+                        aria-label="Niveau de journalisation"
+                        title="Niveau de journalisation"
+                        value={advancedSettings.logLevel} 
+                        onChange={(e) => handleAdvancedSettingChange('logLevel', e.target.value)} 
+                        className="w-full p-2 border rounded-lg"
+                    >
                         <option value="error">Erreur</option>
                         <option value="warn">Avertissement</option>
                         <option value="info">Info</option>
@@ -1588,7 +1684,11 @@ const AdvancedSettingsContent: React.FC = () => {
                 </div>
             </div>
             <div className="flex gap-4">
-                <button onClick={handleClearCache} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg">
+                <button 
+                    onClick={handleClearCache} 
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg"
+                    aria-label="Vider le cache de l'application"
+                >
                     Vider le cache
                 </button>
             </div>
@@ -1609,7 +1709,7 @@ const DashboardSettingsContent: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium mb-2">Période par défaut</label>
-                    <select value={dashboardSettings.defaultPeriod} onChange={(e) => handleDashboardSettingChange('defaultPeriod', e.target.value)} className="w-full p-2 border rounded-lg">
+                    <select value={dashboardSettings.defaultPeriod} onChange={(e) => handleDashboardSettingChange('defaultPeriod', e.target.value)} className="w-full p-2 border rounded-lg" aria-label="Sélectionner la période par défaut pour le tableau de bord">
                         <option value="week">Semaine</option>
                         <option value="month">Mois</option>
                         <option value="quarter">Trimestre</option>
@@ -1618,7 +1718,7 @@ const DashboardSettingsContent: React.FC = () => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Graphique par défaut</label>
-                    <select value={dashboardSettings.defaultChart} onChange={(e) => handleDashboardSettingChange('defaultChart', e.target.value)} className="w-full p-2 border rounded-lg">
+                    <select value={dashboardSettings.defaultChart} onChange={(e) => handleDashboardSettingChange('defaultChart', e.target.value)} className="w-full p-2 border rounded-lg" aria-label="Sélectionner le type de graphique par défaut">
                         <option value="bar">Barres</option>
                         <option value="line">Lignes</option>
                         <option value="pie">Camembert</option>
@@ -1627,13 +1727,13 @@ const DashboardSettingsContent: React.FC = () => {
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={dashboardSettings.autoRefresh} onChange={(e) => handleDashboardSettingChange('autoRefresh', e.target.checked)} className="rounded" />
-                        <span className="text-sm">Actualisation automatique</span>
+                        <input type="checkbox" id="auto-refresh" name="autoRefresh" checked={dashboardSettings.autoRefresh} onChange={(e) => handleDashboardSettingChange('autoRefresh', e.target.checked)} className="rounded" aria-label="Activer l'actualisation automatique du tableau de bord" />
+                        <label htmlFor="auto-refresh" className="text-sm cursor-pointer">Actualisation automatique</label>
                     </label>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Format d'export</label>
-                    <select value={dashboardSettings.exportFormat} onChange={(e) => handleDashboardSettingChange('exportFormat', e.target.value)} className="w-full p-2 border rounded-lg">
+                    <select value={dashboardSettings.exportFormat} onChange={(e) => handleDashboardSettingChange('exportFormat', e.target.value)} className="w-full p-2 border rounded-lg" aria-label="Sélectionner le format d'export par défaut">
                         <option value="pdf">PDF</option>
                         <option value="excel">Excel</option>
                         <option value="csv">CSV</option>
@@ -1643,7 +1743,7 @@ const DashboardSettingsContent: React.FC = () => {
             </div>
             <div>
                 <label className="block text-sm font-medium mb-2">Intervalle d'actualisation (secondes)</label>
-                <input type="number" value={dashboardSettings.refreshInterval} onChange={(e) => handleDashboardSettingChange('refreshInterval', parseInt(e.target.value))} className="w-full p-2 border rounded-lg" min="30" max="3600" />
+                <input type="number" value={dashboardSettings.refreshInterval} onChange={(e) => handleDashboardSettingChange('refreshInterval', parseInt(e.target.value))} className="w-full p-2 border rounded-lg" min="30" max="3600" aria-label="Intervalle d'actualisation automatique du tableau de bord en secondes" />
             </div>
         </div>
     );
@@ -1662,30 +1762,30 @@ const AISettingsContent: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium mb-2">Modèle IA</label>
-                    <select value={aiSettings.model} onChange={(e) => handleAISettingChange('model', e.target.value)} className="w-full p-2 border rounded-lg">
+                    <select value={aiSettings.model} onChange={(e) => handleAISettingChange('model', e.target.value)} className="w-full p-2 border rounded-lg" aria-label="Sélectionner le modèle d'IA à utiliser">
                         <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                         <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                     </select>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Température (créativité)</label>
-                    <input type="range" min="0" max="1" step="0.1" value={aiSettings.temperature} onChange={(e) => handleAISettingChange('temperature', parseFloat(e.target.value))} className="w-full" />
+                    <input type="range" min="0" max="1" step="0.1" value={aiSettings.temperature} onChange={(e) => handleAISettingChange('temperature', parseFloat(e.target.value))} className="w-full" aria-label="Ajuster le niveau de créativité de l'IA" />
                     <span className="text-sm text-text-muted">{aiSettings.temperature}</span>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Tokens maximum</label>
-                    <input type="number" value={aiSettings.maxTokens} onChange={(e) => handleAISettingChange('maxTokens', parseInt(e.target.value))} className="w-full p-2 border rounded-lg" min="100" max="4000" />
+                    <input type="number" value={aiSettings.maxTokens} onChange={(e) => handleAISettingChange('maxTokens', parseInt(e.target.value))} className="w-full p-2 border rounded-lg" min="100" max="4000" aria-label="Définir le nombre maximum de tokens pour les réponses IA" />
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={aiSettings.autoGenerate} onChange={(e) => handleAISettingChange('autoGenerate', e.target.checked)} className="rounded" />
-                        <span className="text-sm">Génération automatique</span>
+                        <input type="checkbox" id="auto-generate" name="autoGenerate" checked={aiSettings.autoGenerate} onChange={(e) => handleAISettingChange('autoGenerate', e.target.checked)} className="rounded" aria-label="Activer la génération automatique de contenu par IA" />
+                        <label htmlFor="auto-generate" className="text-sm cursor-pointer">Génération automatique</label>
                     </label>
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={aiSettings.smartSuggestions} onChange={(e) => handleAISettingChange('smartSuggestions', e.target.checked)} className="rounded" />
-                        <span className="text-sm">Suggestions intelligentes</span>
+                        <input type="checkbox" id="smart-suggestions" name="smartSuggestions" checked={aiSettings.smartSuggestions} onChange={(e) => handleAISettingChange('smartSuggestions', e.target.checked)} className="rounded" aria-label="Activer les suggestions intelligentes de l'IA" />
+                        <label htmlFor="smart-suggestions" className="text-sm cursor-pointer">Suggestions intelligentes</label>
                     </label>
                 </div>
             </div>
@@ -1716,23 +1816,23 @@ const ConnectivitySettingsContent: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={settings.autoSync} onChange={(e) => setSettings({...settings, autoSync: e.target.checked})} className="rounded" />
-                        <span className="text-sm">Synchronisation automatique</span>
+                        <input type="checkbox" id="auto-sync" name="autoSync" checked={settings.autoSync} onChange={(e) => setSettings({...settings, autoSync: e.target.checked})} className="rounded" aria-label="Activer la synchronisation automatique" />
+                        <label htmlFor="auto-sync" className="text-sm cursor-pointer">Synchronisation automatique</label>
                     </label>
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={settings.offlineMode} onChange={(e) => setSettings({...settings, offlineMode: e.target.checked})} className="rounded" />
-                        <span className="text-sm">Mode hors-ligne</span>
+                        <input type="checkbox" id="offline-mode" name="offlineMode" checked={settings.offlineMode} onChange={(e) => setSettings({...settings, offlineMode: e.target.checked})} className="rounded" aria-label="Activer le mode hors-ligne" />
+                        <label htmlFor="offline-mode" className="text-sm cursor-pointer">Mode hors-ligne</label>
                     </label>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Intervalle de sync (secondes)</label>
-                    <input type="number" value={settings.syncInterval} onChange={(e) => setSettings({...settings, syncInterval: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="300" max="86400" />
+                    <input type="number" value={settings.syncInterval} onChange={(e) => setSettings({...settings, syncInterval: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="300" max="86400" aria-label="Intervalle de synchronisation en secondes" />
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Utilisation des données</label>
-                    <select value={settings.dataUsage} onChange={(e) => setSettings({...settings, dataUsage: e.target.value})} className="w-full p-2 border rounded-lg">
+                    <select value={settings.dataUsage} onChange={(e) => setSettings({...settings, dataUsage: e.target.value})} className="w-full p-2 border rounded-lg" aria-label="Sélectionner l'utilisation des données">
                         <option value="wifi">WiFi uniquement</option>
                         <option value="mobile">WiFi + Mobile</option>
                         <option value="unlimited">Illimité</option>
@@ -1740,7 +1840,7 @@ const ConnectivitySettingsContent: React.FC = () => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Tentatives de retry</label>
-                    <input type="number" value={settings.retryAttempts} onChange={(e) => setSettings({...settings, retryAttempts: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="1" max="10" />
+                    <input type="number" value={settings.retryAttempts} onChange={(e) => setSettings({...settings, retryAttempts: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="1" max="10" aria-label="Nombre de tentatives de retry" />
                 </div>
             </div>
             <button onClick={handleSave} className="px-4 py-2 bg-primary hover:bg-primary-light text-white font-semibold rounded-lg">
@@ -1772,29 +1872,29 @@ const AdvancedCommunicationContent: React.FC = () => {
         <div className="space-y-6">
             <div>
                 <label className="block text-sm font-medium mb-2">Signature email</label>
-                <textarea value={settings.emailSignature} onChange={(e) => setSettings({...settings, emailSignature: e.target.value})} className="w-full p-2 border rounded-lg" rows={4} placeholder="Cordialement, Votre Nom" />
+                <textarea id="email-signature" name="emailSignature" value={settings.emailSignature} onChange={(e) => setSettings({...settings, emailSignature: e.target.value})} className="w-full p-2 border rounded-lg" rows={4} placeholder="Cordialement, Votre Nom" aria-label="Signature email personnalisée" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={settings.autoReply} onChange={(e) => setSettings({...settings, autoReply: e.target.checked})} className="rounded" />
-                        <span className="text-sm">Réponse automatique</span>
+                        <input type="checkbox" id="auto-reply" name="autoReply" checked={settings.autoReply} onChange={(e) => setSettings({...settings, autoReply: e.target.checked})} className="rounded" aria-label="Activer les réponses automatiques" />
+                        <label htmlFor="auto-reply" className="text-sm cursor-pointer">Réponse automatique</label>
                     </label>
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={settings.trackOpens} onChange={(e) => setSettings({...settings, trackOpens: e.target.checked})} className="rounded" />
-                        <span className="text-sm">Suivi des ouvertures</span>
+                        <input type="checkbox" id="track-opens" name="trackOpens" checked={settings.trackOpens} onChange={(e) => setSettings({...settings, trackOpens: e.target.checked})} className="rounded" aria-label="Activer le suivi des ouvertures d'email" />
+                        <label htmlFor="track-opens" className="text-sm cursor-pointer">Suivi des ouvertures</label>
                     </label>
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-2">Délai de réponse (heures)</label>
-                    <input type="number" value={settings.replyDelay} onChange={(e) => setSettings({...settings, replyDelay: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="1" max="168" />
+                    <input type="number" id="reply-delay" name="replyDelay" value={settings.replyDelay} onChange={(e) => setSettings({...settings, replyDelay: parseInt(e.target.value)})} className="w-full p-2 border rounded-lg" min="1" max="168" aria-label="Délai de réponse automatique en heures" />
                 </div>
                 <div>
                     <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={settings.customHeaders} onChange={(e) => setSettings({...settings, customHeaders: e.target.checked})} className="rounded" />
-                        <span className="text-sm">En-têtes personnalisés</span>
+                        <input type="checkbox" id="custom-headers" name="customHeaders" checked={settings.customHeaders} onChange={(e) => setSettings({...settings, customHeaders: e.target.checked})} className="rounded" aria-label="Activer les en-têtes personnalisés" />
+                        <label htmlFor="custom-headers" className="text-sm cursor-pointer">En-têtes personnalisés</label>
                     </label>
                 </div>
             </div>
