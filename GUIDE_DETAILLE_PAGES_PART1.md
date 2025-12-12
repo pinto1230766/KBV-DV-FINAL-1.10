@@ -51,7 +51,7 @@
 
 #### 1.3 Prochaines Visites (7 jours)
 
-### Design
+### Design - Prochaines Visites
 
 - Titre: "Prochaines visites (7 jours)"
 - Liste de cartes horizontales
@@ -79,7 +79,7 @@
 
 #### 1.4 Visites Nécessitant une Action
 
-### Design
+### Design - Visites Nécessitant une Action
 
 - Titre: "Visites nécessitant une action"
 - Badge rouge avec nombre d'actions
@@ -245,7 +245,7 @@ const getVisitTypeDistribution = () => {
 
 ## PAGE 2: PLANNING (Gestion des visites)
 
-### Design
+### Design - Planning
 
 - **Layout**: Liste/Grille avec barre d'outils en haut
 - **Filtres**: Barre latérale collapsible
@@ -514,7 +514,7 @@ const groupByMonth = (visits, year, month) => {
 
 ## PAGE 3: MESSAGERIE (Centre de communication)
 
-### Design
+### Design - Messagerie
 
 - **Layout**: Split view (liste gauche, détails droite)
 - **Couleurs**: Vert pour messages envoyés, gris pour en attente
